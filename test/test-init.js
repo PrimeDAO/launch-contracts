@@ -1,6 +1,6 @@
 const { parseEther } = ethers.utils;
 
-const PROXY_CREATION = "ProxyCreation";
+// const PROXY_CREATION = "ProxyCreation";
 const PRIME_CAP = parseEther("90000000").toString();
 const PRIME_SUPPLY = parseEther("21000000").toString();
 
@@ -19,23 +19,23 @@ const initialize = async (accounts) => {
   return setup;
 };
 
-const getGnosisProxyInstance = async (setup) => {
-  const gnosisSafeProxyFactoryFactory = await ethers.getContractFactory(
-    "GnosisSafeProxyFactory",
-    setup.roles.prime
-  );
-  const gnosisSafeProxyFactoryInstance =
-    await gnosisSafeProxyFactoryFactory.deploy();
+// const getGnosisProxyInstance = async (setup) => {
+//   const gnosisSafeProxyFactoryFactory = await ethers.getContractFactory(
+//     "GnosisSafeProxyFactory",
+//     setup.roles.prime
+//   );
+//   const gnosisSafeProxyFactoryInstance =
+//     await gnosisSafeProxyFactoryFactory.deploy();
 
-  const proxy_tx = await gnosisSafeProxyFactoryInstance
-    .connect(setup.roles.prime)
-    .createProxy(setup.gnosisSafe.address, "0x00");
-  const proxy_receit = await proxy_tx.wait();
-  const proxy_addr = proxy_receit.events.filter((data) => {
-    return data.event === PROXY_CREATION;
-  })[0].args["proxy"];
-  return await ethers.getContractAt("GnosisSafe", proxy_addr);
-};
+//   const proxy_tx = await gnosisSafeProxyFactoryInstance
+//     .connect(setup.roles.prime)
+//     .createProxy(setup.gnosisSafe.address, "0x00");
+//   const proxy_receit = await proxy_tx.wait();
+//   const proxy_addr = proxy_receit.events.filter((data) => {
+//     return data.event === PROXY_CREATION;
+//   })[0].args["proxy"];
+//   return await ethers.getContractAt("GnosisSafe", proxy_addr);
+// };
 
 const getLBPManagerFactory = async (setup) => {
   return await ethers.getContractFactory("LBPManager", setup.roles.root);
@@ -67,19 +67,19 @@ const gettokenInstances = async (setup) => {
   return { seedToken, fundingToken };
 };
 
-const signerV2 = async (setup) => {
-  const signerV2Factory = await ethers.getContractFactory(
-    "SignerV2",
-    setup.roles.root
-  );
-  return await signerV2Factory.deploy(setup.roles.root.address, [], []);
-};
+// const signerV2 = async (setup) => {
+//   const signerV2Factory = await ethers.getContractFactory(
+//     "SignerV2",
+//     setup.roles.root
+//   );
+//   return await signerV2Factory.deploy(setup.roles.root.address, [], []);
+// };
 
 module.exports = {
   initialize,
-  getGnosisProxyInstance,
+  // getGnosisProxyInstance,
   gettokenInstances,
   getLBPManagerFactory,
   getContractInstance,
-  signerV2,
+  // signerV2,
 };
