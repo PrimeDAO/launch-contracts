@@ -65,6 +65,8 @@ contract Seed {
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
 
+    ContributorClass[] classes; // Different contributor classes
+
     mapping(address => bool) public whitelisted; // funders that are whitelisted and allowed to contribute
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
 
@@ -79,8 +81,17 @@ contract Seed {
     event MetadataUpdated(bytes indexed metadata);
 
     struct FunderPortfolio {
+        uint8   class; // Contibutor class id
         uint256 totalClaimed; // Total amount of seed tokens claimed
         uint256 fundingAmount; // Total amount of funding tokens contributed
+    }
+
+    struct ContributorClass {
+        uint256 classCap; // Amount of tokens that can be donated for class
+        uint256 cap; // Amount of tokens that can be donated by specific contributor
+        uint256 price; // Price of seed tokens for class
+        uint256 vestingDuration; // Vesting duration for class
+        uint256 totalStaked; // Total amount of staked tokens
     }
 
     modifier onlyAdmin() {
@@ -168,6 +179,22 @@ contract Seed {
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
+    }
+
+    /**
+     * @dev                       Add contributor class.
+     * @param _cap                The total cap of the contributor class.
+     * @param _personalCap        The personal cap of each contributor in this class.
+     * @param _rate               The token rate for the addresses in this clas.
+     * @param _vestingDuration    The vesting duration for this contributors class.
+     */
+    function addClass(
+        uint256 _cap,
+        uint256 _personalCap,
+        uint256 _rate,
+        uint256 _vestingDuration
+    ) public {
+        classes.push(ContributorClass(_cap, _personalCap, _rate, _vestingDuration, 0));
     }
 
     /**
