@@ -185,16 +185,39 @@ contract Seed {
      * @dev                       Add contributor class.
      * @param _cap                The total cap of the contributor class.
      * @param _personalCap        The personal cap of each contributor in this class.
-     * @param _rate               The token rate for the addresses in this clas.
+     * @param _price               The token price for the addresses in this clas.
      * @param _vestingDuration    The vesting duration for this contributors class.
      */
     function addClass(
         uint256 _cap,
         uint256 _personalCap,
-        uint256 _rate,
+        uint256 _price,
         uint256 _vestingDuration
-    ) public {
-        classes.push(ContributorClass(_cap, _personalCap, _rate, _vestingDuration, 0));
+    ) onlyAdmin public {
+        classes.push(ContributorClass(_cap, _personalCap, _price, _vestingDuration, 0));
+    }
+
+    /**
+     * @dev                        Add contributor class batch.
+     * @param _caps                The total caps of the contributor class.
+     * @param _personalCaps        The personal caps of each contributor in this class.
+     * @param _prices              The token prices for the addresses in this clas.
+     * @param _vestingDurations    The vesting durations for this contributors class.
+     */
+    function addClassBatch(
+        uint256[] memory _caps,
+        uint256[] memory _personalCaps,
+        uint256[] memory _prices,
+        uint256[] memory _vestingDurations
+    ) onlyAdmin public {
+        require(_caps.length == _personalCaps.length &&
+                _caps.length == _prices.length &&
+                _caps.length == _vestingDurations.length,
+            "Seed: All provided arrays should be same size");
+        for(uint8 i = 0; i < _caps.length; i++){
+            classes.push(ContributorClass(_caps[i], _personalCaps[i], _prices[i], _vestingDurations[i], 0));
+        }
+
     }
 
     /**
@@ -542,5 +565,19 @@ contract Seed {
         returns (uint256)
     {
         return (funders[_funder].fundingAmount * PRECISION) / price;
+    }
+
+    /**
+     * @dev                      Get contributor class.
+     * @param _id                The total caps of the contributor class.
+     */
+    function getClass(
+        uint8 _id
+    ) public view returns(uint256, uint256, uint256, uint256, uint256) {
+        return (classes[_id].classCap,
+                classes[_id].cap,
+                classes[_id].price,
+                classes[_id].vestingDuration,
+                classes[_id].totalStaked);
     }
 }
