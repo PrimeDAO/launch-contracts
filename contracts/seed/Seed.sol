@@ -215,7 +215,7 @@ contract Seed {
                 _classCaps.length == _prices.length &&
                 _classCaps.length == _vestingDurations.length,
             "Seed: All provided arrays should be same size");
-        for(uint8 i = 0; i < _caps.length; i++){
+        for(uint8 i = 0; i < _classCaps.length; i++){
             classes.push(ContributorClass(_classCaps[i], _individualCaps[i], _prices[i], _vestingDurations[i], 0));
         }
 
