@@ -65,6 +65,8 @@ contract Seed {
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
 
+    ContributorClass[] classes; // Array of contributor classes
+
     mapping(address => bool) public whitelisted; // funders that are whitelisted and allowed to contribute
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
 
@@ -79,8 +81,17 @@ contract Seed {
     event MetadataUpdated(bytes indexed metadata);
 
     struct FunderPortfolio {
+        uint8   class; // Contibutor class id
         uint256 totalClaimed; // Total amount of seed tokens claimed
         uint256 fundingAmount; // Total amount of funding tokens contributed
+    }
+
+    struct ContributorClass {
+        uint256 classCap; // Amount of tokens that can be donated for class
+        uint256 individualCap; // Amount of tokens that can be donated by specific contributor
+        uint256 price; // Price of seed tokens for class
+        uint256 vestingDuration; // Vesting duration for class
+        uint256 totalStaked; // Total amount of staked tokens
     }
 
     modifier onlyAdmin() {
@@ -168,6 +179,46 @@ contract Seed {
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
+    }
+
+    /**
+     * @dev                       Add contributor class.
+     * @param _classCap           The total cap of the contributor class.
+     * @param _individualCap      The personal cap of each contributor in this class.
+     * @param _price              The token price for the addresses in this clas.
+     * @param _vestingDuration    The vesting duration for this contributors class.
+     */
+    function addClass(
+        uint256 _classCap,
+        uint256 _individualCap,
+        uint256 _price,
+        uint256 _vestingDuration
+    ) onlyAdmin public {
+        classes.push(ContributorClass(_classCap, _individualCap, _price, _vestingDuration, 0));
+    }
+
+    /**
+     * @dev                        Add contributor class batch.
+     * @param _classCaps                The total caps of the contributor class.
+     * @param _individualCaps        The personal caps of each contributor in this class.
+     * @param _prices              The token prices for the addresses in this clas.
+     * @param _vestingDurations    The vesting durations for this contributors class.
+     */
+    function addClassBatch(
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _prices,
+        uint256[] memory _vestingDurations
+    ) onlyAdmin public {
+        require(_classCaps.length <= 100, "Seed: Can't add batch with more then 100 classes");
+        require(_classCaps.length == _individualCaps.length &&
+                _classCaps.length == _prices.length &&
+                _classCaps.length == _vestingDurations.length,
+            "Seed: All provided arrays should be same size");
+        for(uint8 i = 0; i < _classCaps.length; i++){
+            classes.push(ContributorClass(_classCaps[i], _individualCaps[i], _prices[i], _vestingDurations[i], 0));
+        }
+
     }
 
     /**
@@ -515,5 +566,19 @@ contract Seed {
         returns (uint256)
     {
         return (funders[_funder].fundingAmount * PRECISION) / price;
+    }
+
+    /**
+     * @dev                      Get contributor class.
+     * @param _id                The total caps of the contributor class.
+     */
+    function getClass(
+        uint8 _id
+    ) public view returns(uint256, uint256, uint256, uint256, uint256) {
+        return (classes[_id].classCap,
+                classes[_id].individualCap,
+                classes[_id].price,
+                classes[_id].vestingDuration,
+                classes[_id].totalStaked);
     }
 }

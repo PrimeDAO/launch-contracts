@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+console.log(ethers)
 const {
   constants,
   time,
@@ -59,7 +60,9 @@ describe("SeedFactory", () => {
 
   context("» creator is owner", () => {
     before("!! deploy setup", async () => {
+      console.log("Before deploy");
       setup = await deploy();
+      console.log("After deploy");
       Seed = await ethers.getContractFactory("Seed", setup.roles.root);
       dao = setup.roles.prime;
       admin = setup.roles.root;
@@ -68,7 +71,9 @@ describe("SeedFactory", () => {
       hardCap = parseEther("100").toString();
       price = parseEther("0.01").toString();
       softCap = parseEther("100").toString();
+      console.log("Before SeedFactory");
       startTime = await time.latest();
+      console.log("After SeedFactory");
       endTime = await startTime.add(await time.duration.days(7));
       vestingDuration = await time.duration.days(365); // 1 year
       vestingCliff = await time.duration.days(90); // 3 months
