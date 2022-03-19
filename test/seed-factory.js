@@ -5,7 +5,6 @@ const {
   constants,
   time,
   expectRevert,
-  BN,
 } = require("@openzeppelin/test-helpers");
 const { parseEther } = ethers.utils;
 
@@ -35,7 +34,6 @@ const deploy = async () => {
 };
 
 describe("SeedFactory", () => {
-  let tx;
   let setup;
   let dao;
   let admin;
@@ -53,10 +51,7 @@ describe("SeedFactory", () => {
   let seedFactory;
   let newSeed;
   let metadata;
-  let receipt;
-  let requiredSeedAmount;
   let Seed;
-  const pct_base = new BN("1000000000000000000"); // 10**18
 
   context("» creator is owner", () => {
     before("!! deploy setup", async () => {
@@ -199,7 +194,6 @@ describe("SeedFactory", () => {
         );
       });
       it("it creates new seed contract", async () => {
-        requiredSeedAmount = new BN(hardCap).div(new BN(price)).mul(pct_base);
 
         await expect(
           seedFactory.deploySeed(
