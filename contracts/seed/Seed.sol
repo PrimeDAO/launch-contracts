@@ -519,12 +519,28 @@ contract Seed {
             return 0;
         }
 
+        // require(tokenFunder.class, "Class not exist"); 
+        require(tokenFunder.class > 0, "Class not exist"); // to avoid empty names
+
+        uint8 currentId = tokenFunder.class;
+        uint256 currentVestingDuration;
+
+        console.log("current class Id is %s ", currentId);
+        console.log("vestingDuration is %s \n", vestingDuration);
+
+        // arr = getClass(currentId); 
+        // (a,b,c,currentVestingDuration,d) = getClass(currentId); 
+        (,,,currentVestingDuration,) = getClass(currentId); 
+        // getClass(currentId); 
+        // currentVestingDuration = getClass(0)[0]; 
+        console.log("currentVestingDuration is %s \n", currentVestingDuration);
+
         // If over vesting duration, all tokens vested
-        if (elapsedSeconds >= vestingDuration) {
+        if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
             uint256 amountVested = (elapsedSeconds *
-                seedAmountForFunder(_funder)) / vestingDuration;
+                seedAmountForFunder(_funder)) / currentVestingDuration;
             return amountVested - tokenFunder.totalClaimed;
         }
     }
