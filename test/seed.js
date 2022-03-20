@@ -486,6 +486,11 @@ describe("Contract: Seed", async () => {
                 permissionedSeed,
                 fee
             );
+
+            await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
             ).add(await alternativeSetup.seed.feeAmountRequired());
@@ -735,7 +740,7 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
-          await setup.seed
+          await setup.data.seed
               .connect(admin)
               .addClass(1e14, 1e12, 1e12, 10000000);
         });
@@ -829,7 +834,7 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
-          await setup.seed
+          await setup.data.seed
               .connect(admin)
               .addClass(1e14, 1e12, 1e12, 10000000);
         });
@@ -838,10 +843,15 @@ describe("Contract: Seed", async () => {
               beneficiary.address
           );
 
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
-          feeAmountOnClaim = new BN(claimTemp)
+          await setup.data.seed
+          .connect(admin)
+          .addClass(1e14, 1e12, 1e12, 10000000);
+
+          const claimTemp = new BN(buySeedAmount).mul(new BN(10000000)).toString();//err can be here
+          feeAmountOnClaim = new BN(claimTemp)//err can be here
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
+
 
           await expect(
               setup.data.seed
@@ -851,9 +861,9 @@ describe("Contract: Seed", async () => {
               .to.emit(setup.data.seed, "TokensClaimed")
               .withArgs(
                   buyer2.address,
-                  claimTemp.toString(),
+                  claimTemp.toString(), //err can be here
                   beneficiary.address,
-                  feeAmountOnClaim.toString()
+                  feeAmountOnClaim.toString() //err can be here
               );
 
           // const receipt = await expectEvent.inTransaction(setup.data.tx.tx, setup.data.seed, "TokensClaimed");
@@ -910,6 +920,10 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1113,6 +1127,10 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
           await alternativeFundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
