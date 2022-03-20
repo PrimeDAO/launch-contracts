@@ -118,6 +118,7 @@ describe("Contract: Seed", async () => {
       startTime = await time.latest();
       endTime = await startTime.add(await time.duration.days(7));
       vestingDuration = time.duration.days(365); // 1 year
+      // classZeroVestingDuration = 
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
@@ -297,7 +298,12 @@ describe("Contract: Seed", async () => {
           feeAmount = new BN(claimAmount)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
+          
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
         });
+
         it("it cannot buy if not funded", async () => {
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
@@ -396,7 +402,7 @@ describe("Contract: Seed", async () => {
         it("updates lock when it buys tokens", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
           seedAmount = new BN(buyAmount)
-              .mul(new BN(PRECISION.toString()))
+              .mul(new BN(PRECISION.toString())) 
               .div(new BN(price));
 
           // get fundingAmount to calculate seedAmount
@@ -535,6 +541,10 @@ describe("Contract: Seed", async () => {
           await alternativeSetup.seed
               .connect(buyer1)
               .buy(getFundingAmounts("5"));
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);    
         });
 
         it("is not possible to buy", async () => {
@@ -570,7 +580,7 @@ describe("Contract: Seed", async () => {
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
-              .div(new BN(vestingDuration));
+              .div(new BN(10000000));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -724,6 +734,10 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
@@ -814,6 +828,10 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("claims all seeds after vesting duration", async () => {
           setup.data.prevBalance = await seedToken.balanceOf(
@@ -989,6 +1007,10 @@ describe("Contract: Seed", async () => {
           );
 
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("it cannot return funding tokens if not bought", async () => {
           await expectRevert(
@@ -1148,6 +1170,10 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .approve(setup.data.seed.address, smallBuyAmount);
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("can only be called by admin", async () => {
           await expectRevert(
