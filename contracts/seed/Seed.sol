@@ -520,10 +520,12 @@ contract Seed {
         }
 
         // require(tokenFunder.class, "Class not exist"); 
-        require(tokenFunder.class > 0, "Class not exist"); // to avoid empty names
+        // require(tokenFunder.class > 0, "Seed: zero class not exist"); // to avoid empty names
 
         uint8 currentId = tokenFunder.class;
         uint256 currentVestingDuration;
+        // require(currentId, "Seed: zero class not exist");
+        require(currentId > 0, "Seed: zero class not exist");
 
         console.log("current class Id is %s ", currentId);
         console.log("vestingDuration is %s \n", vestingDuration);
