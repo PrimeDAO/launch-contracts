@@ -528,7 +528,8 @@ contract Seed {
 
         (,,,currentVestingDuration,) = getClass(currentId); 
         // console.log("currentVestingDuration is %s \n", currentVestingDuration);
-
+        // currentVestingDuration = vestingDuration; //no 4 errors with it
+        
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;

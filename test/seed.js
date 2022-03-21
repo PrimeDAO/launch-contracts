@@ -735,14 +735,14 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
 
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
-
-          await setup.data.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
@@ -829,25 +829,20 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
 
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
-
-          await setup.data.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("claims all seeds after vesting duration", async () => {
           setup.data.prevBalance = await seedToken.balanceOf(
               beneficiary.address
           );
 
-          await setup.data.seed
-          .connect(admin)
-          .addClass(1e14, 1e12, 1e12, 10000000);
-
-          const claimTemp = new BN(buySeedAmount).mul(new BN(10000000)).toString();//err can be here
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();//err can be here
           feeAmountOnClaim = new BN(claimTemp)//err can be here
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
@@ -870,8 +865,8 @@ describe("Contract: Seed", async () => {
           // expect(await receipt.args[1].toString()).to.equal(new BN(buySeedAmount).mul(twoBN).toString());
         });
         it("it claims all the fee for a buyer's claim", async () => {
-          const fee = await setup.data.seed.feeForFunder(buyer2.address);
-          const feeClaimed = await setup.data.seed.feeClaimedForFunder(
+          const fee = await setup.data.seed.feeForFunder(buyer2.address); //calculates as (=) 0
+          const feeClaimed = await setup.data.seed.feeClaimedForFunder( // = twoHundredFourETH/1000000
               buyer2.address
           );
           expect(fee.toString()).to.equal(feeClaimed.toString());
