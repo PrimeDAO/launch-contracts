@@ -438,24 +438,30 @@ contract Seed {
     /**
      * @dev                     Add address to whitelist.
      * @param _buyer            Address which needs to be whitelisted
+     * @param _class            Class to which buyer will be assigned
      */
-    function whitelist(address _buyer) external onlyAdmin {
+    function whitelist(address _buyer, uint8 _class) external onlyAdmin {
+        require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
 
         whitelisted[_buyer] = true;
+        funders[_buyer].class = _class;
     }
 
     /**
      * @dev                     Add multiple addresses to whitelist.
      * @param _buyers           Array of addresses to whitelist addresses in batch
+     * @param _classes          Array of classes assigned in batch
      */
-    function whitelistBatch(address[] memory _buyers) external onlyAdmin {
+    function whitelistBatch(address[] memory _buyers, uint8[] memory _classes) external onlyAdmin {
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
         isWhitelistBatchInvoked = true;
         for (uint256 i = 0; i < _buyers.length; i++) {
+            require(_classes[i] < classes.length, "Seed: incorrect class chosen");
             whitelisted[_buyers[i]] = true;
+            funders[_buyers[i]].class = _classes[i];
         }
     }
 
