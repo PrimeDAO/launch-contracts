@@ -855,23 +855,22 @@ describe("Contract: Seed", async () => {
           // get fundingAmount and calculate fee here
           const fee = await setup.data.seed.feeForFunder(buyer2.address);
           const dividor = new BN(1000000000);
-          const dividedFeeAmountRequired = (fee/dividor).toString();
-          // const claimTemp = new BN(fee).div(new BN(dividor)).toString();//err can be here
-          const sum = (dividedFeeAmountRequired + setup.data.prevBalance).toString(); //how???
+          const dividedFeeAmountRequired = ethers.BigNumber.from((fee/dividor).toString());
+          const sdpb = ethers.BigNumber.from(setup.data.prevBalance);
+          const sum = ethers.BigNumber.from(dividedFeeAmountRequired.add(sdpb));
           /*
           seedToken.balanceOf(beneficiary.address) = 378493909404000
           setup.data.prevBalance = 378493909200000
           //378493909404000 - 378493909200000 = 204000
           fee / dividor = 204000
           */
-          console.log("sum "+sum);
+          console.log("sdpb "+sdpb);
           console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
-          console.log("setup.data.prevBalance "+setup.data.prevBalance);   
-          // console.log("sum = "+ claimTemp);       
+          console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           // ).to.equal(fee.add(setup.data.prevBalance).toString());
-          ).to.equal((dividedFeeAmountRequired + setup.data.prevBalance).toString());
+          ).to.equal((sum).toString());
           delete setup.data.prevBalance;
         });
       });
