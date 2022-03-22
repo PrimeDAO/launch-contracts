@@ -67,10 +67,8 @@ describe("Contract: Seed", async () => {
   const zero = 0;
   const one = 1;
   const hundred = 100;
-  const tenETH = parseEther("10").toString();
   const hundredTwoETH = parseEther("102").toString();
   const twoHundredFourETH = parseEther("204").toString();
-  const hundredBn = new BN(100);
   const twoBN = new BN(2);
   const PRECISION = ethers.constants.WeiPerEther;
   const ninetyTwoDaysInSeconds = time.duration.days(92);
@@ -118,7 +116,6 @@ describe("Contract: Seed", async () => {
       startTime = await time.latest();
       endTime = await startTime.add(await time.duration.days(7));
       vestingDuration = time.duration.days(365); // 1 year
-      // classZeroVestingDuration = 
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
@@ -213,30 +210,6 @@ describe("Contract: Seed", async () => {
           );
           expect((await setup.seed.isFunded()).toString()).to.equal("false");
         });
-        it("it adds class", () => {
-          context("» generics", () => {
-            it("it adds Customer class", async () => {
-              await setup.seed
-                  .connect(admin)
-                  .addClass(1e14, 1e12, 1e12, 10000000);
-              expect(
-                  (await setup.seed.getClass(0))[0]
-              ).to.equal((ethers.BigNumber.from(1e14)));
-            });
-          });
-        });
-        it("it adds batch of classes", () => {
-          context("» generics", () => {
-            it("it adds Customer class", async () => {
-              await setup.seed
-                  .connect(admin)
-                  .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000]);
-              expect(
-                  (await setup.seed.getClass(2))[0]
-              ).to.equal((ethers.BigNumber.from(1e12)));
-            });
-          });
-        });
         it("it reverts on double initialization", async () => {
           await expectRevert(
               setup.seed.initialize(
@@ -267,17 +240,6 @@ describe("Contract: Seed", async () => {
               "Seed: seed is not whitelisted"
           );
         });
-        it("it reverts when trying to add batch of Class", () => {
-          context("» generics", () => {
-            it("it adds Customer class", async () => {
-              await expectRevert(
-                  setup.seed
-                      .connect(admin)
-                      .addClassBatch([1e14,1e12], [1e12], [1e12,1e6], [10000000,10000]),
-                  "Seed: All provided arrays should be same size");
-            });
-          });
-        });
       });
     });
     context("# buy", () => {
@@ -298,12 +260,7 @@ describe("Contract: Seed", async () => {
           feeAmount = new BN(claimAmount)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
-          
-          await setup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
         });
-
         it("it cannot buy if not funded", async () => {
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
@@ -402,7 +359,7 @@ describe("Contract: Seed", async () => {
         it("updates lock when it buys tokens", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
           seedAmount = new BN(buyAmount)
-              .mul(new BN(PRECISION.toString())) 
+              .mul(new BN(PRECISION.toString()))
               .div(new BN(price));
 
           // get fundingAmount to calculate seedAmount
@@ -488,8 +445,8 @@ describe("Contract: Seed", async () => {
             );
 
             await alternativeSetup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
+                .connect(admin)
+                .addClass(1e14, 1e12, 1e12, 10000000);
 
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
@@ -549,7 +506,7 @@ describe("Contract: Seed", async () => {
 
           await setup.seed
               .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);    
+              .addClass(1e14, 1e12, 1e12, 10000000);   
         });
 
         it("is not possible to buy", async () => {
@@ -582,10 +539,12 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
+          const dividor = 10000000;
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
-              .div(new BN(10000000));
+              .div(new BN(dividor));
+              // .div(new BN(vestingDuration));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -735,7 +694,7 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          
+
           await setup.data.seed
               .connect(admin)
               .addClass(1e14, 1e12, 1e12, 10000000);
@@ -816,7 +775,6 @@ describe("Contract: Seed", async () => {
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
 
-          permissionedSeed = true;
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -830,6 +788,7 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+
           await setup.data.seed
               .connect(admin)
               .addClass(1e14, 1e12, 1e12, 10000000);
@@ -850,8 +809,9 @@ describe("Contract: Seed", async () => {
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const dividor = 1000000000;
           const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();//err can be here
-
-          feeAmountOnClaim = new BN(claimTemp)//err can be here
+          
+          // const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
+          feeAmountOnClaim = new BN(claimTemp)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
 
@@ -863,9 +823,9 @@ describe("Contract: Seed", async () => {
               .to.emit(setup.data.seed, "TokensClaimed")
               .withArgs(
                   buyer2.address,
-                  claimTemp.toString(), //err can be here
+                  claimTemp.toString(),
                   beneficiary.address,
-                  feeAmountOnClaim.toString() //err can be here
+                  feeAmountOnClaim.toString()
               );
 
           // const receipt = await expectEvent.inTransaction(setup.data.tx.tx, setup.data.seed, "TokensClaimed");
@@ -893,12 +853,9 @@ describe("Contract: Seed", async () => {
         it("funds DAO with all the fee", async () => {
           // get fundingAmount and calculate fee here
           const fee = await setup.data.seed.feeForFunder(buyer2.address);
-          // const dividor = 1000000000; //so divider vas added
-          // const dividedFee = fee / dividor;
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           ).to.equal(fee.add(setup.data.prevBalance).toString());
-          // ).to.equal(fee.add(setup.data.prevBalance).toString());
           delete setup.data.prevBalance;
         });
       });
@@ -932,10 +889,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await alternativeSetup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
-
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1031,12 +984,11 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);  
 
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
-
-          await setup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("it cannot return funding tokens if not bought", async () => {
           await expectRevert(
@@ -1139,10 +1091,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await alternativeSetup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
-
           await alternativeFundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1200,10 +1148,6 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .approve(setup.data.seed.address, smallBuyAmount);
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
-
-          await setup.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
         });
         it("can only be called by admin", async () => {
           await expectRevert(
@@ -1302,7 +1246,7 @@ describe("Contract: Seed", async () => {
               .transfer(
                   alternativeSetup.seed.address,
                   requiredSeedAmount.toString()
-              );
+              );          
         });
 
         it("reverts 'Seed: should transfer seed tokens to refund receiver' when time to refund is NOT reached", async () => {
@@ -1500,6 +1444,48 @@ describe("Contract: Seed", async () => {
       });
     });
     context("# admin functions", () => {
+      before("!! setup", async () => {
+        await setup.seed
+            .connect(admin)
+            .addClass(1e14, 1e12, 1e12, 10000000);
+      })
+      context("» add class", () => {
+        it("it adds class", () => {
+          context("» generics", () => {
+            it("it adds Customer class", async () => {
+              await setup.seed
+                  .connect(admin)
+                  .addClass(1e14, 1e12, 1e12, 10000000);
+              expect(
+                  (await setup.seed.getClass(0))[0]
+              ).to.equal((ethers.BigNumber.from(1e14)));
+            });
+          });
+        });
+        it("it adds batch of classes", () => {
+          context("» generics", () => {
+            it("it adds Customer class", async () => {
+              await setup.seed
+                  .connect(admin)
+                  .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000]);
+              expect(
+                  (await setup.seed.getClass(2))[0]
+              ).to.equal((ethers.BigNumber.from(1e12)));
+            });
+          });
+        });
+        it("it reverts when trying to add batch of Class", () => {
+          context("» generics", () => {
+            it("it adds Customer class", async () => {
+              await expectRevert(
+                  setup.seed
+                      .connect(admin)
+                      .addClassBatch([1e14,1e12], [1e12], [1e12,1e6], [10000000,10000]),
+                  "Seed: All provided arrays should be same size");
+            });
+          });
+        });
+      })
       context("» update metadata", () => {
         it("can only be called by admin", async () => {
           await expectRevert(
@@ -1646,7 +1632,7 @@ describe("Contract: Seed", async () => {
         });
         it("reverts: can only be called on whitelisted contract", async () => {
           await expectRevert(
-              setup.seed.connect(admin).whitelist(buyer1.address),
+              setup.seed.connect(admin).whitelist(buyer1.address, 0),
               "Seed: seed is not whitelisted"
           );
         });
@@ -1683,21 +1669,24 @@ describe("Contract: Seed", async () => {
             );
             await time.increase(tenDaysInSeconds);
             await alternativeSeed.close();
+            await alternativeSeed
+                .connect(admin)
+                .addClass(1e14, 1e12, 1e12, 10000000);
             await expectRevert(
-                alternativeSeed.connect(admin).whitelist(buyer1.address),
+                alternativeSeed.connect(admin).whitelist(buyer1.address, 0),
                 "Seed: should not be closed"
             );
           });
         });
         it("can only be called by admin", async () => {
           await expectRevert(
-              setup.seed.connect(buyer1).whitelist(buyer1.address),
+              setup.seed.connect(buyer1).whitelist(buyer1.address, 0),
               "Seed: caller should be admin"
           );
         });
         it("reverts: can only be called on whitelisted contract", async () => {
           await expectRevert(
-              setup.seed.connect(admin).whitelist(buyer1.address),
+              setup.seed.connect(admin).whitelist(buyer1.address, 0),
               "Seed: seed is not whitelisted"
           );
         });
@@ -1819,6 +1808,8 @@ describe("Contract: Seed", async () => {
           .div(new BN(PRECISION.toString()));
       requiredSeedAmount = seedForDistribution.add(seedForFee);
     });
+    before("!! setup", async () => {
+    });
     context("» contract is not initialized yet", () => {
       context("» parameters are valid", () => {
         before("!! deploy new contract", async () => {
@@ -1844,6 +1835,8 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await seed.connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
@@ -1894,8 +1887,9 @@ describe("Contract: Seed", async () => {
       context("» whitelist", () => {
         it("adds a user to the whitelist", async () => {
           expect(await seed.whitelisted(buyer1.address)).to.equal(false);
-          await seed.connect(admin).whitelist(buyer1.address);
+          await seed.connect(admin).whitelist(buyer1.address, 0);
           expect(await seed.whitelisted(buyer1.address)).to.equal(true);
+          expect((await seed.funders(buyer1.address))['class']).to.equal(0);
         });
       });
       context("» unwhitelist", () => {
@@ -1965,7 +1959,7 @@ describe("Contract: Seed", async () => {
 
           await seed
               .connect(admin)
-              .whitelistBatch([buyer3.address, buyer4.address]);
+              .whitelistBatch([buyer3.address, buyer4.address], [0, 0]);
 
           expect(await seed.whitelisted(buyer3.address)).to.equal(true);
           expect(await seed.whitelisted(buyer4.address)).to.equal(true);
@@ -2006,7 +2000,8 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer2)
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
-          await alternativeSetup.seed.connect(admin).whitelist(buyer2.address);
+          await alternativeSetup.seed.connect(admin).addClass(1e14, 1e12, 1e12, 10000000);
+          await alternativeSetup.seed.connect(admin).whitelist(buyer2.address, 0);
           await alternativeSetup.seed
               .connect(buyer2)
               .buy(getFundingAmounts("102"));
