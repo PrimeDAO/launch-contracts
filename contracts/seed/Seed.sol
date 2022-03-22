@@ -230,7 +230,12 @@ contract Seed {
         isActive
         returns (uint256, uint256)
     {
+        ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
+        require(! ( userClass.classCap < (userClass.totalStaked + _fundingAmount)),
+            "Seed: maximum class funding reached");
+        require(!((funders[msg.sender].fundingAmount + _fundingAmount) > userClass.individualCap),
+            "Seed: maximum personnal funding reached");
         require(
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
@@ -248,7 +253,7 @@ contract Seed {
             isFunded = true;
         }
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
-        uint256 seedAmount = (_fundingAmount * PRECISION) / price;
+        uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * fee) / PRECISION;

@@ -75,6 +75,10 @@ describe("Contract: Seed", async () => {
   const eightyNineDaysInSeconds = time.duration.days(89);
   const tenDaysInSeconds = time.duration.days(10);
 
+  const CLASS_FUNDING_LIMIT = ethers.BigNumber.from("1000000000000000000000000");
+  const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
+  const CLASS_PRICE = ethers.BigNumber.from("100000000000000000000");
+
   context("» creator is avatar", () => {
     before("!! setup", async () => {
       setup = await deploy();
@@ -152,6 +156,9 @@ describe("Contract: Seed", async () => {
             );
             const signers = await ethers.getSigners();
             const randomSigner = signers[9];
+            await alternativeSetup.seed
+                .connect(admin)
+                .addClass(CLASS_FUNDING_LIMIT, CLASS_PERSONAL_FUNDING_LIMIT, CLASS_PRICE, 10000000);
             await expectRevert(
                 alternativeSetup.seed
                     .connect(randomSigner)
@@ -262,6 +269,9 @@ describe("Contract: Seed", async () => {
               .div(new BN(PRECISION.toString()));
         });
         it("it cannot buy if not funded", async () => {
+          await setup.seed
+              .connect(admin)
+              .addClass(CLASS_FUNDING_LIMIT, CLASS_PERSONAL_FUNDING_LIMIT, CLASS_PRICE, 10000000);
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
               "Seed: sufficient seeds not provided"
@@ -455,6 +465,9 @@ describe("Contract: Seed", async () => {
                     alternativeSetup.seed.address,
                     requiredAmount.toString()
                 );
+            await alternativeSetup.seed
+                .connect(admin)
+                .addClass(CLASS_FUNDING_LIMIT, CLASS_PERSONAL_FUNDING_LIMIT, CLASS_PRICE, 10000000);
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
                 "Seed: funding token transferFrom failed"
