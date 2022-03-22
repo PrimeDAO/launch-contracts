@@ -864,9 +864,9 @@ describe("Contract: Seed", async () => {
           //378493909404000 - 378493909200000 = 204000
           fee / dividor = 204000
           */
-          console.log("sdpb "+sdpb);
-          console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
-          console.log("sum "+sum);   
+          // console.log("sdpb "+sdpb);
+          // console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
+          // console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           // ).to.equal(fee.add(setup.data.prevBalance).toString());
