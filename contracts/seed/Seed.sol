@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-
 import "hardhat/console.sol";
 
 /**
@@ -249,24 +248,15 @@ contract Seed {
             );
             isFunded = true;
         }
-
-        // FunderPortfolio storage tokenFunder = funders[msg.sender];
-        // require(tokenFunder.class < classes.length, "Seed: class not exist");
-        // uint8 currentId = tokenFunder.class;
-        // uint256 currentPrice;
-        // uint256 currentVestingDuration;        
-        // (,,currentPrice,currentVestingDuration,) = getClass(currentId); 
-
-
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
-        uint256 seedAmount = (_fundingAmount * PRECISION) / price; //currentPrice;
+        uint256 seedAmount = (_fundingAmount * PRECISION) / price;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * fee) / PRECISION;
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
-            seedAmount >= vestingDuration,//currentVestingDuration,
+            seedAmount >= vestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
 
@@ -347,8 +337,7 @@ contract Seed {
                 seedToken.transfer(_funder, _claimAmount),
             "Seed: seed token transfer failed"
         );
-        console.log("_claimAmount 2 %s ", _claimAmount);
-        console.log("feeAmountOnClaim %s ", feeAmountOnClaim);
+
         emit TokensClaimed(
             _funder,
             _claimAmount,
@@ -501,14 +490,6 @@ contract Seed {
             therefore contributors can no longer withdraw their funding tokens.
         */
         require(
-            /*@decadanse q: why maximumReached ? isnt it the sum max value what stakers can.. like.. stake? 
-            and then like no one can add more funds?
-            why is this enough for withdraw if block.timestamp is not >= endTime?
-
-            possible a: its func fot not withdraw of like actual funds, but of fundingToken, which is
-            user who staking - buying fundingToken for their real tokens. so when 'buy' part ends 
-            the remaining fundingTokens no longer needed
-            */
             maximumReached || (minimumReached && block.timestamp >= endTime),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
@@ -575,7 +556,6 @@ contract Seed {
     function feeClaimed() public view returns (uint256) {
         console.log("!~feeClaimed = %s ", (seedClaimed * fee) / PRECISION);
         console.log("!~feeAmountRequired = %s ", feeAmountRequired);
-
         return (seedClaimed * fee) / PRECISION;
     }
 
@@ -599,7 +579,9 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        console.log("!F feeForFunder %s ", (seedAmountForFunder(_funder) * fee) / PRECISION);
+        console.log("!Fff feeForFunder %s ", (seedAmountForFunder(_funder) * fee) / PRECISION);
+        console.log("!Fff balanceOf(beneficiary.address) %s ", seedToken.balanceOf(beneficiary));
+
         return (seedAmountForFunder(_funder) * fee) / PRECISION;
     }
 

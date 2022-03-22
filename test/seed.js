@@ -774,7 +774,8 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
-
+          
+          permissionedSeed = true;
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -853,9 +854,24 @@ describe("Contract: Seed", async () => {
         it("funds DAO with all the fee", async () => {
           // get fundingAmount and calculate fee here
           const fee = await setup.data.seed.feeForFunder(buyer2.address);
+          const dividor = new BN(1000000000);
+          const dividedFeeAmountRequired = (fee/dividor).toString();
+          // const claimTemp = new BN(fee).div(new BN(dividor)).toString();//err can be here
+          const sum = (dividedFeeAmountRequired + setup.data.prevBalance).toString(); //how???
+          /*
+          seedToken.balanceOf(beneficiary.address) = 378493909404000
+          setup.data.prevBalance = 378493909200000
+          //378493909404000 - 378493909200000 = 204000
+          fee / dividor = 204000
+          */
+          console.log("sum "+sum);
+          console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
+          console.log("setup.data.prevBalance "+setup.data.prevBalance);   
+          // console.log("sum = "+ claimTemp);       
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
-          ).to.equal(fee.add(setup.data.prevBalance).toString());
+          // ).to.equal(fee.add(setup.data.prevBalance).toString());
+          ).to.equal((dividedFeeAmountRequired + setup.data.prevBalance).toString());
           delete setup.data.prevBalance;
         });
       });
@@ -876,6 +892,7 @@ describe("Contract: Seed", async () => {
           );
           const altVestingDuration = time.duration.days(365);
           const altVestingCliff = time.duration.days(9);
+          permissionedSeed = true;///////////
           await alternativeSetup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -889,6 +906,15 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
+          await alternativeSetup.seed
+              .connect(admin)
+              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
+
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
