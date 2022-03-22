@@ -544,7 +544,6 @@ describe("Contract: Seed", async () => {
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(dividor));
-              // .div(new BN(vestingDuration));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -809,7 +808,7 @@ describe("Contract: Seed", async () => {
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const dividor = 1000000000;
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();//err can be here
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();
           
           // const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
           feeAmountOnClaim = new BN(claimTemp)
@@ -837,10 +836,9 @@ describe("Contract: Seed", async () => {
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const dividor = 1000000000; //so divider vas added
           const dividedFee = fee / dividor;
-          const feeClaimed = await setup.data.seed.feeClaimedForFunder( // calculations are correct
+          const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
           );
-          // expect(fee.toString()).to.equal(feeClaimed.toString());
           expect(dividedFee.toString()).to.equal(feeClaimed.toString());
         });
         it("it claims all the fee", async () => {
@@ -848,7 +846,6 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.feeClaimed();
           const dividor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / dividor;
-          // expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -869,7 +866,6 @@ describe("Contract: Seed", async () => {
           // console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
-          // ).to.equal(fee.add(setup.data.prevBalance).toString());
           ).to.equal((sum).toString());
           delete setup.data.prevBalance;
         });
@@ -891,7 +887,7 @@ describe("Contract: Seed", async () => {
           );
           const altVestingDuration = time.duration.days(365);
           const altVestingCliff = time.duration.days(9);
-          permissionedSeed = true;///////////
+          permissionedSeed = true;
           await alternativeSetup.seed.initialize(
               beneficiary.address,
               admin.address,
