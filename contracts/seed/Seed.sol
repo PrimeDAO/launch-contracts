@@ -21,6 +21,8 @@ pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -247,15 +249,24 @@ contract Seed {
             );
             isFunded = true;
         }
+
+        // FunderPortfolio storage tokenFunder = funders[msg.sender];
+        // require(tokenFunder.class < classes.length, "Seed: class not exist");
+        // uint8 currentId = tokenFunder.class;
+        // uint256 currentPrice;
+        // uint256 currentVestingDuration;        
+        // (,,currentPrice,currentVestingDuration,) = getClass(currentId); 
+
+
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
-        uint256 seedAmount = (_fundingAmount * PRECISION) / price;
+        uint256 seedAmount = (_fundingAmount * PRECISION) / price; //currentPrice;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * fee) / PRECISION;
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
-            seedAmount >= vestingDuration,
+            seedAmount >= vestingDuration,//currentVestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
 
@@ -317,6 +328,9 @@ contract Seed {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaim(_funder);
+        console.log("amountClaimable %s ", amountClaimable);
+        console.log("_claimAmount %s ", _claimAmount);
+
         require(amountClaimable > 0, "Seed: amount claimable is 0");
         require(
             amountClaimable >= _claimAmount,
@@ -325,6 +339,7 @@ contract Seed {
         uint256 feeAmountOnClaim = (_claimAmount * fee) / PRECISION;
 
         funders[_funder].totalClaimed += _claimAmount;
+        console.log("claim funders[_funder].totalClaimed = %s ", funders[_funder].totalClaimed);
 
         seedClaimed += _claimAmount;
         require(
@@ -332,7 +347,8 @@ contract Seed {
                 seedToken.transfer(_funder, _claimAmount),
             "Seed: seed token transfer failed"
         );
-
+        console.log("_claimAmount 2 %s ", _claimAmount);
+        console.log("feeAmountOnClaim %s ", feeAmountOnClaim);
         emit TokensClaimed(
             _funder,
             _claimAmount,
@@ -438,24 +454,30 @@ contract Seed {
     /**
      * @dev                     Add address to whitelist.
      * @param _buyer            Address which needs to be whitelisted
+     * @param _class            Class to which buyer will be assigned
      */
-    function whitelist(address _buyer) external onlyAdmin {
+    function whitelist(address _buyer, uint8 _class) external onlyAdmin {
+        require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
 
         whitelisted[_buyer] = true;
+        funders[_buyer].class = _class;
     }
 
     /**
      * @dev                     Add multiple addresses to whitelist.
      * @param _buyers           Array of addresses to whitelist addresses in batch
+     * @param _classes          Array of classes assigned in batch
      */
-    function whitelistBatch(address[] memory _buyers) external onlyAdmin {
+    function whitelistBatch(address[] memory _buyers, uint8[] memory _classes) external onlyAdmin {
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
         isWhitelistBatchInvoked = true;
         for (uint256 i = 0; i < _buyers.length; i++) {
+            require(_classes[i] < classes.length, "Seed: incorrect class chosen");
             whitelisted[_buyers[i]] = true;
+            funders[_buyers[i]].class = _classes[i];
         }
     }
 
@@ -479,6 +501,14 @@ contract Seed {
             therefore contributors can no longer withdraw their funding tokens.
         */
         require(
+            /*@decadanse q: why maximumReached ? isnt it the sum max value what stakers can.. like.. stake? 
+            and then like no one can add more funds?
+            why is this enough for withdraw if block.timestamp is not >= endTime?
+
+            possible a: its func fot not withdraw of like actual funds, but of fundingToken, which is
+            user who staking - buying fundingToken for their real tokens. so when 'buy' part ends 
+            the remaining fundingTokens no longer needed
+            */
             maximumReached || (minimumReached && block.timestamp >= endTime),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
@@ -529,7 +559,6 @@ contract Seed {
         (,,,currentVestingDuration,) = getClass(currentId); 
         // console.log("currentVestingDuration is %s \n", currentVestingDuration);
         // currentVestingDuration = vestingDuration; //no 4 errors with it
-        
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
@@ -544,6 +573,9 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function feeClaimed() public view returns (uint256) {
+        console.log("!~feeClaimed = %s ", (seedClaimed * fee) / PRECISION);
+        console.log("!~feeAmountRequired = %s ", feeAmountRequired);
+
         return (seedClaimed * fee) / PRECISION;
     }
 
@@ -556,6 +588,9 @@ contract Seed {
         view
         returns (uint256)
     {
+        console.log("!FC totalClaimed = %s ", funders[_funder].totalClaimed);
+        console.log("!FC feeClaimedForFunder = %s ", (funders[_funder].totalClaimed * fee) / PRECISION);
+
         return (funders[_funder].totalClaimed * fee) / PRECISION;
     }
 
@@ -564,6 +599,7 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
+        console.log("!F feeForFunder %s ", (seedAmountForFunder(_funder) * fee) / PRECISION);
         return (seedAmountForFunder(_funder) * fee) / PRECISION;
     }
 
@@ -576,6 +612,8 @@ contract Seed {
         view
         returns (uint256)
     {
+        console.log("F fundingAmount %s ", funders[_funder].fundingAmount);
+
         return (funders[_funder].fundingAmount * PRECISION) / price;
     }
 
