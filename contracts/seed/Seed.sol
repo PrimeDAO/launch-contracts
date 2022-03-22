@@ -318,8 +318,8 @@ contract Seed {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaim(_funder);
-        console.log("amountClaimable %s ", amountClaimable);
-        console.log("_claimAmount %s ", _claimAmount);
+        // console.log("amountClaimable %s ", amountClaimable);
+        // console.log("_claimAmount %s ", _claimAmount);
 
         require(amountClaimable > 0, "Seed: amount claimable is 0");
         require(
@@ -329,7 +329,7 @@ contract Seed {
         uint256 feeAmountOnClaim = (_claimAmount * fee) / PRECISION;
 
         funders[_funder].totalClaimed += _claimAmount;
-        console.log("claim funders[_funder].totalClaimed = %s ", funders[_funder].totalClaimed);
+        // console.log("claim funders[_funder].totalClaimed = %s ", funders[_funder].totalClaimed);
 
         seedClaimed += _claimAmount;
         require(
@@ -554,8 +554,8 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function feeClaimed() public view returns (uint256) {
-        console.log("!~feeClaimed = %s ", (seedClaimed * fee) / PRECISION);
-        console.log("!~feeAmountRequired = %s ", feeAmountRequired);
+        // console.log("!~feeClaimed = %s ", (seedClaimed * fee) / PRECISION);
+        // console.log("!~feeAmountRequired = %s ", feeAmountRequired);
         return (seedClaimed * fee) / PRECISION;
     }
 
@@ -568,8 +568,8 @@ contract Seed {
         view
         returns (uint256)
     {
-        console.log("!FC totalClaimed = %s ", funders[_funder].totalClaimed);
-        console.log("!FC feeClaimedForFunder = %s ", (funders[_funder].totalClaimed * fee) / PRECISION);
+        // console.log("!FC totalClaimed = %s ", funders[_funder].totalClaimed);
+        // console.log("!FC feeClaimedForFunder = %s ", (funders[_funder].totalClaimed * fee) / PRECISION);
 
         return (funders[_funder].totalClaimed * fee) / PRECISION;
     }
@@ -579,8 +579,8 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        console.log("!Fff feeForFunder %s ", (seedAmountForFunder(_funder) * fee) / PRECISION);
-        console.log("!Fff balanceOf(beneficiary.address) %s ", seedToken.balanceOf(beneficiary));
+        // console.log("!Fff feeForFunder %s ", (seedAmountForFunder(_funder) * fee) / PRECISION);
+        // console.log("!Fff balanceOf(beneficiary.address) %s ", seedToken.balanceOf(beneficiary));
 
         return (seedAmountForFunder(_funder) * fee) / PRECISION;
     }
@@ -594,7 +594,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        console.log("F fundingAmount %s ", funders[_funder].fundingAmount);
+        // console.log("F fundingAmount %s ", funders[_funder].fundingAmount);
 
         return (funders[_funder].fundingAmount * PRECISION) / price;
     }

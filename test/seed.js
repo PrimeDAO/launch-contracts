@@ -864,9 +864,9 @@ describe("Contract: Seed", async () => {
           //378493909404000 - 378493909200000 = 204000
           fee / dividor = 204000
           */
-          // console.log("sdpb "+sdpb);
-          // console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
-          // console.log("sum "+sum);   
+          console.log("sdpb "+sdpb);
+          console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
+          console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           // ).to.equal(fee.add(setup.data.prevBalance).toString());
@@ -996,6 +996,7 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .approve(setup.data.seed.address, smallBuyAmount);
 
+          permissionedSeed = true;
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -1012,6 +1013,10 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(1e14, 1e12, 1e12, 10000000);  
+
+          await setup.data.seed
+              .connect(admin)
+              .whitelist(buyer2.address, 0);
 
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
         });
@@ -1116,6 +1121,15 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+              
+          await alternativeSetup.seed
+              .connect(admin)
+              .whitelist(buyer1.address, 0);
+
           await alternativeFundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1168,6 +1182,14 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
+          await setup.data.seed
+              .connect(admin)
+              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
           await fundingToken
               .connect(buyer2)
@@ -1260,6 +1282,15 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
+          await alternativeSetup.seed
+              .connect(admin)
+              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
+
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1328,6 +1359,13 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
+          await setup.data.seed
+              .connect(admin)
+              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
           await fundingToken
               .connect(buyer2)
@@ -1392,6 +1430,13 @@ describe("Contract: Seed", async () => {
                   permissionedSeed,
                   fee
               );
+              await setup.data.seed
+                  .connect(admin)
+                  .addClass(1e14, 1e12, 1e12, 10000000);
+
+              await setup.data.seed
+                  .connect(admin)
+                  .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
               await fundingToken
                   .connect(buyer2)
@@ -1750,6 +1795,13 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000);
+
+          await setup.data.seed
+              .connect(admin)
+              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
         });
         it("can not withdraw before minumum funding amount is met", async () => {
           await expectRevert(
