@@ -1564,7 +1564,6 @@ describe("Contract: Seed", async () => {
             });
           });
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
         it("it reverts when trying to add > 100 classes", () => { 
           context("» generics", () => {
             it("it adds Customer class", async () => {
@@ -1581,7 +1580,6 @@ describe("Contract: Seed", async () => {
             });
           });
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
         it("it reverts when trying to add batch of Class", () => {
           context("» generics", () => {
             it("it adds Customer class", async () => {
@@ -1798,14 +1796,12 @@ describe("Contract: Seed", async () => {
               "Seed: seed is not whitelisted"
           );
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
         it("reverts: can't set non existent class", async () => {
           await expectRevert(
               setup.seed.connect(admin).whitelist(buyer1.address, 101),
               "Seed: incorrect class chosen"
           );
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
       });
       context("» withdraw", () => {
         before("!! deploy new contract", async () => {
@@ -2088,7 +2084,6 @@ describe("Contract: Seed", async () => {
           expect(await seed.whitelisted(buyer4.address)).to.equal(true);
           expect(await seed.isWhitelistBatchInvoked()).to.equal(true);
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
         it("reverts: can't set non existent class", async () => {
           await expectRevert(
               seed
@@ -2097,7 +2092,6 @@ describe("Contract: Seed", async () => {
               "Seed: incorrect class chosen"
           );
         });
-        //!!!!!!!!!!!!!!!!!CURRENT
       });
     });
     context("# hardCap", () => {
