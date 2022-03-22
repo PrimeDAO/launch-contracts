@@ -430,6 +430,7 @@ describe("Contract: Seed", async () => {
                 "0.01",
                 parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
             ).toString();
+            // permissionedSeed = true;
             await alternativeSetup.seed.initialize(
                 beneficiary.address,
                 admin.address,
@@ -447,6 +448,10 @@ describe("Contract: Seed", async () => {
             await alternativeSetup.seed
                 .connect(admin)
                 .addClass(1e14, 1e12, 1e12, 10000000);
+
+            // await alternativeSetup.seed
+            //     .connect(admin)
+            //     .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
@@ -544,6 +549,7 @@ describe("Contract: Seed", async () => {
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(dividor));
+              // .div(new BN(vestingDuration));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -579,6 +585,21 @@ describe("Contract: Seed", async () => {
               "Seed: request is greater than claimable amount"
           );
         });
+        // //!!!!!!!!!!!CURRENT --> need to config this part also under whitelisted thing
+        // it("it cannot claim if class of buyer is non existent", async () => {
+        //   // set non existing class
+        //   await setup.seed
+        //       .connect(admin)
+        //       .whitelist(buyer3.address, 101);
+        //   // increase time
+        //   await time.increase(tenDaysInSeconds);
+        //   await expectRevert(
+        //       setup.seed
+        //           .calculateClaim(buyer3.address),
+        //       "Seed: class not exist"
+        //   );
+        // });
+        // //!!!!!!!!!!!CURRENT
         it("it returns amount of the fee", async () => {
           let feeSent = await setup.seed
               .connect(buyer1)
@@ -808,7 +829,7 @@ describe("Contract: Seed", async () => {
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const dividor = 1000000000;
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();//err can be here
           
           // const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
           feeAmountOnClaim = new BN(claimTemp)
@@ -836,9 +857,10 @@ describe("Contract: Seed", async () => {
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const dividor = 1000000000; //so divider vas added
           const dividedFee = fee / dividor;
-          const feeClaimed = await setup.data.seed.feeClaimedForFunder(
+          const feeClaimed = await setup.data.seed.feeClaimedForFunder( // calculations are correct
               buyer2.address
           );
+          // expect(fee.toString()).to.equal(feeClaimed.toString());
           expect(dividedFee.toString()).to.equal(feeClaimed.toString());
         });
         it("it claims all the fee", async () => {
@@ -846,6 +868,7 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.feeClaimed();
           const dividor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / dividor;
+          // expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -866,6 +889,7 @@ describe("Contract: Seed", async () => {
           // console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
+          // ).to.equal(fee.add(setup.data.prevBalance).toString());
           ).to.equal((sum).toString());
           delete setup.data.prevBalance;
         });
@@ -887,7 +911,7 @@ describe("Contract: Seed", async () => {
           );
           const altVestingDuration = time.duration.days(365);
           const altVestingCliff = time.duration.days(9);
-          permissionedSeed = true;
+          permissionedSeed = true;///////////
           await alternativeSetup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -1540,6 +1564,24 @@ describe("Contract: Seed", async () => {
             });
           });
         });
+        //!!!!!!!!!!!!!!!!!CURRENT
+        it("it reverts when trying to add > 100 classes", () => { 
+          context("» generics", () => {
+            it("it adds Customer class", async () => {
+              const arr1 = Array.from(Array(101).keys());
+              const arr2 = Array.from(Array(101).fill(10000));
+              // console.log(arr1);
+              // console.log(arr2);
+              await expectRevert( 
+                  setup.seed
+                      .connect(admin)
+                      .addClassBatch(arr1, arr1, arr1, arr2),
+                  "Seed: Can't add batch with more then 100 classes"
+              );
+            });
+          });
+        });
+        //!!!!!!!!!!!!!!!!!CURRENT
         it("it reverts when trying to add batch of Class", () => {
           context("» generics", () => {
             it("it adds Customer class", async () => {
@@ -1756,6 +1798,14 @@ describe("Contract: Seed", async () => {
               "Seed: seed is not whitelisted"
           );
         });
+        //!!!!!!!!!!!!!!!!!CURRENT
+        it("reverts: can't set non existent class", async () => {
+          await expectRevert(
+              setup.seed.connect(admin).whitelist(buyer1.address, 101),
+              "Seed: incorrect class chosen"
+          );
+        });
+        //!!!!!!!!!!!!!!!!!CURRENT
       });
       context("» withdraw", () => {
         before("!! deploy new contract", async () => {
@@ -2038,6 +2088,16 @@ describe("Contract: Seed", async () => {
           expect(await seed.whitelisted(buyer4.address)).to.equal(true);
           expect(await seed.isWhitelistBatchInvoked()).to.equal(true);
         });
+        //!!!!!!!!!!!!!!!!!CURRENT
+        it("reverts: can't set non existent class", async () => {
+          await expectRevert(
+              seed
+                  .connect(admin)
+                  .whitelistBatch([buyer3.address, buyer4.address], [101, 101]),
+              "Seed: incorrect class chosen"
+          );
+        });
+        //!!!!!!!!!!!!!!!!!CURRENT
       });
     });
     context("# hardCap", () => {
