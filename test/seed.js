@@ -585,21 +585,6 @@ describe("Contract: Seed", async () => {
               "Seed: request is greater than claimable amount"
           );
         });
-        // //!!!!!!!!!!!CURRENT --> need to config this part also under whitelisted thing
-        // it("it cannot claim if class of buyer is non existent", async () => {
-        //   // set non existing class
-        //   await setup.seed
-        //       .connect(admin)
-        //       .whitelist(buyer3.address, 101);
-        //   // increase time
-        //   await time.increase(tenDaysInSeconds);
-        //   await expectRevert(
-        //       setup.seed
-        //           .calculateClaim(buyer3.address),
-        //       "Seed: class not exist"
-        //   );
-        // });
-        // //!!!!!!!!!!!CURRENT
         it("it returns amount of the fee", async () => {
           let feeSent = await setup.seed
               .connect(buyer1)
