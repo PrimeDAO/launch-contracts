@@ -449,10 +449,6 @@ describe("Contract: Seed", async () => {
                 .connect(admin)
                 .addClass(1e14, 1e12, 1e12, 10000000);
 
-            // await alternativeSetup.seed
-            //     .connect(admin)
-            //     .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
-
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
             ).add(await alternativeSetup.seed.feeAmountRequired());
@@ -549,7 +545,6 @@ describe("Contract: Seed", async () => {
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(dividor));
-              // .div(new BN(vestingDuration));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -816,7 +811,6 @@ describe("Contract: Seed", async () => {
           const dividor = 1000000000;
           const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(dividor)).toString();//err can be here
           
-          // const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
           feeAmountOnClaim = new BN(claimTemp)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
@@ -845,7 +839,6 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.feeClaimedForFunder( // calculations are correct
               buyer2.address
           );
-          // expect(fee.toString()).to.equal(feeClaimed.toString());
           expect(dividedFee.toString()).to.equal(feeClaimed.toString());
         });
         it("it claims all the fee", async () => {
@@ -853,7 +846,6 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.feeClaimed();
           const dividor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / dividor;
-          // expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -869,12 +861,8 @@ describe("Contract: Seed", async () => {
           //378493909404000 - 378493909200000 = 204000
           fee / dividor = 204000
           */
-          // console.log("sdpb "+sdpb);
-          // console.log("dividedFeeAmountRequired "+dividedFeeAmountRequired);
-          // console.log("sum "+sum);   
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
-          // ).to.equal(fee.add(setup.data.prevBalance).toString());
           ).to.equal((sum).toString());
           delete setup.data.prevBalance;
         });
@@ -1554,8 +1542,6 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               const arr1 = Array.from(Array(101).keys());
               const arr2 = Array.from(Array(101).fill(10000));
-              // console.log(arr1);
-              // console.log(arr2);
               await expectRevert( 
                   setup.seed
                       .connect(admin)

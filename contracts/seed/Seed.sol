@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PrimeDAO Seed contract
@@ -318,9 +317,7 @@ contract Seed {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaim(_funder);
-        // console.log("amountClaimable %s ", amountClaimable);
-        // console.log("_claimAmount %s ", _claimAmount);
-
+ 
         require(amountClaimable > 0, "Seed: amount claimable is 0");
         require(
             amountClaimable >= _claimAmount,
