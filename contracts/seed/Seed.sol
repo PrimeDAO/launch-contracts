@@ -254,9 +254,9 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        require(! ((userClass.fundingCollected + _fundingAmount) > userClass.classCap),
+        require((userClass.fundingCollected + _fundingAmount) < userClass.classCap,
             "Seed: maximum class funding reached");
-        require(!((funders[msg.sender].fundingAmount + _fundingAmount) > userClass.individualCap),
+        require((funders[msg.sender].fundingAmount + _fundingAmount) < userClass.individualCap,
             "Seed: maximum personnal funding reached");
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
