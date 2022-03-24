@@ -250,13 +250,19 @@ describe("Contract: Seed", async () => {
     });
     context("# buy", () => {
       context("» generics", () => {
-        before("!! top up buyer1 balance", async () => {
+        before("!! top up buyer1 and buyer3 balance", async () => {
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
           await fundingToken
               .connect(buyer1)
               .approve(setup.seed.address, getFundingAmounts("102"));
+          await fundingToken
+              .connect(root)
+              .transfer(buyer3.address, getFundingAmounts("1"));
+          await fundingToken
+              .connect(buyer3)
+              .approve(setup.seed.address, getFundingAmounts("1"));
 
           claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
               new BN(buySeedAmount)
@@ -270,7 +276,7 @@ describe("Contract: Seed", async () => {
         it("it cannot buy if not funded", async () => {
           await setup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, hardCap, price, 10000000);
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
               "Seed: sufficient seeds not provided"
@@ -313,12 +319,20 @@ describe("Contract: Seed", async () => {
               Math.floor((buySeedAmount * price) / PRECISION).toString()
           );
         });
-        it("cannot buy more than maximum target", async () => {
+        it("cannot buy more than class allows", async () => {
           await expectRevert(
               setup.seed
                   .connect(buyer1)
                   .buy(getFundingAmounts("1").add(buyAmount)),
-              "Seed: amount exceeds contract sale hardCap"
+              "Seed: maximum class funding reached"
+          );
+        });
+        it("cannot buy more than personal maximum allows", async () => {
+          await setup.seed.addClass(hardCap, 1e12, price, 10000000);
+          await setup.seed.connect(admin).setClass(buyer3.address, 2);
+          await expectRevert(
+              setup.seed.connect(buyer3).buy(1e14),
+              "Seed: maximum personal funding reached"
           );
         });
         it("minimumReached == true", async () => {
@@ -418,6 +432,17 @@ describe("Contract: Seed", async () => {
               (await setup.seed.funders(buyer1.address)).totalClaimed.toString()
           ).to.equal(zero.toString());
         });
+        // it("cannot buy more than maximum target", async () => {
+        //   await setup.seed.addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+        //   await setup.seed.setClass(buyer3.address, 1);
+        //   await setup.seed.connect(buyer3).buy(getFundingAmounts("1"));
+        //   await expectRevert(
+        //       setup.seed
+        //           .connect(buyer1)
+        //           .buy(getFundingAmounts("1")),
+        //       "Seed: amount exceeds contract sale hardCap"
+        //   );
+        // });
         context("» ERC20 transfer fails", () => {
           it("reverts 'Seed: funding token transferFrom failed' ", async () => {
             const alternativeSetup = await deploy();
@@ -1476,7 +1501,7 @@ describe("Contract: Seed", async () => {
                   .connect(admin)
                   .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000]);
               expect(
-                  (await setup.seed.getClass(3))[0]
+                  (await setup.seed.getClass(3))[1]
               ).to.equal((ethers.BigNumber.from(1e12)));
             });
           });

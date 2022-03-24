@@ -179,6 +179,14 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        classes.push( ContributorClass(
+                hardCap,
+                hardCap,
+                _price,
+                _vestingDuration,
+                0,
+                seedAmountRequired,
+                feeAmountRequired));
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
     }
@@ -205,6 +213,22 @@ contract Seed {
                     0,
                     seedRequired,
                     (seedRequired * fee) / PRECISION ));
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _address            Address of the contributor.
+     * @param _class              Class of the contributor.
+     */
+    function setClass(
+        address _address,
+        uint8 _class
+    ) onlyAdmin public {
+        require(_class < classes.length, "Seed: incorrect class chosen");
+        require(!closed, "Seed: should not be closed");
+
+        funders[_address].class = _class;
+
     }
 
     /**
@@ -254,10 +278,10 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        require((userClass.fundingCollected + _fundingAmount) < userClass.classCap,
+        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
-        require((funders[msg.sender].fundingAmount + _fundingAmount) < userClass.individualCap,
-            "Seed: maximum personnal funding reached");
+        require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
+            "Seed: maximum personal funding reached");
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
