@@ -91,7 +91,7 @@ contract Seed {
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
-        uint256 totalStaked; // Total amount of staked tokens
+        uint256 fundingCollected; // Total amount of staked tokens
         uint256 seedAmountRequired;
         uint256 feeAmountRequired;
     }
@@ -254,7 +254,7 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        require(! ((userClass.totalStaked + _fundingAmount) > userClass.classCap),
+        require(! ((userClass.fundingCollected + _fundingAmount) > userClass.classCap),
             "Seed: maximum class funding reached");
         require(!((funders[msg.sender].fundingAmount + _fundingAmount) > userClass.individualCap),
             "Seed: maximum personnal funding reached");
@@ -289,6 +289,7 @@ contract Seed {
         );
 
         fundingCollected += _fundingAmount;
+        classes[funders[msg.sender].class].fundingCollected += _fundingAmount;
 
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
@@ -608,7 +609,7 @@ contract Seed {
                 classes[_id].individualCap,
                 classes[_id].price,
                 classes[_id].vestingDuration,
-                classes[_id].totalStaked,
+                classes[_id].fundingCollected,
                 classes[_id].seedAmountRequired,
                 classes[_id].feeAmountRequired);
     }
