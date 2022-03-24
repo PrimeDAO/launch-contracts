@@ -75,7 +75,6 @@ describe("Contract: Seed", async () => {
   const eightyNineDaysInSeconds = time.duration.days(89);
   const tenDaysInSeconds = time.duration.days(10);
 
-  const CLASS_FUNDING_LIMIT = ethers.BigNumber.from("1000000000000000000000000");
   const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
 
 
