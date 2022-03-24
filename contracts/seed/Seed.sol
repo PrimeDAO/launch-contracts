@@ -20,6 +20,7 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 /**
  * @title PrimeDAO Seed contract
@@ -92,6 +93,8 @@ contract Seed {
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
         uint256 totalStaked; // Total amount of staked tokens
+        uint256 seedAmountRequired;
+        uint256 feeAmountRequired;
     }
 
     modifier onlyAdmin() {
@@ -194,7 +197,15 @@ contract Seed {
         uint256 _price,
         uint256 _vestingDuration
     ) onlyAdmin public {
-        classes.push(ContributorClass(_classCap, _individualCap, _price, _vestingDuration, 0));
+        uint256 seedRequired = (_classCap * PRECISION) / _price;
+        classes.push( ContributorClass(
+                    _classCap,
+                    _individualCap,
+                    _price,
+                    _vestingDuration,
+                    0,
+                    seedRequired,
+                    (seedRequired * fee) / PRECISION ));
     }
 
     /**
@@ -216,7 +227,15 @@ contract Seed {
                 _classCaps.length == _vestingDurations.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            classes.push(ContributorClass(_classCaps[i], _individualCaps[i], _prices[i], _vestingDurations[i], 0));
+            uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
+            classes.push(ContributorClass(
+                _classCaps[i],
+                _individualCaps[i],
+                _prices[i],
+                _vestingDurations[i],
+                0,
+                seedRequired,
+                (seedRequired * fee) / PRECISION));
         }
 
     }
@@ -230,16 +249,16 @@ contract Seed {
         isActive
         returns (uint256, uint256)
     {
-        ContributorClass memory userClass = classes[funders[msg.sender].class];
-        require(!maximumReached, "Seed: maximum funding reached");
-        require(! ( userClass.classCap < (userClass.totalStaked + _fundingAmount)),
-            "Seed: maximum class funding reached");
-        require(!((funders[msg.sender].fundingAmount + _fundingAmount) > userClass.individualCap),
-            "Seed: maximum personnal funding reached");
         require(
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
+        ContributorClass memory userClass = classes[funders[msg.sender].class];
+        require(!maximumReached, "Seed: maximum funding reached");
+        require(! ((userClass.totalStaked + _fundingAmount) > userClass.classCap),
+            "Seed: maximum class funding reached");
+        require(!((funders[msg.sender].fundingAmount + _fundingAmount) > userClass.individualCap),
+            "Seed: maximum personnal funding reached");
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
@@ -247,7 +266,7 @@ contract Seed {
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
-                    seedAmountRequired + feeAmountRequired,
+                    userClass.seedAmountRequired + userClass.feeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
@@ -585,11 +604,13 @@ contract Seed {
      */
     function getClass(
         uint8 _id
-    ) public view returns(uint256, uint256, uint256, uint256, uint256) {
+    ) public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         return (classes[_id].classCap,
                 classes[_id].individualCap,
                 classes[_id].price,
                 classes[_id].vestingDuration,
-                classes[_id].totalStaked);
+                classes[_id].totalStaked,
+                classes[_id].seedAmountRequired,
+                classes[_id].feeAmountRequired);
     }
 }
