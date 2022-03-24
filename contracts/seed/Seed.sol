@@ -197,6 +197,10 @@ contract Seed {
         uint256 _vestingDuration,
         uint256 _classVestingStartTime
     ) onlyAdmin public {
+        require(
+            endTime < _classVestingStartTime,
+            "Seed: vesting start time can't be less than endTime"
+        );
         classes.push(ContributorClass(_classCap, _individualCap, _price, _vestingDuration, _classVestingStartTime, 0));
     }
 
@@ -322,9 +326,13 @@ contract Seed {
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
         require(
-            endTime < currentClassVestingStartTime || maximumReached,
-            // endTime < block.timestamp || maximumReached,
+            // endTime < currentClassVestingStartTime || maximumReached,
+            endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
+        );
+        require(
+            block.timestamp < currentClassVestingStartTime,
+            "Seed: vesting start time for this class is not started yet"
         );
         uint256 amountClaimable;
 
