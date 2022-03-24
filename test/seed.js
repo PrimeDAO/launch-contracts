@@ -259,10 +259,10 @@ describe("Contract: Seed", async () => {
               .approve(setup.seed.address, getFundingAmounts("102"));
           await fundingToken
               .connect(root)
-              .transfer(buyer3.address, getFundingAmounts("1"));
+              .transfer(buyer3.address, getFundingAmounts("102"));
           await fundingToken
               .connect(buyer3)
-              .approve(setup.seed.address, getFundingAmounts("1"));
+              .approve(setup.seed.address, getFundingAmounts("102"));
 
           claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
               new BN(buySeedAmount)
@@ -379,6 +379,16 @@ describe("Contract: Seed", async () => {
               (await setup.seed.calculateClaim(buyer1.address)).toString()
           ).to.equal("0");
         });
+        it("cannot buy more than maximum target", async () => {
+          await setup.seed.addClass(hardCap, hardCap, price, 10000000);
+          await setup.seed.setClass(buyer3.address, 3);
+          await expectRevert(
+              setup.seed
+                  .connect(buyer3)
+                  .buy(hardCap),
+              "Seed: amount exceeds contract sale hardCap"
+          );
+        });
         it("updates lock when it buys tokens", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
           seedAmount = new BN(buyAmount)
@@ -432,17 +442,7 @@ describe("Contract: Seed", async () => {
               (await setup.seed.funders(buyer1.address)).totalClaimed.toString()
           ).to.equal(zero.toString());
         });
-        // it("cannot buy more than maximum target", async () => {
-        //   await setup.seed.addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
-        //   await setup.seed.setClass(buyer3.address, 1);
-        //   await setup.seed.connect(buyer3).buy(getFundingAmounts("1"));
-        //   await expectRevert(
-        //       setup.seed
-        //           .connect(buyer1)
-        //           .buy(getFundingAmounts("1")),
-        //       "Seed: amount exceeds contract sale hardCap"
-        //   );
-        // });
+
         context("» ERC20 transfer fails", () => {
           it("reverts 'Seed: funding token transferFrom failed' ", async () => {
             const alternativeSetup = await deploy();
