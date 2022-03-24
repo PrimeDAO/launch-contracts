@@ -528,7 +528,7 @@ contract Seed {
 
         uint8 currentId = tokenFunder.class;
         uint256 currentVestingDuration;
-        (,,,currentVestingDuration,) = getClass(currentId); 
+        uint256 currentVestingDuration = classes[currentId].vestingDuration; 
  
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
