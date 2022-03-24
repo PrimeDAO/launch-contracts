@@ -1537,6 +1537,7 @@ describe("Contract: Seed", async () => {
             });
           });
         });
+        
         it("it reverts when trying to add > 100 classes", () => { 
           context("» generics", () => {
             it("it adds Customer class", async () => {
@@ -1551,6 +1552,7 @@ describe("Contract: Seed", async () => {
             });
           });
         });
+
         it("it reverts when trying to add batch of Class", () => {
           context("» generics", () => {
             it("it adds Customer class", async () => {
