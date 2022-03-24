@@ -833,8 +833,8 @@ describe("Contract: Seed", async () => {
         it("it claims all the fee for a buyer's claim", async () => {
           const fee = await setup.data.seed.feeForFunder(buyer2.address); //calculates too much; calculates for ALL, not for claimable
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
-          const dividor = 1000000000; //so divider vas added
-          const dividedFee = fee / dividor;
+          const divisor = 1000000000; //so divider vas added
+          const dividedFee = fee / divisor;
           const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
           );
@@ -843,15 +843,15 @@ describe("Contract: Seed", async () => {
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
           const feeClaimed = await setup.data.seed.feeClaimed();
-          const dividor = 1000000000;
-          const dividedFeeAmountRequired = feeAmountRequired / dividor;
+          const divisor = 1000000000;
+          const dividedFeeAmountRequired = feeAmountRequired / divisor;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
           // get fundingAmount and calculate fee here
           const fee = await setup.data.seed.feeForFunder(buyer2.address);
-          const dividor = new BN(1000000000);
-          const dividedFeeAmountRequired = ethers.BigNumber.from((fee/dividor).toString());
+          const divisor = new BN(1000000000);
+          const dividedFeeAmountRequired = ethers.BigNumber.from((fee/divisor).toString());
           const sdpb = ethers.BigNumber.from(setup.data.prevBalance);
           const sum = ethers.BigNumber.from(dividedFeeAmountRequired.add(sdpb));
           expect(
