@@ -317,6 +317,7 @@ contract Seed {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaim(_funder);
+ 
         require(amountClaimable > 0, "Seed: amount claimable is 0");
         require(
             amountClaimable >= _claimAmount,
@@ -525,12 +526,16 @@ contract Seed {
             return 0;
         }
 
+        uint8 currentId = tokenFunder.class;
+        uint256 currentVestingDuration;
+        currentVestingDuration = classes[currentId].vestingDuration; 
+ 
         // If over vesting duration, all tokens vested
-        if (elapsedSeconds >= vestingDuration) {
+        if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
             uint256 amountVested = (elapsedSeconds *
-                seedAmountForFunder(_funder)) / vestingDuration;
+                seedAmountForFunder(_funder)) / currentVestingDuration;
             return amountVested - tokenFunder.totalClaimed;
         }
     }
