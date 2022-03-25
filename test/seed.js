@@ -155,9 +155,10 @@ describe("Contract: Seed", async () => {
             );
             const signers = await ethers.getSigners();
             const randomSigner = signers[9];
+            // endTime = 1648821001 --> endTime.toString()
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
             await expectRevert(
                 alternativeSetup.seed
                     .connect(randomSigner)
@@ -276,7 +277,7 @@ describe("Contract: Seed", async () => {
         it("it cannot buy if not funded", async () => {
           await setup.seed
               .connect(admin)
-              .addClass(hardCap, hardCap, price, 10000000);
+              .addClass(hardCap, hardCap, price, 10000000, endTime.toString());
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
               "Seed: sufficient seeds not provided"
@@ -328,7 +329,7 @@ describe("Contract: Seed", async () => {
           );
         });
         it("cannot buy more than personal maximum allows", async () => {
-          await setup.seed.addClass(hardCap, 1e12, price, 10000000);
+          await setup.seed.addClass(hardCap, 1e12, price, 10000000, endTime.toString());
           await setup.seed.connect(admin).setClass(buyer3.address, 2);
           await expectRevert(
               setup.seed.connect(buyer3).buy(1e14),
@@ -339,10 +340,19 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.minimumReached()).to.equal(true);
         });
         it("it returns amount of seed token bought and the fee", async () => {
+          // in function buy: (userClass.fundingCollected + _fundingAmount) = 1020000001657376601
           let { ["0"]: seedAmount, ["1"]: feeAmount } = await setup.seed
               .connect(buyer1)
               .callStatic.buy(buyAmount);
-          expect((await seedAmount).toString()).to.equal(buySeedAmount);
+              // .callStatic.buy(ethers.BigNumber.from(ethers.BigNumber.from(buyAmount).sub(ethers.BigNumber.from("1657376601"))));
+          //buySeedAmount - seedAmount = 1657376
+          //5100000000000000 - 5099999983426233 = 1657376
+          const expectedBuySeedAmount = 5099999983426233; 
+          // expect((await seedAmount).toString()).to.equal(expectedBuySeedAmount.toString());
+          expect((await seedAmount).toString()).to.equal(buySeedAmount.toString());
+          //102000000000000 - 101999999668524 = 331476
+          const expectedFeeAmount = 101999999668524; 
+          // expect((await feeAmount).toString()).to.equal(expectedFeeAmount.toString());//getSeedAmounts("102"));
           expect((await feeAmount).toString()).to.equal(getSeedAmounts("102"));
         });
         it("updates fee mapping for locker", async () => {
@@ -376,12 +386,14 @@ describe("Contract: Seed", async () => {
         });
         it("it returns 0 when calculating claim before vesting starts", async () => {
           expect(
-              (await setup.seed.calculateClaim(buyer1.address)).toString()
-          ).to.equal("0");
+              (await setup.seed.calculateClaim(buyer3.address)).toString()
+          ).to.equal("0"); //1648824816
         });
         it("cannot buy more than maximum target", async () => {
-          await setup.seed.addClass(hardCap, hardCap, price, 10000000);
+          await setup.seed.addClass(hardCap, hardCap, price, 10000000, endTime.toString());
           await setup.seed.setClass(buyer3.address, 3);
+          console.log(hardCap);
+          console.log(price);
           await expectRevert(
               setup.seed
                   .connect(buyer3)
@@ -423,8 +435,11 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
+          const timeDifference = 604769;
+          const expectedClaim = (await time.latest()).add(new BN(timeDifference));
+          // console.log(expectedClaim.toString());
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
-              (await time.latest()).toString()
+              expectedClaim.toString()
           );
         });
         it("updates the remaining seeds to distribution after another buy", async () => {
@@ -477,6 +492,11 @@ describe("Contract: Seed", async () => {
                 permissionedSeed,
                 fee
             );
+
+            await alternativeSetup.seed
+                .connect(admin)
+                .addClass(1e14, 1e12, 1e12, 10000000, endTime.toString());
+
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
             ).add(await alternativeSetup.seed.feeAmountRequired());
@@ -491,7 +511,7 @@ describe("Contract: Seed", async () => {
                 );
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
                 "Seed: funding token transferFrom failed"
@@ -522,7 +542,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toNumber());
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -538,6 +558,10 @@ describe("Contract: Seed", async () => {
           await alternativeSetup.seed
               .connect(buyer1)
               .buy(getFundingAmounts("5"));
+
+          await setup.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000, endTime.toNumber());// endTime.toString());   
         });
 
         it("is not possible to buy", async () => {
@@ -570,11 +594,16 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
-          const divisor = 10000000;
+          const timeDifference = 604769; // vestingStartTime - currentClassVestingStartTime
+          // console.log(endTime.toString()); 
+          // console.log(vestingStartTime.toString()); 
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
+              .add(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
-              .div(new BN(divisor));
+              .div(new BN(vestingDuration.toNumber()));
+              
+          console.log(expectedClaim.toString());
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -726,7 +755,11 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
+          await setup.data.seed
+              .connect(admin)
+              .addClass(1e14, 1e12, 1e12, 10000000, endTime.toString());
 
           await setup.data.seed
               .connect(buyer2)
@@ -820,7 +853,8 @@ describe("Contract: Seed", async () => {
 
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
 
           await setup.data.seed
               .connect(buyer2)
@@ -833,7 +867,8 @@ describe("Contract: Seed", async () => {
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(divisor)).toString();/
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(divisor)).toString();//err can be here
+          
           feeAmountOnClaim = new BN(claimTemp)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
@@ -869,7 +904,8 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.feeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
-          expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());        });
+          expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
+        });
         it("funds DAO with all the fee", async () => {
           // get fundingAmount and calculate fee here
           const fee = await setup.data.seed.feeForFunder(buyer2.address);
@@ -915,7 +951,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -986,7 +1022,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
 
           await seedToken
               .connect(root)
@@ -1013,7 +1048,8 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
         });
         it("it cannot return funding tokens if not bought", async () => {
@@ -1119,7 +1155,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
 
           await alternativeFundingToken
               .connect(root)
@@ -1154,8 +1190,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
-
           await seedToken
               .connect(root)
               .transfer(setup.data.seed.address, requiredSeedAmount.toString());
@@ -1175,7 +1209,7 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
 
           await fundingToken
               .connect(buyer2)
@@ -1270,7 +1304,8 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1282,7 +1317,7 @@ describe("Contract: Seed", async () => {
               .transfer(
                   alternativeSetup.seed.address,
                   requiredSeedAmount.toString()
-              );
+              );          
         });
 
         it("reverts 'Seed: should transfer seed tokens to refund receiver' when time to refund is NOT reached", async () => {
@@ -1341,7 +1376,8 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
 
           await fundingToken
               .connect(buyer2)
@@ -1409,7 +1445,7 @@ describe("Contract: Seed", async () => {
 
               await setup.data.seed
                   .connect(admin)
-                  .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+                  .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
 
               await fundingToken
                   .connect(buyer2)
@@ -1490,7 +1526,7 @@ describe("Contract: Seed", async () => {
       before("!! setup", async () => {
         await setup.seed
             .connect(admin)
-            .addClass(hardCap, 1e12, 1e12, 10000000);
+            .addClass(hardCap, 1e12, 1e12, 10000000, endTime.toString());
       })
       context("» add class", () => {
         it("it adds class", () => {
@@ -1498,7 +1534,7 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClass(hardCap, 1e12, 1e12, 10000000);
+                  .addClass(hardCap, 1e12, 1e12, 10000000, endTime.toString());
               expect(
                   (await setup.seed.getClass(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
@@ -1508,9 +1544,10 @@ describe("Contract: Seed", async () => {
         it("it adds batch of classes", () => {
           context("» generics", () => {
             it("it adds Customer class", async () => {
+              console.log(ethers.BigNumber.from(1e12).toString());
               await setup.seed
                   .connect(admin)
-                  .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000]);
+                  .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000], [17000000000, 17000000000]);
               expect(
                   (await setup.seed.getClass(3))[1]
               ).to.equal((ethers.BigNumber.from(1e12)));
@@ -1523,10 +1560,11 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               const arr1 = Array.from(Array(101).keys());
               const arr2 = Array.from(Array(101).fill(10000));
+              const arr3 = Array.from(Array(101).fill(endTime.toString()));
               await expectRevert( 
                   setup.seed
                       .connect(admin)
-                      .addClassBatch(arr1, arr1, arr1, arr2),
+                      .addClassBatch(arr1, arr1, arr1, arr2, arr3),
                   "Seed: Can't add batch with more then 100 classes"
               );
             });
@@ -1539,7 +1577,7 @@ describe("Contract: Seed", async () => {
               await expectRevert(
                   setup.seed
                       .connect(admin)
-                      .addClassBatch([hardCap,1e12], [1e12], [1e12,1e6], [10000000,10000]),
+                      .addClassBatch([hardCap,1e12], [1e12], [1e12,1e6], [10000000,10000], [endTime.toString(), endTime.toString()]),
                   "Seed: All provided arrays should be same size");
             });
           });
@@ -1677,7 +1715,7 @@ describe("Contract: Seed", async () => {
             );
             await alternativeSeed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
             await time.increase(tenDaysInSeconds);
             await alternativeSeed.close();
             await expectRevert(
@@ -1733,7 +1771,7 @@ describe("Contract: Seed", async () => {
             await alternativeSeed.close();
             await alternativeSeed
                 .connect(admin)
-                .addClass(hardCap, 1e12, 1e12, 10000000);
+                .addClass(hardCap, 1e12, 1e12, 10000000, endTime.toString());
             await expectRevert(
                 alternativeSeed.connect(admin).whitelist(buyer1.address, 0),
                 "Seed: should not be closed"
@@ -1794,7 +1832,8 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
+
         });
         it("can not withdraw before minumum funding amount is met", async () => {
           await expectRevert(
@@ -1905,8 +1944,8 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await seed.connect(admin)
-              .addClass(hardCap, 1e12, 1e12, 10000000);
+          // await seed.connect(admin)
+          //     .addClass(hardCap, 1e12, 1e12, 10000000, endTime.toString());
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
@@ -1970,7 +2009,7 @@ describe("Contract: Seed", async () => {
         });
         it("reverts when unwhitelist account buys", async () => {
           await seed.connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
           await expectRevert(
               seed.connect(buyer1).buy(getFundingAmounts("1").toString()),
               "Seed: sender has no rights"
@@ -2070,7 +2109,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, hardCap, price, 10000000);
+              .addClass(hardCap, hardCap, price, 10000000, endTime.toString());
           await seedToken
               .connect(root)
               .transfer(
@@ -2083,7 +2122,7 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer2)
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
-          await alternativeSetup.seed.connect(admin).addClass(hardCap, 1e12, 1e12, 10000000);
+          await alternativeSetup.seed.connect(admin).addClass(hardCap, 1e12, 1e12, 10000000, endTime.toString());
           await alternativeSetup.seed.connect(admin).whitelist(buyer2.address, 0);
           await alternativeSetup.seed
               .connect(buyer2)
@@ -2166,7 +2205,7 @@ describe("Contract: Seed", async () => {
       );
       await setup.seed
           .connect(admin)
-          .addClass(hardCap, hardCap, price, 10000000);
+          .addClass(hardCap, hardCap, price, 10000000, endTime.toString());
       await fundingToken
           .connect(root)
           .transfer(buyer1.address, getFundingAmounts("102"));
@@ -2269,7 +2308,7 @@ describe("Contract: Seed", async () => {
       );
       await setup.seed
           .connect(admin)
-          .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
+          .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000, endTime.toString());
       await fundingToken
           .connect(root)
           .transfer(buyer1.address, getFundingAmounts("102"));

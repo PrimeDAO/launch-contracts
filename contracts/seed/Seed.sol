@@ -292,6 +292,11 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
+        console.log("buy userClass.classCap %s", userClass.classCap);
+        console.log("buy (userClass.fundingCollected + _fundingAmount) %s",(userClass.fundingCollected + _fundingAmount));
+        // console.log("buy (funders[msg.sender].fundingAmount + _fundingAmount) %s", (funders[msg.sender].fundingAmount + _fundingAmount));
+        console.log("buy userClass.fundingCollected %s",userClass.fundingCollected);
+        
         require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
@@ -585,7 +590,9 @@ contract Seed {
         FunderPortfolio storage tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-
+        
+        console.log("CC vestingStartTime %s", vestingStartTime);
+        console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
         if (block.timestamp < currentClassVestingStartTime) {
         // if (block.timestamp < vestingStartTime) {
             return 0;
