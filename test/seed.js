@@ -579,11 +579,10 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
-          const divisor = 10000000;
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
-              .div(new BN(divisor));
+              .div(new BN(vestingDuration.toNumber()));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -816,8 +815,7 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
-          
-          permissionedSeed = true;
+
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -1003,7 +1001,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
 
           await seedToken
               .connect(root)
@@ -1172,8 +1169,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
-
           await seedToken
               .connect(root)
               .transfer(setup.data.seed.address, requiredSeedAmount.toString());
@@ -1194,14 +1189,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, 10000000);
-
-          await setup.data.seed
-              .connect(admin)
-              .addClass(1e14, 1e12, 1e12, 10000000);
-
-          await setup.data.seed
-              .connect(admin)
-              .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
           await fundingToken
               .connect(buyer2)
@@ -1434,13 +1421,6 @@ describe("Contract: Seed", async () => {
                   permissionedSeed,
                   fee
               );
-              await setup.data.seed
-                  .connect(admin)
-                  .addClass(1e14, 1e12, 1e12, 10000000);
-
-              await setup.data.seed
-                  .connect(admin)
-                  .whitelistBatch([buyer1.address, buyer2.address], [0, 0]);
 
               await setup.data.seed
                   .connect(admin)
@@ -1941,8 +1921,8 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await seed.connect(admin)
-              .addClass(hardCap, 1e12, 1e12, 10000000);
+          // await seed.connect(admin)
+          //     .addClass(hardCap, 1e12, 1e12, 10000000);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
