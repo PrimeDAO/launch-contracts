@@ -831,7 +831,9 @@ describe("Contract: Seed", async () => {
               beneficiary.address
           );
 
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).toString();
+          // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
+          const divisor = 1000000000;
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(divisor)).toString();/
           feeAmountOnClaim = new BN(claimTemp)
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
