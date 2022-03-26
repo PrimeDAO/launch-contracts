@@ -341,19 +341,10 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.minimumReached()).to.equal(true);
         });
         it("it returns amount of seed token bought and the fee", async () => {
-          // in function buy: (userClass.fundingCollected + _fundingAmount) = 1020000001657376601
           let { ["0"]: seedAmount, ["1"]: feeAmount } = await setup.seed
               .connect(buyer1)
               .callStatic.buy(buyAmount);
-              // .callStatic.buy(ethers.BigNumber.from(ethers.BigNumber.from(buyAmount).sub(ethers.BigNumber.from("1657376601"))));
-          //buySeedAmount - seedAmount = 1657376
-          //5100000000000000 - 5099999983426233 = 1657376
-          // const expectedBuySeedAmount = 5099999983426233; 
-          // expect((await seedAmount).toString()).to.equal(expectedBuySeedAmount.toString());
           expect((await seedAmount).toString()).to.equal(buySeedAmount.toString());
-          //102000000000000 - 101999999668524 = 331476
-          // const expectedFeeAmount = 101999999668524; 
-          // expect((await feeAmount).toString()).to.equal(expectedFeeAmount.toString());//getSeedAmounts("102"));
           expect((await feeAmount).toString()).to.equal(getSeedAmounts("102"));
         });
         it("updates fee mapping for locker", async () => {
@@ -388,7 +379,7 @@ describe("Contract: Seed", async () => {
         it("it returns 0 when calculating claim before vesting starts", async () => {
           expect(
               (await setup.seed.calculateClaim(buyer3.address)).toString()
-          ).to.equal("0"); //1648824816
+          ).to.equal("0");
         });
         it("cannot buy more than maximum target", async () => {
           await setup.seed.addClass(hardCap, hardCap, price, 10000000, 1700000000);
@@ -596,8 +587,6 @@ describe("Contract: Seed", async () => {
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
           const timeDifference = 604769; // vestingStartTime - currentClassVestingStartTime
-          // console.log(1700000000); 
-          // console.log(vestingStartTime.toString()); 
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(timeDifference))
@@ -766,7 +755,7 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
         });
-        //!!!!!!!!!!!!!!!!!!!
+
         it("it cannot claim before currentVestingStartTime", async () => {
   
           await setup.data.seed
@@ -786,7 +775,7 @@ describe("Contract: Seed", async () => {
               "Seed: vesting start time for this class is not started yet"
           );
         });
-        //!!!!!!!!!!!!!!!!!!!        
+    
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
           time.increase(vestingDuration.toNumber());
@@ -889,7 +878,7 @@ describe("Contract: Seed", async () => {
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
-          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(divisor)).toString();//err can be here
+          const claimTemp = new BN(buySeedAmount).mul(new BN(twoBN)).div(new BN(divisor)).toString();
           
           feeAmountOnClaim = new BN(claimTemp)
               .mul(new BN(fee))
@@ -914,7 +903,7 @@ describe("Contract: Seed", async () => {
         it("it claims all the fee for a buyer's claim", async () => {
           const fee = await setup.data.seed.feeForFunder(buyer2.address); //calculates too much; calculates for ALL, not for claimable
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
-          const divisor = 1000000000; //so divider vas added
+          const divisor = 1000000000;
           const dividedFee = fee / divisor;
           const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
@@ -1613,7 +1602,7 @@ describe("Contract: Seed", async () => {
             });
           });
         });
-        //!!!!!!!!!!!
+        
         it("it reverts when trying to set non existent class with setClass", async () => {
           await expectRevert(
               setup.seed
@@ -1638,16 +1627,6 @@ describe("Contract: Seed", async () => {
             "Seed: vesting start time can't be less than endTime"
           );
         });
-        // it("it reverts when Seed is closed", async () => {
-        //   await setup.seed.connect(admin).close();
-        //   await expectRevert(
-        //     setup.seed
-        //           .connect(admin)
-        //           .setClass(buyer3.address, 0),
-        //     "Seed: should not be closed"
-        //   );
-        // });
-        //!!!!!!!!!!!!!!
       })
       context("» update metadata", () => {
         it("can only be called by admin", async () => {

@@ -289,18 +289,13 @@ contract Seed {
         isActive
         returns (uint256, uint256)
     {
-        // console.log("buy _fundingAmount %s", _fundingAmount);
         require(
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        // console.log("buy userClass.classCap %s", userClass.classCap);
-        // console.log("buy (userClass.fundingCollected + _fundingAmount) %s",(userClass.fundingCollected + _fundingAmount));
-        // console.log("buy (funders[msg.sender].fundingAmount + _fundingAmount) %s", (funders[msg.sender].fundingAmount + _fundingAmount));
-        // console.log("buy userClass.fundingCollected %s",userClass.fundingCollected);
-        
+
         require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -330,8 +325,6 @@ contract Seed {
             "Seed: amountVestedPerSecond > 0"
         );
 
-        // console.log("buy fundingCollected + _fundingAmount %s",fundingCollected + _fundingAmount);
-        // console.log("buy hardCap %s",hardCap);
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,
@@ -351,7 +344,6 @@ contract Seed {
         if (fundingCollected >= hardCap) {
             maximumReached = true;
             classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
-            // vestingStartTime = block.timestamp;
         }
 
         //functionality of addFunder
@@ -597,16 +589,13 @@ contract Seed {
         FunderPortfolio storage tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-        // console.log("CC vestingStartTime %s", vestingStartTime);
-        // console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
+
         if (block.timestamp < currentClassVestingStartTime) {
-        // if (block.timestamp < vestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
-        // uint256 elapsedSeconds = block.timestamp - vestingStartTime;
 
         if (elapsedSeconds < vestingCliff) {
             return 0;
@@ -618,12 +607,9 @@ contract Seed {
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
-            // console.log("second way");
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
-            
-            // console.log("amountVested %s", amountVested);
-            // console.log("tokenFunder.totalClaimed %s", tokenFunder.totalClaimed);
+
             return amountVested - tokenFunder.totalClaimed;
         }
     }
