@@ -348,11 +348,11 @@ describe("Contract: Seed", async () => {
               // .callStatic.buy(ethers.BigNumber.from(ethers.BigNumber.from(buyAmount).sub(ethers.BigNumber.from("1657376601"))));
           //buySeedAmount - seedAmount = 1657376
           //5100000000000000 - 5099999983426233 = 1657376
-          const expectedBuySeedAmount = 5099999983426233; 
+          // const expectedBuySeedAmount = 5099999983426233; 
           // expect((await seedAmount).toString()).to.equal(expectedBuySeedAmount.toString());
           expect((await seedAmount).toString()).to.equal(buySeedAmount.toString());
           //102000000000000 - 101999999668524 = 331476
-          const expectedFeeAmount = 101999999668524; 
+          // const expectedFeeAmount = 101999999668524; 
           // expect((await feeAmount).toString()).to.equal(expectedFeeAmount.toString());//getSeedAmounts("102"));
           expect((await feeAmount).toString()).to.equal(getSeedAmounts("102"));
         });
