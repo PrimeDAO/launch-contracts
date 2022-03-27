@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PrimeDAO Seed contract
@@ -169,7 +168,7 @@ contract Seed {
         price = _price;
         startTime = _startTime;
         endTime = _endTime;
-        vestingStartTime = endTime;
+        vestingStartTime = endTime + 1;
         vestingDuration = _vestingDuration;
         vestingCliff = _vestingCliff;
         permissionedSeed = _permissionedSeed;
@@ -186,7 +185,7 @@ contract Seed {
                 hardCap,
                 _price,
                 _vestingDuration,
-                _endTime,
+                vestingStartTime,
                 0,
                 seedAmountRequired,
                 feeAmountRequired));
