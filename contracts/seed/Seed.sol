@@ -92,8 +92,8 @@ contract Seed {
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
         uint256 fundingCollected; // Total amount of staked tokens
-        uint256 seedAmountRequired;
-        uint256 feeAmountRequired;
+        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
+        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
 
     modifier onlyAdmin() {
