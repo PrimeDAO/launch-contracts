@@ -33,7 +33,6 @@ contract Seed {
     uint256 public hardCap;
     uint256 public seedAmountRequired; // Amount of seed required for distribution
     uint256 public feeAmountRequired; // Amount of seed required for fee
-    uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -89,7 +88,7 @@ contract Seed {
     struct ContributorClass {
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 price; // Price of seed tokens for class
+        uint256 price; // Price of a SeedToken for class, expressed in fundingTokens, with precision of 10**18
         uint256 vestingDuration; // Vesting duration for class
         uint256 fundingCollected; // Total amount of staked tokens
         uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
@@ -164,7 +163,6 @@ contract Seed {
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
-        price = _price;
         startTime = _startTime;
         endTime = _endTime;
         vestingStartTime = endTime;
@@ -631,7 +629,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / price;
+        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
     }
 
     /**
