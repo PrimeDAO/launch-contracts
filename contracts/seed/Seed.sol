@@ -179,6 +179,7 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        // Adding default class of contributors(specifically for non-whitelisted seed)
         classes.push( ContributorClass(
                 hardCap,
                 hardCap,
