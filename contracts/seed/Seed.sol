@@ -204,6 +204,8 @@ contract Seed {
         uint256 _price,
         uint256 _vestingDuration
     ) onlyAdmin public {
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -250,6 +252,8 @@ contract Seed {
                 _classCaps.length == _vestingDurations.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -278,6 +282,7 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
+        // Checks if contributor has exceeded his personal or class cap.
         require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
