@@ -415,7 +415,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
-        classes[msg.sender].fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
