@@ -407,6 +407,7 @@ contract Seed {
             "Seed: distribution haven't started"
         );
         require(!minimumReached, "Seed: minimum funding amount met");
+        ContributorClass class = classes[msg.sender];
         FunderPortfolio storage tokenFunder = funders[msg.sender];
         uint256 fundingAmount = tokenFunder.fundingAmount;
         require(fundingAmount > 0, "Seed: zero funding amount");
@@ -415,6 +416,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[msg.sender].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
