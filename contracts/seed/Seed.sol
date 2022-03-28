@@ -64,6 +64,7 @@ contract Seed {
     uint256 public feeRemainder; // Amount of seed tokens remaining for the fee
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
+    uint256 public totalFee; //Amount of all fee claimed when the seed was claimed.
 
     ContributorClass[] classes; // Array of contributor classes
 
@@ -93,7 +94,7 @@ contract Seed {
         uint256 vestingDuration; // Vesting duration for class
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
-        uint256 fundingCollected; // Total amount of staked tokens        
+        uint256 classFundingCollected; // Total amount of staked tokens        
         uint256 seedAmountRequired;
         uint256 feeAmountRequired;
     }
@@ -176,6 +177,8 @@ contract Seed {
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
         fee = _fee;
+        
+        totalFee = 0;
 
         seedAmountRequired = (hardCap * PRECISION) / _price;
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
@@ -305,7 +308,7 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
-        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
+        require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
@@ -327,7 +330,7 @@ contract Seed {
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         // uint256 feeAmount = (seedAmount * fee) / PRECISION;
-        uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;        
+        uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;    
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
@@ -342,8 +345,7 @@ contract Seed {
         );
 
         fundingCollected += _fundingAmount;
-        classes[funders[msg.sender].class].fundingCollected += _fundingAmount;
-
+        classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
         feeRemainder -= feeAmount;
@@ -406,12 +408,14 @@ contract Seed {
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
         );
-        uint currentClassFee = classes[funders[msg.sender].class].classFee;
-        uint256 feeAmountOnClaim = (_claimAmount * currentClassFee) / PRECISION;
+        uint256 currentClassFee = classes[currentId].classFee;
+        uint256 feeAmountOnClaim = (_claimAmount * currentClassFee) / PRECISION;        
 
         funders[_funder].totalClaimed += _claimAmount;
 
-        seedClaimed += _claimAmount;
+        seedClaimed += _claimAmount;    
+        totalFee += feeAmountOnClaim; 
+
         require(
             seedToken.transfer(beneficiary, feeAmountOnClaim) &&
                 seedToken.transfer(_funder, _claimAmount),
@@ -629,10 +633,8 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function feeClaimed() public view returns (uint256) {
-        //TODO
-        //class fee
 
-        return (seedClaimed * fee) / PRECISION; 
+        return totalFee;//(seedClaimed * fee) / PRECISION; 
     }
 
     /**
@@ -687,7 +689,7 @@ contract Seed {
                 classes[id].individualCap,
                 classes[id].price,
                 classes[id].vestingDuration,
-                classes[id].fundingCollected,
+                classes[id].classFundingCollected,
                 classes[id].classVestingStartTime,
                 classes[id].classFee,
                 classes[id].seedAmountRequired,
