@@ -226,7 +226,7 @@ contract Seed {
                     _classFee,
                     0,
                     seedRequired,
-                    (seedRequired * fee) / PRECISION ));
+                    (seedRequired * _classFee) / PRECISION ));
     }
 
     /**
@@ -629,7 +629,10 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function feeClaimed() public view returns (uint256) {
-        return (seedClaimed * fee) / PRECISION;
+        //TODO
+        //class fee
+
+        return (seedClaimed * fee) / PRECISION; 
     }
 
     /**
@@ -641,7 +644,11 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].totalClaimed * fee) / PRECISION;
+        FunderPortfolio storage tokenFunder = funders[_funder];
+        uint8 currentId = tokenFunder.class;
+        uint256 currentFee = classes[currentId].classFee; 
+
+        return (funders[_funder].totalClaimed * currentFee) / PRECISION;
     }
 
     /**
