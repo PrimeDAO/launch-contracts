@@ -20,7 +20,7 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -96,8 +96,8 @@ contract Seed {
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
         uint256 classFundingCollected; // Total amount of staked tokens        
-        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
-        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
+        uint256 seedAmountRequired;
+        uint256 feeAmountRequired;
     }
 
     modifier onlyAdmin() {
@@ -163,9 +163,10 @@ contract Seed {
             _endTime > _startTime,
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
-        uint256 initMaxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
+        //need for test named 'it creates new seed contract'
+        maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
         require(
-            _fee < initMaxFee,
+            _fee < maxFee,
             "SeedFactory: fee cannot be more than 45%"
         );
 
@@ -190,7 +191,6 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
-        // Adding default class of contributors(specifically for non-whitelisted seed)
         classes.push( ContributorClass(
                 hardCap,
                 hardCap,
@@ -230,8 +230,6 @@ contract Seed {
             _classFee < maxFee,
             "Seed: fee cannot be more than 45%"
         );
-        // The maximum required amount of the seed tokens to satisfy
-        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -296,8 +294,7 @@ contract Seed {
                 _classFee[i] < maxFee,
                 "Seed: fee cannot be more than 45%"
             );
-            // The maximum required amount of the seed tokens to satisfy
-            // the maximum possible classCap is calculated.
+            
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -310,7 +307,6 @@ contract Seed {
                 seedRequired,
                 (seedRequired * _classFee[i]) / PRECISION));
         }
-
     }
 
     /**
@@ -328,8 +324,7 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        
-        // Checks if contributor has exceeded his personal or class cap.
+
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -368,7 +363,6 @@ contract Seed {
 
         fundingCollected += _fundingAmount;
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
-
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
         feeRemainder -= feeAmount;
@@ -472,7 +466,6 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
-        classes[tokenFunder.class].classFundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
