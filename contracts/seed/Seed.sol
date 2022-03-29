@@ -96,8 +96,8 @@ contract Seed {
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
         uint256 classFundingCollected; // Total amount of staked tokens        
-        uint256 seedAmountRequired;
-        uint256 feeAmountRequired;
+        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
+        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
 
     modifier onlyAdmin() {
@@ -190,6 +190,7 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        // Adding default class of contributors(specifically for non-whitelisted seed)
         classes.push( ContributorClass(
                 hardCap,
                 hardCap,
@@ -293,7 +294,8 @@ contract Seed {
                 _classFee[i] < maxFee,
                 "Seed: fee cannot be more than 45%"
             );
-            
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -324,10 +326,9 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-
-        require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
+        // Checks if contributor has exceeded his personal or class cap.
+        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
-
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached");
         require(
@@ -363,6 +364,7 @@ contract Seed {
 
         fundingCollected += _fundingAmount;
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
+
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
         feeRemainder -= feeAmount;
@@ -466,6 +468,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
