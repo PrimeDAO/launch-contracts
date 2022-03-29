@@ -91,7 +91,9 @@ contract Seed {
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
-        uint256 totalStaked; // Total amount of staked tokens
+        uint256 fundingCollected; // Total amount of staked tokens
+        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
+        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
 
     modifier onlyAdmin() {
@@ -177,6 +179,15 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        // Adding default class of contributors(specifically for non-whitelisted seed)
+        classes.push( ContributorClass(
+                hardCap,
+                hardCap,
+                _price,
+                _vestingDuration,
+                0,
+                seedAmountRequired,
+                feeAmountRequired));
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
     }
@@ -194,7 +205,33 @@ contract Seed {
         uint256 _price,
         uint256 _vestingDuration
     ) onlyAdmin public {
-        classes.push(ContributorClass(_classCap, _individualCap, _price, _vestingDuration, 0));
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
+        uint256 seedRequired = (_classCap * PRECISION) / _price;
+        classes.push( ContributorClass(
+                    _classCap,
+                    _individualCap,
+                    _price,
+                    _vestingDuration,
+                    0,
+                    seedRequired,
+                    (seedRequired * fee) / PRECISION ));
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _address            Address of the contributor.
+     * @param _class              Class of the contributor.
+     */
+    function setClass(
+        address _address,
+        uint8 _class
+    ) onlyAdmin public {
+        require(_class < classes.length, "Seed: incorrect class chosen");
+        require(!closed, "Seed: should not be closed");
+
+        funders[_address].class = _class;
+
     }
 
     /**
@@ -216,7 +253,17 @@ contract Seed {
                 _classCaps.length == _vestingDurations.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            classes.push(ContributorClass(_classCaps[i], _individualCaps[i], _prices[i], _vestingDurations[i], 0));
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
+            uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
+            classes.push(ContributorClass(
+                _classCaps[i],
+                _individualCaps[i],
+                _prices[i],
+                _vestingDurations[i],
+                0,
+                seedRequired,
+                (seedRequired * fee) / PRECISION));
         }
 
     }
@@ -230,11 +277,17 @@ contract Seed {
         isActive
         returns (uint256, uint256)
     {
-        require(!maximumReached, "Seed: maximum funding reached");
         require(
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
+        ContributorClass memory userClass = classes[funders[msg.sender].class];
+        require(!maximumReached, "Seed: maximum funding reached");
+        // Checks if contributor has exceeded his personal or class cap.
+        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
+            "Seed: maximum class funding reached");
+        require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
+            "Seed: maximum personal funding reached");
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
@@ -242,13 +295,13 @@ contract Seed {
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
-                    seedAmountRequired + feeAmountRequired,
+                    userClass.seedAmountRequired + userClass.feeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
         }
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
-        uint256 seedAmount = (_fundingAmount * PRECISION) / price;
+        uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * fee) / PRECISION;
@@ -266,6 +319,7 @@ contract Seed {
         );
 
         fundingCollected += _fundingAmount;
+        classes[funders[msg.sender].class].fundingCollected += _fundingAmount;
 
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
@@ -361,6 +415,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
@@ -585,11 +640,13 @@ contract Seed {
      */
     function getClass(
         uint8 _id
-    ) public view returns(uint256, uint256, uint256, uint256, uint256) {
+    ) public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         return (classes[_id].classCap,
                 classes[_id].individualCap,
                 classes[_id].price,
                 classes[_id].vestingDuration,
-                classes[_id].totalStaked);
+                classes[_id].fundingCollected,
+                classes[_id].seedAmountRequired,
+                classes[_id].feeAmountRequired);
     }
 }
