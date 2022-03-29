@@ -91,7 +91,6 @@ contract Seed {
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
- 12-add-vesting-start-time-for-class
         uint256 classVestingStartTime;
         uint256 fundingCollected; // Total amount of staked tokens        
         uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
