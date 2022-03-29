@@ -78,6 +78,8 @@ describe("Contract: Seed", async () => {
   const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
   const CLASS_VESTING_DURATION =  10000000;
   const CLASS_VESTING_START_TIME = 1700000000;
+  const e_twenty = 1e12;
+  const e_fourteen = 1e14;
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
@@ -331,10 +333,10 @@ describe("Contract: Seed", async () => {
           );
         });
         it("cannot buy more than personal maximum allows", async () => {
-          await setup.seed.addClass(hardCap, 1e12, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          await setup.seed.addClass(hardCap, e_twenty, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
           await setup.seed.connect(admin).setClass(buyer3.address, 2);
           await expectRevert(
-              setup.seed.connect(buyer3).buy(1e14),
+              setup.seed.connect(buyer3).buy(e_fourteen),
               "Seed: maximum personal funding reached"
           );
         });
@@ -485,7 +487,7 @@ describe("Contract: Seed", async () => {
 
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(1e14, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
 
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
@@ -551,7 +553,7 @@ describe("Contract: Seed", async () => {
 
           await setup.seed
               .connect(admin)
-              .addClass(1e14, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);   
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);   
         });
 
         it("is not possible to buy", async () => {
@@ -746,7 +748,7 @@ describe("Contract: Seed", async () => {
 
           await setup.data.seed
               .connect(admin)
-              .addClass(1e14, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
 
           await setup.data.seed
               .connect(buyer2)
@@ -1535,7 +1537,7 @@ describe("Contract: Seed", async () => {
       before("!! setup", async () => {
         await setup.seed
             .connect(admin)
-            .addClass(hardCap, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+            .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
       })
       context("» add class", () => {
         it("it adds class", () => {
@@ -1543,7 +1545,7 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClass(hardCap, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                  .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
               expect(
                   (await setup.seed.getClass(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
@@ -1555,10 +1557,10 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClassBatch([1e14,1e12], [1e12,1e6], [1e12,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, 17000000000]);
+                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, 17000000000]);
               expect(
                   (await setup.seed.getClass(3))[1]
-              ).to.equal((ethers.BigNumber.from(1e12)));
+              ).to.equal((ethers.BigNumber.from(e_twenty)));
             });
           });
         });
@@ -1585,7 +1587,7 @@ describe("Contract: Seed", async () => {
               await expectRevert(
                   setup.seed
                       .connect(admin)
-                      .addClassBatch([hardCap,1e12], [1e12], [1e12,1e6], [CLASS_VESTING_DURATION,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME]),
+                      .addClassBatch([hardCap,e_twenty], [e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME]),
               "Seed: All provided arrays should be same size");
             });
           });
@@ -1611,7 +1613,7 @@ describe("Contract: Seed", async () => {
           await expectRevert(
             setup.seed
                 .connect(admin)
-                .addClassBatch([hardCap,1e12], [1e12, 1e12], [1e12,1e6], [CLASS_VESTING_DURATION,10000], [endTime.toString(), startTime.toString()]),
+                .addClassBatch([hardCap,e_twenty], [e_twenty, e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [endTime.toString(), startTime.toString()]),
             "Seed: vesting start time can't be less than endTime"
           );
         });
@@ -1804,7 +1806,7 @@ describe("Contract: Seed", async () => {
             await alternativeSeed.close();
             await alternativeSeed
                 .connect(admin)
-                .addClass(hardCap, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
             await expectRevert(
                 alternativeSeed.connect(admin).whitelist(buyer1.address, 0),
                 "Seed: should not be closed"
@@ -1977,7 +1979,7 @@ describe("Contract: Seed", async () => {
               fee
           );
           // await seed.connect(admin)
-          //     .addClass(hardCap, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          //     .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
@@ -2154,7 +2156,7 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer2)
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
-          await alternativeSetup.seed.connect(admin).addClass(hardCap, 1e12, 1e12, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          await alternativeSetup.seed.connect(admin).addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
           await alternativeSetup.seed.connect(admin).whitelist(buyer2.address, 0);
           await alternativeSetup.seed
               .connect(buyer2)
