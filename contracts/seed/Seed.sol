@@ -91,10 +91,11 @@ contract Seed {
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
         uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
+ 12-add-vesting-start-time-for-class
         uint256 classVestingStartTime;
         uint256 fundingCollected; // Total amount of staked tokens        
-        uint256 seedAmountRequired;
-        uint256 feeAmountRequired;
+        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
+        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
 
     modifier onlyAdmin() {
@@ -180,6 +181,7 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        // Adding default class of contributors(specifically for non-whitelisted seed)
         classes.push( ContributorClass(
                 hardCap,
                 hardCap,
@@ -212,6 +214,9 @@ contract Seed {
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
         );
+
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -261,10 +266,14 @@ contract Seed {
                 _classCaps.length == _vestingDurations.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
+
             require(
                 endTime < _classVestingStartTime[i],
                 "Seed: vesting start time can't be less than endTime"
             );
+
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -294,7 +303,8 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-
+        
+        // Checks if contributor has exceeded his personal or class cap.
         require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -433,6 +443,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"

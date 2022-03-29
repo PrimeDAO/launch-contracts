@@ -591,7 +591,6 @@ describe("Contract: Seed", async () => {
               .add(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
-              
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -863,8 +862,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
-
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
@@ -1058,7 +1055,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
         });
         it("it cannot return funding tokens if not bought", async () => {
@@ -1219,7 +1215,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
           await fundingToken
               .connect(buyer2)
               .approve(setup.data.seed.address, smallBuyAmount);
@@ -1314,7 +1309,6 @@ describe("Contract: Seed", async () => {
           await alternativeSetup.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1386,8 +1380,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
-
           await fundingToken
               .connect(buyer2)
               .approve(setup.data.seed.address, buyAmount);
@@ -1464,7 +1456,6 @@ describe("Contract: Seed", async () => {
               await setup.data.seed
                   .connect(admin)
                   .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-
               await fundingToken
                   .connect(buyer2)
                   .approve(setup.data.seed.address, buyAmount);
