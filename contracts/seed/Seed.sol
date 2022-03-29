@@ -255,7 +255,7 @@ contract Seed {
         require(!closed, "Seed: should not be closed");
         // require(current_time < startTime);
         require(block.timestamp < classes[_class].classVestingStartTime, 
-            "Seed: this class vesting is not started yet"
+            "Seed: this class vesting is already started"
         );
         funders[_address].class = _class;
     }

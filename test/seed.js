@@ -1646,14 +1646,6 @@ describe("Contract: Seed", async () => {
             "Seed: vesting start time can't be less than endTime"
           );
         });
-        it("it reverts when trying to set class when vesting is not started yet", async () => { //CURRENT
-          await expectRevert(
-              setup.seed
-                  .connect(admin)
-                  .setClass(buyer3.address, 101),
-              "Seed: this class vesting is not started yet"
-          );
-        });
       })
       context("» update metadata", () => {
         it("can only be called by admin", async () => {
@@ -1939,6 +1931,57 @@ describe("Contract: Seed", async () => {
           await expectRevert(
               setup.seed.connect(buyer1).withdraw(),
               "Seed: caller should be admin"
+          );
+        });
+      });
+      context("» change class", () => {
+        before("!! deploy new contract", async () => {
+          let newStartTime = await time.latest();
+          let newEndTime = await newStartTime.add(await time.duration.days(1));
+          let newClassVestingStartTime = await newEndTime.add(await time.duration.hours(1));
+
+          setup.data.seed = await init.getContractInstance(
+              "Seed",
+              setup.roles.prime
+          );
+
+          await seedToken
+              .connect(root)
+              .transfer(setup.data.seed.address, requiredSeedAmount.toString());
+          await fundingToken
+              .connect(root)
+              .transfer(buyer2.address, buyAmount.toString());
+          await fundingToken
+              .connect(buyer2)
+              .approve(setup.data.seed.address, buyAmount.toString());
+
+          setup.data.seed.initialize(
+              beneficiary.address,
+              admin.address,
+              [seedToken.address, fundingToken.address],
+              [softCap, hardCap],
+              price,
+              newStartTime.toNumber(),
+              newEndTime.toNumber(),
+              vestingDuration.toNumber(),
+              vestingCliff.toNumber(),
+              permissionedSeed,
+              fee
+          );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
+          await setup.seed
+              .connect(admin)
+              .setClass(buyer2.address, 1)
+        });
+        it("it reverts when trying to set class when vesting is already started", async () => {
+          await time.increase(time.duration.days(2));
+          await expectRevert(
+              setup.seed
+                  .connect(admin)
+                  .setClass(buyer2.address, 0),
+              "Seed: this class vesting is already started"
           );
         });
       });
