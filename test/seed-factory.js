@@ -193,6 +193,25 @@ describe("SeedFactory", () => {
           "SeedFactory: endTime cannot be less than equal to startTime"
         );
       });
+      it("it reverts when fee >= 45%", async () => {
+        const feeTooBig = parseEther("0.45").toString(); // 45%
+        await expectRevert(
+          seedFactory.deploySeed(
+            dao.address,
+            admin.address,
+            [seedToken.address, fundingToken.address],
+            [softCap, hardCap],
+            price,
+            startTime.toNumber(),
+            endTime.toNumber(),
+            [vestingDuration.toNumber(), vestingCliff.toNumber()],
+            isWhitelisted,
+            feeTooBig,
+            metadata
+          ),
+          "SeedFactory: fee cannot be more than 45%"
+        );
+      });
       it("it creates new seed contract", async () => {
 
         await expect(

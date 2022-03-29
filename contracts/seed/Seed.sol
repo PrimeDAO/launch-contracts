@@ -227,7 +227,7 @@ contract Seed {
         );
         require(
             _classFee < maxFee,
-            "SeedFactory: fee cannot be more than 45%"
+            "Seed: fee cannot be more than 45%"
         );
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
@@ -254,11 +254,10 @@ contract Seed {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         // require(current_time < startTime);
-        require(block.timestamp < classes[_class].classVestingStartTime);
-
-
+        require(block.timestamp < classes[_class].classVestingStartTime, 
+            "Seed: this class vesting is not started yet"
+        );
         funders[_address].class = _class;
-
     }
 
     /**
@@ -290,10 +289,9 @@ contract Seed {
                 endTime < _classVestingStartTime[i],
                 "Seed: vesting start time can't be less than endTime"
             );
-            require(block.timestamp < _classVestingStartTime[i]);
             require(
                 _classFee[i] < maxFee,
-                "SeedFactory: fee cannot be more than 45%"
+                "Seed: fee cannot be more than 45%"
             );
             
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];

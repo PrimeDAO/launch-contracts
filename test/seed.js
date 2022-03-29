@@ -1560,6 +1560,15 @@ describe("Contract: Seed", async () => {
                   (await setup.seed.getClass(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
             });
+            it("it reverts when fee >= 45% for Customer class", async () => {
+              const feeTooBig = parseEther("0.45").toString(); // 45%
+              await expectRevert( 
+                  setup.seed
+                      .connect(admin)
+                      .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, feeTooBig),
+                  "Seed: fee cannot be more than 45%"
+              );
+            });
           });
         });
         it("it adds batch of classes", () => {
@@ -1567,10 +1576,19 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, 17000000000], [CLASS_FEE, CLASS_FEE]);
+                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
               expect(
                   (await setup.seed.getClass(3))[1]
               ).to.equal((ethers.BigNumber.from(e_twenty)));
+            });
+            it("it reverts when fee >= 45% for Customer class", async () => {
+              const feeTooBig = parseEther("0.45").toString(); // 45%
+              await expectRevert( 
+                  setup.seed
+                      .connect(admin)
+                      .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [feeTooBig, feeTooBig]),
+                  "Seed: fee cannot be more than 45%"
+              );
             });
           });
         });
@@ -1626,6 +1644,14 @@ describe("Contract: Seed", async () => {
                 .connect(admin)
                 .addClassBatch([hardCap,e_twenty], [e_twenty, e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [endTime.toString(), startTime.toString()], [CLASS_FEE, CLASS_FEE]),
             "Seed: vesting start time can't be less than endTime"
+          );
+        });
+        it("it reverts when trying to set class when vesting is not started yet", async () => { //CURRENT
+          await expectRevert(
+              setup.seed
+                  .connect(admin)
+                  .setClass(buyer3.address, 101),
+              "Seed: this class vesting is not started yet"
           );
         });
       })
