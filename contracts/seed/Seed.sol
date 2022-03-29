@@ -163,9 +163,9 @@ contract Seed {
             _endTime > _startTime,
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
-        uint256 maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
+        uint256 initMaxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
         require(
-            _fee < maxFee,
+            _fee < initMaxFee,
             "SeedFactory: fee cannot be more than 45%"
         );
 
@@ -230,6 +230,8 @@ contract Seed {
             _classFee < maxFee,
             "Seed: fee cannot be more than 45%"
         );
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -326,9 +328,11 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
+        
         // Checks if contributor has exceeded his personal or class cap.
-        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
+        require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
+
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached");
         require(

@@ -489,7 +489,6 @@ describe("Contract: Seed", async () => {
             await alternativeSetup.seed
                 .connect(admin)
                 .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
             ).add(await alternativeSetup.seed.feeAmountRequired());
@@ -749,7 +748,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
@@ -760,7 +758,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
-
           await setup.data.seed
               .connect(admin)
               .setClass(buyer1.address, 2);
@@ -2212,7 +2209,6 @@ describe("Contract: Seed", async () => {
           await alternativeSetup.seed
               .connect(admin)
               .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-
           await seedToken
               .connect(root)
               .transfer(
