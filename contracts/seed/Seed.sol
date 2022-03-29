@@ -20,7 +20,7 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -43,6 +43,7 @@ contract Seed {
     IERC20 public seedToken;
     IERC20 public fundingToken;
     uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
+    uint256 public maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
 
     bytes public metadata; // IPFS Hash
 
@@ -64,7 +65,7 @@ contract Seed {
     uint256 public feeRemainder; // Amount of seed tokens remaining for the fee
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
-    uint256 public totalFee; //Amount of all fee claimed when the seed was claimed.
+    uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
     ContributorClass[] classes; // Array of contributor classes
 
@@ -162,6 +163,11 @@ contract Seed {
             _endTime > _startTime,
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
+        uint256 maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
+        require(
+            _fee < maxFee,
+            "SeedFactory: fee cannot be more than 45%"
+        );
 
         beneficiary = _beneficiary;
         admin = _admin;
@@ -178,7 +184,7 @@ contract Seed {
         fundingToken = IERC20(_tokens[1]);
         fee = _fee;
         
-        totalFee = 0;
+        feeClaimed = 0;
 
         seedAmountRequired = (hardCap * PRECISION) / _price;
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
@@ -219,6 +225,10 @@ contract Seed {
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
         );
+        require(
+            _classFee < maxFee,
+            "SeedFactory: fee cannot be more than 45%"
+        );
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -243,6 +253,9 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
+        // require(current_time < startTime);
+        require(block.timestamp < classes[_class].classVestingStartTime);
+
 
         funders[_address].class = _class;
 
@@ -277,6 +290,12 @@ contract Seed {
                 endTime < _classVestingStartTime[i],
                 "Seed: vesting start time can't be less than endTime"
             );
+            require(block.timestamp < _classVestingStartTime[i]);
+            require(
+                _classFee[i] < maxFee,
+                "SeedFactory: fee cannot be more than 45%"
+            );
+            
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -414,7 +433,7 @@ contract Seed {
         funders[_funder].totalClaimed += _claimAmount;
 
         seedClaimed += _claimAmount;    
-        totalFee += feeAmountOnClaim; 
+        feeClaimed += feeAmountOnClaim; 
 
         require(
             seedToken.transfer(beneficiary, feeAmountOnClaim) &&
@@ -632,9 +651,9 @@ contract Seed {
     /**
      * @dev                     Amount of seed tokens claimed as fee
      */
-    function feeClaimed() public view returns (uint256) {
+    function allFeeClaimed() public view returns (uint256) {
 
-        return totalFee;//(seedClaimed * fee) / PRECISION; 
+        return feeClaimed;//(seedClaimed * fee) / PRECISION; 
     }
 
     /**
