@@ -254,9 +254,9 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-        // require(current_time < startTime);
-        require(block.timestamp < classes[_class].classVestingStartTime, 
-            "Seed: this class vesting is already started"
+        require(block.timestamp < startTime,
+        // require(block.timestamp < classes[_class].vestingStartTime, 
+            "Seed: vesting is already started"
         );
         funders[_address].class = _class;
     }
@@ -328,12 +328,22 @@ contract Seed {
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
+        console.log("b ff %s",funders[msg.sender].fundingAmount + _fundingAmount);
+        console.log("b uc %s",userClass.individualCap);
+
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached");
+
+        console.log(startTime);
+        console.log(block.timestamp);
+        console.log(endTime);
+
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
         );
+        console.log(seedToken.balanceOf(address(this)));
+        console.log(endTime);
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
@@ -355,6 +365,8 @@ contract Seed {
             "Seed: amountVestedPerSecond > 0"
         );
 
+console.log("fc fs %s",fundingCollected + _fundingAmount);
+console.log("hc %s", hardCap);
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,
