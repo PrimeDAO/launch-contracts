@@ -668,15 +668,23 @@ contract Seed {
      */
     function getClass(
         uint8 _id
-    ) public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        uint8 id = _id;
-        return (classes[id].classCap,
-                classes[id].individualCap,
-                classes[id].price,
-                classes[id].vestingDuration,
-                classes[id].fundingCollected,
-                classes[id].classVestingStartTime,
-                classes[id].seedAmountRequired,
-                classes[id].feeAmountRequired);
+    ) public view returns(
+        uint256 classCap,
+        uint256 individualCap,
+        uint256 price,
+        uint256 vestingDuration,
+        uint256 fundingCollected,
+        uint256 classVestingStartTime,
+        uint256 seedAmountRequired,
+        uint256 feeAmountRequired)
+   {
+        classCap = classes[_id].classCap;
+        individualCap = classes[_id].individualCap;
+        price = classes[_id].price;
+        vestingDuration = classes[_id].vestingDuration;
+        fundingCollected = classes[_id].fundingCollected;
+        classVestingStartTime = classes[_id].classVestingStartTime;
+        seedAmountRequired = classes[_id].seedAmountRequired;
+        feeAmountRequired = classes[_id].feeAmountRequired;
     }
 }
