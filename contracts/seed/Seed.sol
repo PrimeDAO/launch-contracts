@@ -90,13 +90,13 @@ contract Seed {
     struct ContributorClass {
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 price; // Price of seed tokens for class
+        uint256 price; // Price of seed tokens for class, expressed in fundingTokens, with precision of 10**18
         uint256 vestingDuration; // Vesting duration for class
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
         uint256 classFundingCollected; // Total amount of staked tokens        
-        uint256 seedAmountRequired;
-        uint256 feeAmountRequired;
+        uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
+        uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
 
     modifier onlyAdmin() {
@@ -690,7 +690,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / price;
+        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price; //price;
     }
 
     /**
