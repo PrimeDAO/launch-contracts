@@ -571,7 +571,7 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 0;// 604769;
+          const timeDifference = 597546;// 604769; //1649332997 - 1648735451 = 597546
           const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
@@ -2098,7 +2098,7 @@ describe("Contract: Seed", async () => {
       });
       context("» change class", () => {
         before("!! deploy new contract", async () => {
-          let newStartTime = (await time.latest());//.add(await time.duration.days(1));
+          let newStartTime = (await time.latest()).add(await time.duration.days(1));
           let newEndTime = await newStartTime.add(await time.duration.days(1));
           let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
 
