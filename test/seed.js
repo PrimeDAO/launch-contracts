@@ -571,7 +571,7 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 597546;// 604769; //1649332997 - 1648735451 = 597546
+          const timeDifference = 597546; //1649332997 - 1648735451 = 597546
           const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
@@ -729,7 +729,7 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
-          const timeDifference = 604769; // vestingStartTime - currentClassVestingStartTime
+          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
