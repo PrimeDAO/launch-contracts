@@ -208,6 +208,9 @@ describe("Contract: Seed", async () => {
           expect((await setup.seed.softCap()).toString()).to.equal(
               softCap.toString()
           );
+          expect((await setup.seed.price()).toString()).to.equal(
+              price.toString()
+          );
           expect(await setup.seed.permissionedSeed()).to.equal(
               permissionedSeed
           );
@@ -839,13 +842,9 @@ describe("Contract: Seed", async () => {
       });
       context("» claim after vesting duration", async () => {
         before("!! deploy new contract + top up buyer balance", async () => {
-        //   let newStartTime = await time.latest();
-          let latestTime =  await time.latest();
-          let newStartTime = await latestTime.add(await time.duration.days(2));
-          let newEndTime = await newStartTime.add(await time.duration.days(7));
-        //   let newVestingDuration = await 
-        //   let newVestingCliff = await newStartTime.add(await time.duration.hours(1));
-
+          let newStartTime = (await time.latest()).add(await time.duration.days(1));
+          let newEndTime = await newStartTime.add(await time.duration.days(1));
+          
           setup.data.seed = await init.getContractInstance(
               "Seed",
               setup.roles.prime
@@ -903,32 +902,35 @@ describe("Contract: Seed", async () => {
 
 
         //THIS IS NEEDED FOR OTHER TESTS BUT IT ALSO CANNOT BE BEFORE increasedNewStartTime
-        //so: 1) sdding this in every test below exept first one, which I'm fixing now
-        //2) alternativeSetupfor first test below
+        //so: 
+        //1) adding this in every test below exept first one, which I'm fixing now
+        //2) alternativeSetup for first test below
         //   await setup.data.seed 
         //       .connect(buyer2)
         //       .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
         });
 
-        it("it cannot claim before currentVestingStartTime", async () => {
-  
-        
-
-
+        it("it cannot claim before currentVestingStartTime", async () => {  
+        //   let latestTime = (await time.latest()).add(await time.duration.days(4));
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+            //   .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 1663974878, CLASS_FEE);
 
           await setup.data.seed
               .connect(admin)
               .setClass(buyer1.address, 2);
 
-          time.increase(await time.duration.days(6));
+          time.increase(await time.duration.days(1));
+
+          await setup.data.seed 
+                .connect(buyer1)
+                .buy(new BN(buyAmount)).toString();
           // await time.increase(eightyNineDaysInSeconds);
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
-                  .claim(buyer1.address, (new BN(twoBN)).toString()),
+                  .claim(buyer1.address, (new BN(one)).toString()),
               "Seed: vesting start time for this class is not started yet"
           );
         });
@@ -2096,9 +2098,9 @@ describe("Contract: Seed", async () => {
       });
       context("» change class", () => {
         before("!! deploy new contract", async () => {
-          let newStartTime = await time.latest();
+          let newStartTime = (await time.latest());//.add(await time.duration.days(1));
           let newEndTime = await newStartTime.add(await time.duration.days(1));
-          let newClassVestingStartTime = await newEndTime.add(await time.duration.hours(1));
+          let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
 
           setup.data.seed = await init.getContractInstance(
               "Seed",
@@ -2128,12 +2130,15 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
+          console.log("newStartTime %s",newStartTime);
+          console.log("newEndTime %s",newEndTime);
+
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
-          await setup.seed
-              .connect(admin)
-              .setClass(buyer2.address, 1)
+        //   await setup.seed
+        //       .connect(admin)
+        //       .setClass(buyer2.address, 1)
         });
         it("it reverts when trying to set class when vesting is already started", async () => {
           await time.increase(time.duration.days(2));
@@ -2226,6 +2231,7 @@ describe("Contract: Seed", async () => {
           expect(await seed.seedToken()).to.equal(seedToken.address);
           expect(await seed.fundingToken()).to.equal(fundingToken.address);
           expect((await seed.softCap()).toString()).to.equal(softCap);
+          expect((await seed.price()).toString()).to.equal(price);
           expect(await seed.permissionedSeed()).to.equal(permissionedSeed);
           expect((await seed.fee()).toString()).to.equal(fee.toString());
           expect(await seed.closed()).to.equal(false);
