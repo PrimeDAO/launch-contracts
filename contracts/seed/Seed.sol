@@ -33,7 +33,6 @@ contract Seed {
     uint256 public hardCap;
     uint256 public seedAmountRequired; // Amount of seed required for distribution
     uint256 public feeAmountRequired; // Amount of seed required for fee
-    uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -91,7 +90,7 @@ contract Seed {
     struct ContributorClass {
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 price; // Price of seed tokens for class
+        uint256 price; // Price of a SeedToken for class, expressed in fundingTokens, with precision of 10**18
         uint256 vestingDuration; // Vesting duration for class
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
@@ -174,7 +173,6 @@ contract Seed {
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
-        price = _price;
         startTime = _startTime;
         endTime = _endTime;
         vestingStartTime = endTime + 1;
@@ -703,7 +701,7 @@ console.log("hc %s", hardCap);
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / price;
+        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
     }
 
     /**
@@ -712,16 +710,23 @@ console.log("hc %s", hardCap);
      */
     function getClass(
         uint8 _id
-    ) public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        uint8 id = _id;
-        return (classes[id].classCap,
-                classes[id].individualCap,
-                classes[id].price,
-                classes[id].vestingDuration,
-                classes[id].classFundingCollected,
-                classes[id].classVestingStartTime,
-                classes[id].classFee,
-                classes[id].seedAmountRequired,
-                classes[id].feeAmountRequired);
+    ) public view returns(
+        uint256 classCap,
+        uint256 individualCap,
+        uint256 price,
+        uint256 vestingDuration,
+        uint256 fundingCollected,
+        uint256 classVestingStartTime,
+        uint256 seedAmountRequired,
+        uint256 feeAmountRequired)
+   {
+        classCap = classes[_id].classCap;
+        individualCap = classes[_id].individualCap;
+        price = classes[_id].price;
+        vestingDuration = classes[_id].vestingDuration;
+        fundingCollected = classes[_id].fundingCollected;
+        classVestingStartTime = classes[_id].classVestingStartTime;
+        seedAmountRequired = classes[_id].seedAmountRequired;
+        feeAmountRequired = classes[_id].feeAmountRequired;
     }
 }
