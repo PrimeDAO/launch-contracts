@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -163,10 +162,8 @@ contract Seed {
             _endTime > _startTime,
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
-        //need for test named 'it creates new seed contract'
-        // MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
         require(
-            _fee < MAX_FEE, //maxFee,
+            _fee < MAX_FEE,
             "SeedFactory: fee cannot be more than 45%"
         );
 
@@ -254,7 +251,6 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-        console.log("current time %s", block.timestamp);
         require(block.timestamp < startTime,
         // require(block.timestamp < classes[_class].vestingStartTime, 
             "Seed: vesting is already started"
@@ -326,26 +322,17 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
-        console.log("curr t %s",block.timestamp);
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
-        console.log("b ff %s",funders[msg.sender].fundingAmount + _fundingAmount);
-        console.log("b uc %s",userClass.individualCap);
-
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached");
-
-        console.log(startTime);
-        // console.log(block.timestamp);
-        console.log(endTime);
 
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
         );
-        console.log(seedToken.balanceOf(address(this)));
-        console.log(endTime);
+
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
@@ -367,8 +354,6 @@ contract Seed {
             "Seed: amountVestedPerSecond > 0"
         );
 
-console.log("fc fs %s",fundingCollected + _fundingAmount);
-console.log("hc %s", hardCap);
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,

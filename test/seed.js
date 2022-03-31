@@ -362,7 +362,6 @@ describe("Contract: Seed", async () => {
               parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
           ).toString();
           const biggerStartTime = startTime.add(await time.duration.hours(1));
-          // console.log(startTime.toNumber());
           const biggerEndTime = endTime.add(await time.duration.hours(2));
           await alternativeSetup.seed.initialize(
               beneficiary.address,
@@ -397,7 +396,6 @@ describe("Contract: Seed", async () => {
 
           time.increase(await time.duration.hours(1));
 
-          console.log("cpfl %s",CLASS_SMALL_PERSONAL_FUNDING_LIMIT);
           await alternativeSetup.seed.connect(buyer1).buy(CLASS_SMALL_PERSONAL_FUNDING_LIMIT);
 
           await expectRevert(
@@ -470,9 +468,6 @@ describe("Contract: Seed", async () => {
                 parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
             ).toString();
             const biggerStartTime = startTime.add(await time.duration.hours(2));
-
-            console.log("st to num %s",startTime.toNumber());
-
             const biggerEndTime = endTime.add(await time.duration.hours(3));
             await alternativeSetup.seed.initialize(
                 beneficiary.address,
@@ -844,9 +839,6 @@ describe("Contract: Seed", async () => {
         before("!! deploy new contract + top up buyer balance", async () => {
           let newStartTime = (await time.latest()).add(await time.duration.days(1));
           let newEndTime = await newStartTime.add(await time.duration.days(3));
-          let newVestingDuration = await newEndTime.add(await time.duration.days(3));
-          let newVestingCliff = await newEndTime.add(await time.duration.days(1));
-          console.log("BEFORE 1");
           setup.data.seed = await init.getContractInstance(
               "Seed",
               setup.roles.prime
@@ -874,7 +866,6 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
-          console.log("BEFORE 2");
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -884,19 +875,10 @@ describe("Contract: Seed", async () => {
               newStartTime.toNumber(),
               newEndTime.toNumber(),
               vestingDuration.toNumber(),
-              // newVestingDuration.toNumber(),
               vestingCliff.toNumber(),
-              // newVestingCliff.toNumber(),
               permissionedSeed,
               fee
-          );
-          console.log(vestingDuration.toNumber());
-          console.log(vestingCliff.toNumber());
-          // let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
-          console.log("BEFORE 3");
-          // console.log(CLASS_VESTING_START_TIME);
-          // console.log(newClassVestingStartTime.toString());
-
+          );    
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
@@ -904,8 +886,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
-
-          console.log("BEFORE");
         });
 
         it("it cannot claim before currentVestingStartTime", async () => {  
@@ -913,16 +893,13 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
 
-          console.log(CLASS_PERSONAL_FUNDING_LIMIT.toString());
-          console.log(new BN(buyAmount).mul(new BN(twoBN)).toString());
-          console.log(hardCap.toString());
           await setup.data.seed
               .connect(admin)
               .setClass(buyer1.address, 3);
 
           time.increase(await time.duration.days(1));
 
-          await setup.data.seed //from 'before' statement
+          await setup.data.seed //was moved from 'before' statement
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
@@ -2128,9 +2105,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          console.log("newStartTime %s",newStartTime);
-          console.log("newEndTime %s",newEndTime);
-
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
@@ -2480,7 +2454,6 @@ describe("Contract: Seed", async () => {
           permissionedSeed,
           fee
       );
-      console.log(CLASS_FEE.toString());//parseEther("0.02").toString();)
       await setup.seed
           .connect(admin)
           .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
