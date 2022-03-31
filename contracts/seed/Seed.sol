@@ -33,6 +33,7 @@ contract Seed {
     uint256 public hardCap;
     uint256 public seedAmountRequired; // Amount of seed required for distribution
     uint256 public feeAmountRequired; // Amount of seed required for fee
+    uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -42,7 +43,7 @@ contract Seed {
     IERC20 public seedToken;
     IERC20 public fundingToken;
     uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-    uint256 public maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
+    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
 
     bytes public metadata; // IPFS Hash
 
@@ -90,7 +91,7 @@ contract Seed {
     struct ContributorClass {
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 price; // Price of a SeedToken for class, expressed in fundingTokens, with precision of 10**18
+        uint256 price; // Price of seed tokens for class
         uint256 vestingDuration; // Vesting duration for class
         uint256 classVestingStartTime;
         uint256 classFee; // Fee of class
@@ -163,9 +164,9 @@ contract Seed {
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
         //need for test named 'it creates new seed contract'
-        maxFee = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
+        // MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
         require(
-            _fee < maxFee,
+            _fee < MAX_FEE, //maxFee,
             "SeedFactory: fee cannot be more than 45%"
         );
 
@@ -173,6 +174,7 @@ contract Seed {
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
+        price = _price;
         startTime = _startTime;
         endTime = _endTime;
         vestingStartTime = endTime + 1;
@@ -225,7 +227,7 @@ contract Seed {
             "Seed: vesting start time can't be less than endTime"
         );
         require(
-            _classFee < maxFee,
+            _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
         );
         uint256 seedRequired = (_classCap * PRECISION) / _price;
@@ -252,6 +254,7 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
+        console.log("current time %s", block.timestamp);
         require(block.timestamp < startTime,
         // require(block.timestamp < classes[_class].vestingStartTime, 
             "Seed: vesting is already started"
@@ -289,7 +292,7 @@ contract Seed {
                 "Seed: vesting start time can't be less than endTime"
             );
             require(
-                _classFee[i] < maxFee,
+                _classFee[i] < MAX_FEE,
                 "Seed: fee cannot be more than 45%"
             );
             
@@ -323,6 +326,7 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
+        console.log("curr t %s",block.timestamp);
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -333,7 +337,7 @@ contract Seed {
             "Seed: maximum personal funding reached");
 
         console.log(startTime);
-        console.log(block.timestamp);
+        // console.log(block.timestamp);
         console.log(endTime);
 
         require(
@@ -701,7 +705,7 @@ console.log("hc %s", hardCap);
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
+        return (funders[_funder].fundingAmount * PRECISION) / price;
     }
 
     /**
@@ -715,17 +719,19 @@ console.log("hc %s", hardCap);
         uint256 individualCap,
         uint256 price,
         uint256 vestingDuration,
-        uint256 fundingCollected,
+        uint256 classFundingCollected,
         uint256 classVestingStartTime,
+        uint256 classFee,
         uint256 seedAmountRequired,
         uint256 feeAmountRequired)
-   {
+    {
         classCap = classes[_id].classCap;
         individualCap = classes[_id].individualCap;
         price = classes[_id].price;
         vestingDuration = classes[_id].vestingDuration;
-        fundingCollected = classes[_id].fundingCollected;
+        classFundingCollected = classes[_id].classFundingCollected;
         classVestingStartTime = classes[_id].classVestingStartTime;
+        classFee = classes[_id].classFee;
         seedAmountRequired = classes[_id].seedAmountRequired;
         feeAmountRequired = classes[_id].feeAmountRequired;
     }
