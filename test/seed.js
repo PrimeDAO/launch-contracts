@@ -843,8 +843,10 @@ describe("Contract: Seed", async () => {
       context("» claim after vesting duration", async () => {
         before("!! deploy new contract + top up buyer balance", async () => {
           let newStartTime = (await time.latest()).add(await time.duration.days(1));
-          let newEndTime = await newStartTime.add(await time.duration.days(1));
-          
+          let newEndTime = await newStartTime.add(await time.duration.days(3));
+          let newVestingDuration = await newEndTime.add(await time.duration.days(3));
+          let newVestingCliff = await newEndTime.add(await time.duration.days(1));
+          console.log("BEFORE 1");
           setup.data.seed = await init.getContractInstance(
               "Seed",
               setup.roles.prime
@@ -872,7 +874,7 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
-
+          console.log("BEFORE 2");
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -882,46 +884,49 @@ describe("Contract: Seed", async () => {
               newStartTime.toNumber(),
               newEndTime.toNumber(),
               vestingDuration.toNumber(),
+              // newVestingDuration.toNumber(),
               vestingCliff.toNumber(),
-            //   newVestingCliff.toNumber(),
+              // newVestingCliff.toNumber(),
               permissionedSeed,
               fee
           );
-          await setup.data.seed
-              .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+          console.log(vestingDuration.toNumber());
+          console.log(vestingCliff.toNumber());
+          // let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
+          console.log("BEFORE 3");
+          // console.log(CLASS_VESTING_START_TIME);
+          // console.log(newClassVestingStartTime.toString());
 
           await setup.data.seed
               .connect(admin)
-              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
 
+          await setup.data.seed
+              .connect(admin)
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
 
-            //   console.log()
-        console.log("nst to num %s",newStartTime.toNumber());
-        console.log("nedt to num %s",newEndTime.toNumber());
-
-
-        //THIS IS NEEDED FOR OTHER TESTS BUT IT ALSO CANNOT BE BEFORE increasedNewStartTime
-        //so: 
-        //1) adding this in every test below exept first one, which I'm fixing now
-        //2) alternativeSetup for first test below
-        //   await setup.data.seed 
-        //       .connect(buyer2)
-        //       .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
+          console.log("BEFORE");
         });
 
         it("it cannot claim before currentVestingStartTime", async () => {  
         //   let latestTime = (await time.latest()).add(await time.duration.days(4));
+          // const newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
           await setup.data.seed
               .connect(admin)
-            //   .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 1663974878, CLASS_FEE);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
 
+          console.log(CLASS_PERSONAL_FUNDING_LIMIT.toString());
+          console.log(new BN(buyAmount).mul(new BN(twoBN)).toString());
+          console.log(hardCap.toString());
           await setup.data.seed
               .connect(admin)
-              .setClass(buyer1.address, 2);
+              .setClass(buyer1.address, 3);
 
           time.increase(await time.duration.days(1));
+
+          // await setup.data.seed //from 'before' statement
+          //     .connect(buyer2)
+          //     .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
           await setup.data.seed 
                 .connect(buyer1)
@@ -930,11 +935,79 @@ describe("Contract: Seed", async () => {
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
-                  .claim(buyer1.address, (new BN(one)).toString()),
+                  .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
               "Seed: vesting start time for this class is not started yet"
           );
+
+          // const alternativeSetup = await deploy();
+          // const CustomERC20MockFactory = await ethers.getContractFactory(
+          //     "CustomERC20Mock",
+          //     setup.roles.prime
+          // );
+          // const alternativeFundingToken = await CustomERC20MockFactory.deploy(
+          //     "DAI Stablecoin",
+          //     "DAI"
+          // );
+          // const fundingTokenDecimal = await getDecimals(
+          //     alternativeFundingToken
+          // );
+          // const getFundingAmounts = getTokenAmount(fundingTokenDecimal);
+          // const softCap = getFundingAmounts("10").toString();
+          // const hardCap = getFundingAmounts("102").toString();
+          // const price = parseUnits(
+          //     "0.01",
+          //     parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
+          // ).toString();
+          // const biggerStartTime = startTime.add(await time.duration.hours(1));
+          // // console.log(startTime.toNumber());
+          // const biggerEndTime = endTime.add(await time.duration.hours(2));
+          // await alternativeSetup.seed.initialize(
+          //     beneficiary.address,
+          //     admin.address,
+          //     [seedToken.address, alternativeFundingToken.address],
+          //     [softCap, hardCap],
+          //     price,
+          //     biggerStartTime.toNumber(),
+          //     biggerEndTime.toNumber(),
+          //     vestingDuration.toNumber(),
+          //     vestingCliff.toNumber(),
+          //     permissionedSeed,
+          //     fee
+          // );
+          // await alternativeSetup.seed //hardCap = 102 //small_pfl = 20
+          //     .connect(admin)
+          //     .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+          // await alternativeFundingToken
+          //     .connect(root)
+          //     .transfer(buyer1.address, getFundingAmounts("104"));
+          // await alternativeFundingToken
+          //     .connect(buyer1)
+          //     .approve(alternativeSetup.seed.address, getFundingAmounts("104"));
+          // await seedToken
+          //     .connect(root)
+          //     .transfer(
+          //         alternativeSetup.seed.address,
+          //         requiredSeedAmount.toString()
+          // );
+          // await alternativeSetup.seed.connect(admin).setClass(buyer1.address, 0);
+          // console.log("SET CLASSS");
+          // time.increase(await time.duration.hours(1));
+
+          // console.log("BUYING");
+          // await alternativeSetup.seed.connect(buyer1).buy(buyAmount);
+
+
+          // console.log("CLAIMING");
+          // await expectRevert(
+          //   alternativeSetup.data.seed
+          //       .connect(buyer1)
+          //       .claim(buyer1.address, buyAmount.toString()).toString()),
+          //   "Seed: vesting start time for this class is not started yet"
+        
+
+
         });
-    
+//--------------------------------------------------------------------------------------
         it("claims all seeds after vesting duration", async () => {
             await setup.data.seed 
               .connect(buyer2)
