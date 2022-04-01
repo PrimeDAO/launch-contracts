@@ -152,9 +152,7 @@ describe("Contract: Seed", async () => {
                 [seedToken.address, fundingToken.address],
                 [softCap, hardCap],
                 price,
-                // (await startTime.add(await time.duration.days(2))).toNumber(),
                 (await startTime.add(await time.duration.hours(12))).toNumber(),
-                // endTime.toNumber(),
                 (await endTime.add(await time.duration.hours(10))).toNumber(),
                 vestingDuration.toNumber(),
                 vestingCliff.toNumber(),
@@ -1784,6 +1782,101 @@ describe("Contract: Seed", async () => {
           );
         });
       })
+      context("» change class", () => {
+        before("!! deploy new contract + top up buyer balance", async () => {
+          let newStartTime = (await time.latest()).add(await time.duration.days(1));
+          let newEndTime = await newStartTime.add(await time.duration.days(2));
+
+          setup.data.seed = await init.getContractInstance(
+              "Seed",
+              setup.roles.prime
+          );
+
+          await seedToken
+              .connect(root)
+              .transfer(setup.data.seed.address, requiredSeedAmount.toString());
+          await fundingToken
+              .connect(root)
+              .transfer(buyer2.address, smallBuyAmount);
+          await fundingToken
+              .connect(buyer2)
+              .approve(setup.data.seed.address, smallBuyAmount);
+
+          await setup.data.seed.initialize(
+              beneficiary.address,
+              admin.address,
+              [seedToken.address, fundingToken.address],
+              [softCap, hardCap],
+              price,
+              newStartTime.toNumber(),
+              newEndTime.toNumber(),
+              vestingDuration.toNumber(),
+              vestingCliff.toNumber(),
+              permissionedSeed,
+              fee
+          );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+        });
+          it("it changes Customer class", async () => {
+            await setup.data.seed
+                .connect(admin)
+                .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+            await setup.data.seed
+                .connect(admin)
+                .changeClass(0, e_twenty, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
+            expect(
+                (await setup.data.seed.getClass(0))[0]
+            ).to.equal((ethers.BigNumber.from(e_twenty)));
+          });
+          it("it reverts when incorrect class choosen", async () => {
+            await expectRevert( 
+              setup.data.seed
+                  .connect(admin)
+                  .changeClass(101, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
+                "Seed: incorrect class chosen"
+            );
+          });   
+          it("it reverts when choosen vesting start time is less than endTime", async () => {
+            let tooSmallVestingStartTime = (await time.latest()).toNumber();
+            await expectRevert( 
+              setup.data.seed
+                  .connect(admin)
+                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, tooSmallVestingStartTime, CLASS_FEE),
+                "Seed: vesting start time can't be less than endTime"
+            );
+          });   
+          it("it reverts when fee >= 45% for choosen clas", async () => {
+            const feeTooBig = parseEther("0.45").toString(); // 45%
+            await expectRevert( 
+              setup.data.seed
+                  .connect(admin)
+                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, feeTooBig),
+                "Seed: fee cannot be more than 45%"
+            );
+          });  
+          it("it reverts when vesting is already started", async () => {
+            await time.increase(time.duration.days(2));
+            await expectRevert( 
+              setup.data.seed
+                  .connect(admin)
+                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
+                "Seed: vesting is already started"
+            );
+          }); 
+          it("it reverts when Seed is closed", async () => {
+            await setup.data.seed
+                .connect(admin)
+                .close();
+            await expectRevert( 
+              setup.data.seed
+                  .connect(admin)
+                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
+                "Seed: should not be closed"
+            );
+          });   
+      });
       context("» update metadata", () => {
         it("can only be called by admin", async () => {
           await expectRevert(
