@@ -651,7 +651,7 @@ contract Seed {
      */
     function allFeeClaimed() public view returns (uint256) {
 
-        return feeClaimed;//(seedClaimed * fee) / PRECISION; 
+        return feeClaimed; 
     }
 
     /**
@@ -691,7 +691,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price; //price;
+        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
     }
 
     /**
