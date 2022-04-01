@@ -42,10 +42,10 @@ contract Seed {
     IERC20 public seedToken;
     IERC20 public fundingToken;
     uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
 
     bytes public metadata; // IPFS Hash
 
+    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -651,7 +651,7 @@ contract Seed {
      */
     function allFeeClaimed() public view returns (uint256) {
 
-        return feeClaimed; 
+        return feeClaimed;
     }
 
     /**

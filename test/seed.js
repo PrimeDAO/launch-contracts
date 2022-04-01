@@ -176,19 +176,13 @@ describe("Contract: Seed", async () => {
 
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens
-
-        //   to fix errors about 'Seed: vesting is already started' we adding one day
-        //   const startTimePlusOneDay = endTime.add(await time.duration.days(1));
-        //   const endTimePlusOneDay = endTime.add(await time.duration.days(1));
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
               [seedToken.address, fundingToken.address],
               [softCap, hardCap],
               price,
-            //   startTimePlusOneDay.toNumber(),//
               startTime.toNumber(),
-            //   endTimePlusOneDay.toNumber(),//
               endTime.toNumber(),
               vestingDuration.toNumber(),
               vestingCliff.toNumber(),
@@ -374,7 +368,7 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await alternativeSetup.seed //hardCap = 102 //small_pfl = 20
+          await alternativeSetup.seed //hardCap = 102 //CLASS_SMALL_PERSONAL_FUNDING_LIMIT = 20
               .connect(admin)
               .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
 
@@ -521,14 +515,6 @@ describe("Contract: Seed", async () => {
                     .buy(hardCap),
                 "Seed: amount exceeds contract sale hardCap"
             );
-        //   await setup.seed.addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-        //   await setup.seed.setClass(buyer3.address, 2);//3);
-        //   await expectRevert(
-        //       setup.seed
-        //           .connect(buyer3)
-        //           .buy(hardCap),
-        //       "Seed: amount exceeds contract sale hardCap"
-        //   );
         });
         it("updates lock when it buys tokens", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
@@ -897,15 +883,15 @@ describe("Contract: Seed", async () => {
 
           time.increase(await time.duration.days(1));
 
-          await setup.data.seed //was moved from 'before' statement
+          await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
           await setup.data.seed 
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
-          // await time.increase(eightyNineDaysInSeconds);
-          await expectRevert(
+
+              await expectRevert(
               setup.data.seed
                   .connect(buyer1)
                   .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
@@ -1037,7 +1023,7 @@ describe("Contract: Seed", async () => {
           // expect(await receipt.args[1].toString()).to.equal(new BN(buySeedAmount).mul(twoBN).toString());
         });
         it("it claims all the fee for a buyer's claim", async () => {
-          const fee = await setup.data.seed.feeForFunder(buyer2.address); //calculates too much; calculates for ALL, not for claimable
+          const fee = await setup.data.seed.feeForFunder(buyer2.address);
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
           const dividedFee = fee / divisor;
@@ -2106,9 +2092,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
-        //   await setup.seed
-        //       .connect(admin)
-        //       .setClass(buyer2.address, 1)
         });
         it("it reverts when trying to set class when vesting is already started", async () => {
           await time.increase(time.duration.days(2));
@@ -2193,8 +2176,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          // await seed.connect(admin)
-          //     .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
