@@ -269,7 +269,7 @@ contract Seed {
      * @param _classFee           The fee for the contributor class.
      */
     function changeClass(
-        uint8 _class,
+        uint8   _class,
         uint256 _classCap,
         uint256 _individualCap,
         uint256 _price,
@@ -299,11 +299,10 @@ contract Seed {
         classes[_class].individualCap = _individualCap;
         classes[_class].price = _price;
         classes[_class].vestingDuration = _vestingDuration;
-        classes[_class].classFundingCollected = _classFundingCollected;
         classes[_class].classVestingStartTime = _classVestingStartTime;
         classes[_class].classFee = _classFee;
         classes[_class].seedAmountRequired = seedRequired;
-        classes[_class].feeAmountRequired = (seedRequired * classFee) / PRECISION );
+        classes[_class].feeAmountRequired = (seedRequired * _classFee) / PRECISION;
     }
 
     /**
