@@ -253,10 +253,57 @@ contract Seed {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(block.timestamp < startTime,
-        // require(block.timestamp < classes[_class].vestingStartTime, 
             "Seed: vesting is already started"
         );
         funders[_address].class = _class;
+    }
+
+    /**
+     * @dev                       Change parameters in the class.
+     * @param _class              Class for changing.
+     * @param _classCap           The total cap of the contributor class.
+     * @param _individualCap      The personal cap of each contributor in this class.
+     * @param _price              The token price for the addresses in this clas.
+     * @param _vestingDuration    The vesting duration for this contributors class.
+     * @param _classVestingStartTime The class vesting start time for the contributor class.
+     * @param _classFee           The fee for the contributor class.
+     */
+    function changeClass(
+        uint8 _class,
+        uint256 _classCap,
+        uint256 _individualCap,
+        uint256 _price,
+        uint256 _vestingDuration,
+        uint256 _classVestingStartTime,
+        uint256 _classFee
+    ) onlyAdmin public {
+        require(_class < classes.length, "Seed: incorrect class chosen");
+        require(!closed, "Seed: should not be closed");
+        require(block.timestamp < startTime,
+            "Seed: vesting is already started"
+        );
+
+        // parameter check
+        require(
+            endTime < _classVestingStartTime,
+            "Seed: vesting start time can't be less than endTime"
+        );
+        require(
+            _classFee < MAX_FEE,
+            "Seed: fee cannot be more than 45%"
+        );
+
+        uint256 seedRequired = (_classCap * PRECISION) / _price;
+
+        classes[_class].classCap = _classCap;
+        classes[_class].individualCap = _individualCap;
+        classes[_class].price = _price;
+        classes[_class].vestingDuration = _vestingDuration;
+        classes[_class].classFundingCollected = _classFundingCollected;
+        classes[_class].classVestingStartTime = _classVestingStartTime;
+        classes[_class].classFee = _classFee;
+        classes[_class].seedAmountRequired = seedRequired;
+        classes[_class].feeAmountRequired = (seedRequired * classFee) / PRECISION ));
     }
 
     /**
