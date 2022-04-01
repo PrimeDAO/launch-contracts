@@ -152,9 +152,7 @@ describe("Contract: Seed", async () => {
                 [seedToken.address, fundingToken.address],
                 [softCap, hardCap],
                 price,
-                // (await startTime.add(await time.duration.days(2))).toNumber(),
                 (await startTime.add(await time.duration.hours(12))).toNumber(),
-                // endTime.toNumber(),
                 (await endTime.add(await time.duration.hours(10))).toNumber(),
                 vestingDuration.toNumber(),
                 vestingCliff.toNumber(),
@@ -179,7 +177,7 @@ describe("Contract: Seed", async () => {
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens
 
-        //   //to fix errors about 'Seed: vesting is already started' we adding one day
+        //   to fix errors about 'Seed: vesting is already started' we adding one day
         //   const startTimePlusOneDay = endTime.add(await time.duration.days(1));
         //   const endTimePlusOneDay = endTime.add(await time.duration.days(1));
           await setup.seed.initialize(
