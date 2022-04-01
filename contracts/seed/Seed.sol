@@ -228,6 +228,9 @@ contract Seed {
             _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
         );
+        
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -291,7 +294,9 @@ contract Seed {
                 _classFee[i] < MAX_FEE,
                 "Seed: fee cannot be more than 45%"
             );
-            
+
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
