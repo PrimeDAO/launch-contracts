@@ -279,6 +279,7 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
+
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
