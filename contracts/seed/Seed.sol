@@ -303,7 +303,7 @@ contract Seed {
         classes[_class].classVestingStartTime = _classVestingStartTime;
         classes[_class].classFee = _classFee;
         classes[_class].seedAmountRequired = seedRequired;
-        classes[_class].feeAmountRequired = (seedRequired * classFee) / PRECISION ));
+        classes[_class].feeAmountRequired = (seedRequired * classFee) / PRECISION );
     }
 
     /**
