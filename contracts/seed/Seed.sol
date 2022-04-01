@@ -253,7 +253,6 @@ contract Seed {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(block.timestamp < startTime,
-        // require(block.timestamp < classes[_class].vestingStartTime, 
             "Seed: vesting is already started"
         );
         funders[_address].class = _class;
@@ -323,6 +322,7 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
+         // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -346,7 +346,6 @@ contract Seed {
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
-        // uint256 feeAmount = (seedAmount * fee) / PRECISION;
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;    
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
@@ -432,7 +431,6 @@ contract Seed {
 
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
-
         require(
             seedToken.transfer(beneficiary, feeAmountOnClaim) &&
                 seedToken.transfer(_funder, _claimAmount),
@@ -650,7 +648,6 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function allFeeClaimed() public view returns (uint256) {
-
         return feeClaimed;
     }
 
