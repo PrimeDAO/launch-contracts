@@ -368,7 +368,7 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          await alternativeSetup.seed //hardCap = 102 //CLASS_SMALL_PERSONAL_FUNDING_LIMIT = 20
+          await alternativeSetup.seed
               .connect(admin)
               .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
 
@@ -891,7 +891,7 @@ describe("Contract: Seed", async () => {
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
 
-              await expectRevert(
+          await expectRevert(
               setup.data.seed
                   .connect(buyer1)
                   .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
