@@ -175,9 +175,8 @@ describe("Contract: Seed", async () => {
         });
 
         it("it initializes seed", async () => {
-          // emulate creation & initialization via seedfactory & fund with seedTokens
-
-        //to fix errors about 'Seed: vesting is already started' we adding one day
+          // emulate creation & initialization via seedfactory & fund with seedTokens         
+          
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -892,6 +891,7 @@ describe("Contract: Seed", async () => {
           await setup.data.seed 
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
+
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
@@ -2269,8 +2269,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          // await seed.connect(admin)
-          //     .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
