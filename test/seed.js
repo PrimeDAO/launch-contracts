@@ -2197,6 +2197,125 @@ describe("Contract: Seed", async () => {
         });
       });
     });
+    context("# few classes simultanuosly", () => {
+      before("!! setup", async () => {
+        await setup.seed
+            .connect(admin)
+            .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+        const SECOND_CLASS_VESTING_DURATION = CLASS_VESTING_DURATION.add(await time.duration.days(2));
+        const SECOND_CLASS_VESTING_START_TIME = CLASS_VESTING_START_TIME.add(await time.duration.days(2));
+        const SECOND_CLASS_FEE = parseEther("0.44").toString(); // 44%
+        await setup.seed
+            .connect(admin)
+            .addClass(hardCap, e_fourteen, e_fourteen, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME, SECOND_CLASS_FEE); //change to different params
+
+        //funding (delete this comment later)
+        await fundingToken
+            .connect(root)
+            .transfer(buyer1.address, getFundingAmounts("102"));
+        await fundingToken
+            .connect(buyer1)
+            .approve(setup.seed.address, getFundingAmounts("102"));
+        await fundingToken
+            .connect(root)
+            .transfer(buyer3.address, getFundingAmounts("102"));
+        await fundingToken
+            .connect(buyer3)
+            .approve(setup.seed.address, getFundingAmounts("102"));
+
+        claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+            new BN(buySeedAmount)
+                .mul(new BN(twoBN))
+                .div(new BN(vestingDuration))
+        );
+        feeAmount = new BN(claimAmount)
+            .mul(new BN(fee))
+            .div(new BN(PRECISION.toString()));
+      })
+      it("it buys tokens ", async () => {
+        //set them to different classes and test for different prices/results (delete this comment later)
+        setup.seed
+            .connect(admin)
+            .setClass(buyer1.address, 1);
+        setup.seed
+            .connect(admin)
+            .setClass(buyer3.address, 2); 
+
+        // seedAmount = (buyAmount*PRECISION)/price;
+        seedAmount = new BN(buyAmount)
+            .mul(new BN(PRECISION.toString()))
+            .div(new BN(price));
+
+        await expect(setup.seed.connect(buyer1).buy(buyAmount))
+            .to.emit(setup.seed, "SeedsPurchased")
+            .withArgs(buyer1.address, seedAmount);
+        expect(
+            (await fundingToken.balanceOf(setup.seed.address)).toString()
+        ).to.equal(
+            Math.floor((buySeedAmount * price) / PRECISION).toString()
+        );
+      });
+
+      it("cannot buy more than class allows", async () => { //test for different prices/results (delete this comment later)
+        await expectRevert(
+            setup.seed
+                .connect(buyer1)
+                .buy(getFundingAmounts("1").add(buyAmount)),
+            "Seed: maximum class funding reached"
+        );
+      });
+      it("cannot buy more than class allows", async () => { //test for different prices/results (delete this comment later)
+        await expectRevert(
+            setup.seed
+                .connect(buyer3)
+                .buy(getFundingAmounts("1").add(buyAmount)),
+            "Seed: maximum class funding reached"
+        );
+      });
+      it("cannot withdraw before minumum funding amount is met", async () => {
+        await expectRevert(
+            setup.data.seed.connect(admin).withdraw(),
+            "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
+        );
+      });
+
+
+      //change test below for 2 diff classes
+      it("cannot withdraw after minimum funding amount is met", async () => {
+        await setup.data.seed.connect(buyer2).buy(buyAmount);
+        await expectRevert(
+            setup.data.seed.connect(admin).withdraw(),
+            "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
+        );
+      });
+      it("can only withdraw after vesting starts", async () => {
+        await time.increase(time.duration.days(7));
+        await setup.data.seed.connect(admin).withdraw();
+        expect(
+            (await fundingToken.balanceOf(setup.data.seed.address)).toString()
+        ).to.equal(zero.toString());
+        expect(
+            (await fundingToken.balanceOf(admin.address)).toString()
+        ).to.equal(buyAmount);
+      });
+      it("updates the amount of funding token withdrawn", async () => {
+        await expect(
+            (await setup.data.seed.fundingWithdrawn()).toString()
+        ).to.equal(buyAmount);
+      });
+
+      // it("it changes Customer class", async () => { //delete this 'it'
+      //   await setup.data.seed
+      //       .connect(admin)
+      //       .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+      //   await setup.data.seed
+      //       .connect(admin)
+      //       .changeClass(0, e_twenty, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
+      //   expect(
+      //       (await setup.data.seed.getClass(0))[0]
+      //   ).to.equal((ethers.BigNumber.from(e_twenty)));
+      // });
+    });
   });
   context("creator is avatar -- whitelisted contract", () => {
     before("!! deploy setup", async () => {
