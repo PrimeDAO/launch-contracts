@@ -2198,30 +2198,60 @@ describe("Contract: Seed", async () => {
       });
     });
     context("# few classes simultanuosly", () => {
-      before("!! setup", async () => {
-        await setup.seed
-            .connect(admin)
-            .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-        const SECOND_CLASS_VESTING_DURATION = CLASS_VESTING_DURATION.add(await time.duration.days(2));
-        const SECOND_CLASS_VESTING_START_TIME = CLASS_VESTING_START_TIME.add(await time.duration.days(2));
-        const SECOND_CLASS_FEE = parseEther("0.44").toString(); // 44%
-        await setup.seed
-            .connect(admin)
-            .addClass(hardCap, e_fourteen, e_fourteen, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME, SECOND_CLASS_FEE); //change to different params
+      before("!! deploy new contract", async () => {
+        let newStartTime = (await time.latest()).add(await time.duration.days(1));
+        let newEndTime = await newStartTime.add(await time.duration.days(1));
+        let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
 
+        setup.data.seed = await init.getContractInstance(
+            "Seed",
+            setup.roles.prime
+        );
+
+        await seedToken
+            .connect(root)
+            .transfer(setup.data.seed.address, requiredSeedAmount.toString());
         //funding (delete this comment later)
         await fundingToken
             .connect(root)
             .transfer(buyer1.address, getFundingAmounts("102"));
         await fundingToken
             .connect(buyer1)
-            .approve(setup.seed.address, getFundingAmounts("102"));
+            .approve(setup.data.seed.address, getFundingAmounts("102"));
         await fundingToken
             .connect(root)
             .transfer(buyer3.address, getFundingAmounts("102"));
         await fundingToken
             .connect(buyer3)
-            .approve(setup.seed.address, getFundingAmounts("102"));
+            .approve(setup.data.seed.address, getFundingAmounts("102"));
+
+        setup.data.seed.initialize(
+            beneficiary.address,
+            admin.address,
+            [seedToken.address, fundingToken.address],
+            [softCap, hardCap],
+            price,
+            newStartTime.toNumber(),
+            newEndTime.toNumber(),
+            vestingDuration.toNumber(),
+            vestingCliff.toNumber(),
+            permissionedSeed,
+            fee
+        );
+        // const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
+        // const CLASS_SMALL_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("20000000000000000000");
+        
+        await setup.data.seed
+            .connect(admin)
+            .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
+
+        const SECOND_CLASS_VESTING_DURATION = CLASS_VESTING_DURATION * 2;
+        let SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
+        const SECOND_CLASS_FEE = parseEther("0.44").toString(); // 44%
+
+        await setup.data.seed
+            .connect(admin)
+            .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, e_fourteen, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
 
         claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
             new BN(buySeedAmount)
@@ -2234,26 +2264,48 @@ describe("Contract: Seed", async () => {
       })
       it("it buys tokens ", async () => {
         //set them to different classes and test for different prices/results (delete this comment later)
-        setup.seed
+        setup.data.seed
             .connect(admin)
             .setClass(buyer1.address, 1);
-        setup.seed
+        setup.data.seed
             .connect(admin)
             .setClass(buyer3.address, 2); 
 
-        // seedAmount = (buyAmount*PRECISION)/price;
-        seedAmount = new BN(buyAmount)
-            .mul(new BN(PRECISION.toString()))
-            .div(new BN(price));
+        await time.increase(time.duration.days(1));
 
-        await expect(setup.seed.connect(buyer1).buy(buyAmount))
-            .to.emit(setup.seed, "SeedsPurchased")
-            .withArgs(buyer1.address, seedAmount);
-        expect(
-            (await fundingToken.balanceOf(setup.seed.address)).toString()
-        ).to.equal(
-            Math.floor((buySeedAmount * price) / PRECISION).toString()
-        );
+
+        // seedAmount = (buyAmount*PRECISION)/price;
+        // buyAmount = getFundingAmounts("51").toString();
+        // smallBuyAmount = getFundingAmounts("9").toString();
+
+          seedAmount = new BN(buyAmount)
+             .mul(new BN(PRECISION.toString()))
+             .div(new BN(price));
+
+         await expect(setup.data.seed.connect(buyer3).buy(buyAmount))
+             .to.emit(setup.data.seed, "SeedsPurchased")
+             .withArgs(buyer3.address, seedAmount);
+         expect(
+             (await fundingToken.balanceOf(setup.data.seed.address)).toString()
+         ).to.equal(
+             Math.floor((buySeedAmount * price) / PRECISION).toString()
+         );
+
+//-----------
+        // seedAmount = new BN(smallBuyAmount)
+        //     .mul(new BN(PRECISION.toString()))
+        //     .div(new BN(price));
+
+        // console.log((await fundingToken.balanceOf(setup.data.seed.address)).toString());
+
+        // await expect(setup.data.seed.connect(buyer1).buy(smallBuyAmount))
+        //     .to.emit(setup.data.seed, "SeedsPurchased")
+        //     .withArgs(buyer1.address, seedAmount);
+        // expect(
+        //     (await fundingToken.balanceOf(setup.data.seed.address)).toString()
+        // ).to.equal(
+        //     Math.floor((buySeedAmount * price) / PRECISION).toString()
+        // );
       });
 
       it("cannot buy more than class allows", async () => { //test for different prices/results (delete this comment later)
