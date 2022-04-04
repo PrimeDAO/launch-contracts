@@ -77,6 +77,8 @@ describe("Contract: Seed", async () => {
 
   const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
   const CLASS_SMALL_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("20000000000000000000");
+  const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
+
   const CLASS_VESTING_DURATION =  10000000;
   const CLASS_VESTING_START_TIME = 1700000000;
   const CLASS_FEE = parseEther("0.02").toString(); // 2%
@@ -2240,6 +2242,8 @@ describe("Contract: Seed", async () => {
         );
         // const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
         // const CLASS_SMALL_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("20000000000000000000");
+        // const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
+
         
         await setup.data.seed
             .connect(admin)
@@ -2251,7 +2255,7 @@ describe("Contract: Seed", async () => {
 
         await setup.data.seed
             .connect(admin)
-            .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, e_fourteen, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+            .addClass(hardCap, CLASS_18_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
 
         claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
             new BN(buySeedAmount)
@@ -2262,33 +2266,66 @@ describe("Contract: Seed", async () => {
             .mul(new BN(fee))
             .div(new BN(PRECISION.toString()));
       })
+
+      it("it changes Customer class", async () => {
+        await setup.data.seed
+            .connect(admin)
+            .changeClass(1, hardCap, CLASS_18_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
+        expect(
+            (await setup.data.seed.getClass(1))[1]
+        ).to.equal((ethers.BigNumber.from(CLASS_18_PERSONAL_FUNDING_LIMIT)));
+      });
+
       it("it buys tokens ", async () => {
+        console.log((await fundingToken.balanceOf(setup.data.seed.address)).toString());
+
         //set them to different classes and test for different prices/results (delete this comment later)
+        // setup.data.seed
+        //     .connect(admin)
+        //     .setClass(buyer1.address, 1);
         setup.data.seed
             .connect(admin)
-            .setClass(buyer1.address, 1);
-        setup.data.seed
-            .connect(admin)
-            .setClass(buyer3.address, 2); 
+            .setClass(buyer3.address, 1); 
 
         await time.increase(time.duration.days(1));
 
+////buySeedAmount = getSeedAmounts("5100").toString();
+        // const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
+        // const CLASS_SMALL_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("20000000000000000000");
 
         // seedAmount = (buyAmount*PRECISION)/price;
         // buyAmount = getFundingAmounts("51").toString();
         // smallBuyAmount = getFundingAmounts("9").toString();
+        buySmallSeedAmount = getSeedAmounts("900").toString();
 
-          seedAmount = new BN(buyAmount)
-             .mul(new BN(PRECISION.toString()))
-             .div(new BN(price));
+        smallSeedAmount = new BN(smallBuyAmount)
+            .mul(new BN(PRECISION.toString()))
+            .div(new BN(price)); //class price
 
-         await expect(setup.data.seed.connect(buyer3).buy(buyAmount))
+        //------------------------
+        smallClaimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+            new BN(smallSeedAmount)
+                .mul(new BN(twoBN))
+                 .div(new BN(CLASS_VESTING_DURATION))
+        );
+        smallFeeAmount = new BN(smallClaimAmount)
+            .mul(new BN(CLASS_FEE))
+            .div(new BN(PRECISION.toString()));
+
+        console.log("seedAmount %s",(seedAmount).toString());
+        console.log("CLASS_18_PERSONAL_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+        console.log("smallBuyAmount %s", (smallBuyAmount).toString());
+        console.log("smallSeedAmount %s", (smallSeedAmount).toString());
+
+
+
+         await expect(setup.data.seed.connect(buyer3).buy(smallBuyAmount))
              .to.emit(setup.data.seed, "SeedsPurchased")
-             .withArgs(buyer3.address, seedAmount);
+             .withArgs(buyer3.address, smallSeedAmount);
          expect(
              (await fundingToken.balanceOf(setup.data.seed.address)).toString()
          ).to.equal(
-             Math.floor((buySeedAmount * price) / PRECISION).toString()
+             Math.floor((buySmallSeedAmount * price) / PRECISION).toString()
          );
 
 //-----------
@@ -2308,23 +2345,29 @@ describe("Contract: Seed", async () => {
         // );
       });
 
-      it("cannot buy more than class allows", async () => { //test for different prices/results (delete this comment later)
-        await expectRevert(
-            setup.seed
-                .connect(buyer1)
-                .buy(getFundingAmounts("1").add(buyAmount)),
-            "Seed: maximum class funding reached"
-        );
-      });
-      it("cannot buy more than class allows", async () => { //test for different prices/results (delete this comment later)
+      it("cannot buy more than class allows 1", async () => { //test for different prices/results (delete this comment later)
+        console.log("fT %s", (await fundingToken.balanceOf(setup.data.seed.address)).toString());
+        console.log("CLASS_18_PERSONAL_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+        console.log('getFundingAmounts("1") %s', getFundingAmounts("1"));
+
         await expectRevert(
             setup.seed
                 .connect(buyer3)
-                .buy(getFundingAmounts("1").add(buyAmount)),
+                .buy(getFundingAmounts("9")),
             "Seed: maximum class funding reached"
         );
       });
-      it("cannot withdraw before minumum funding amount is met", async () => {
+      it("cannot buy more than class allows 2", async () => { //test for different prices/results (delete this comment later)
+        console.log((await fundingToken.balanceOf(setup.data.seed.address)).toString());
+
+        await expectRevert(
+            setup.seed
+                .connect(buyer3)
+                .buy(getFundingAmounts("1")),
+            "Seed: maximum class funding reached"
+        );
+      });
+      it("cannot withdraw before minumum funding amount is met 1", async () => {
         await expectRevert(
             setup.data.seed.connect(admin).withdraw(),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
@@ -2333,7 +2376,7 @@ describe("Contract: Seed", async () => {
 
 
       //change test below for 2 diff classes
-      it("cannot withdraw after minimum funding amount is met", async () => {
+      it("cannot withdraw after minimum funding amount is met 2", async () => {
         await setup.data.seed.connect(buyer2).buy(buyAmount);
         await expectRevert(
             setup.data.seed.connect(admin).withdraw(),
