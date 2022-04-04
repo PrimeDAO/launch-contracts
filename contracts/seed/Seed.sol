@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -33,6 +32,7 @@ contract Seed {
     uint256 public hardCap;
     uint256 public seedAmountRequired; // Amount of seed required for distribution
     uint256 public feeAmountRequired; // Amount of seed required for fee
+    uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -45,6 +45,7 @@ contract Seed {
 
     bytes public metadata; // IPFS Hash
 
+    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -63,6 +64,7 @@ contract Seed {
     uint256 public feeRemainder; // Amount of seed tokens remaining for the fee
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
+    uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
     ContributorClass[] classes; // Array of contributor classes
 
@@ -88,10 +90,11 @@ contract Seed {
     struct ContributorClass {
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 price; // Price of a SeedToken for class, expressed in fundingTokens, with precision of 10**18
+        uint256 price; // Price of seed tokens for class, expressed in fundingTokens, with precision of 10**18
         uint256 vestingDuration; // Vesting duration for class
         uint256 classVestingStartTime;
-        uint256 fundingCollected; // Total amount of staked tokens        
+        uint256 classFee; // Fee of class
+        uint256 classFundingCollected; // Total amount of staked tokens        
         uint256 seedAmountRequired; // The required amount of seed to fully satisfy classCap
         uint256 feeAmountRequired; // The amount of fee with fully satisfied classCap
     }
@@ -159,11 +162,16 @@ contract Seed {
             _endTime > _startTime,
             "SeedFactory: endTime cannot be less than equal to startTime"
         );
+        require(
+            _fee < MAX_FEE,
+            "SeedFactory: fee cannot be more than 45%"
+        );
 
         beneficiary = _beneficiary;
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
+        price = _price;
         startTime = _startTime;
         endTime = _endTime;
         vestingStartTime = endTime + 1;
@@ -173,6 +181,8 @@ contract Seed {
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
         fee = _fee;
+        
+        feeClaimed = 0;
 
         seedAmountRequired = (hardCap * PRECISION) / _price;
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
@@ -185,6 +195,7 @@ contract Seed {
                 _price,
                 _vestingDuration,
                 vestingStartTime,
+                _fee,
                 0,
                 seedAmountRequired,
                 feeAmountRequired));
@@ -199,17 +210,23 @@ contract Seed {
      * @param _price              The token price for the addresses in this clas.
      * @param _vestingDuration    The vesting duration for this contributors class.
      * @param _classVestingStartTime The class vesting start time for the contributor class.
+     * @param _classFee           The fee for the contributor class.
      */
     function addClass(
         uint256 _classCap,
         uint256 _individualCap,
         uint256 _price,
         uint256 _vestingDuration,
-        uint256 _classVestingStartTime
+        uint256 _classVestingStartTime,
+        uint256 _classFee
     ) onlyAdmin public {
         require(
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
+        );
+        require(
+            _classFee < MAX_FEE,
+            "Seed: fee cannot be more than 45%"
         );
 
         // The maximum required amount of the seed tokens to satisfy
@@ -221,9 +238,10 @@ contract Seed {
                     _price,
                     _vestingDuration,
                     _classVestingStartTime,
+                    _classFee,
                     0,
                     seedRequired,
-                    (seedRequired * fee) / PRECISION ));
+                    (seedRequired * _classFee) / PRECISION ));
     }
 
     /**
@@ -237,9 +255,10 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-
+        require(block.timestamp < startTime,
+            "Seed: vesting is already started"
+        );
         funders[_address].class = _class;
-
     }
 
     /**
@@ -249,24 +268,31 @@ contract Seed {
      * @param _prices              The token prices for the addresses in this clas.
      * @param _vestingDurations    The vesting durations for this contributors class.
      * @param _classVestingStartTime The class vesting start time for the contributor class.
+     * @param _classFee             The fee for the contributor class.
      */
     function addClassBatch(
         uint256[] memory _classCaps,
         uint256[] memory _individualCaps,
         uint256[] memory _prices,
         uint256[] memory _vestingDurations,
-        uint256[] memory _classVestingStartTime
+        uint256[] memory _classVestingStartTime,
+        uint256[] memory _classFee
     ) onlyAdmin public {
         require(_classCaps.length <= 100, "Seed: Can't add batch with more then 100 classes");
         require(_classCaps.length == _individualCaps.length &&
                 _classCaps.length == _prices.length &&
-                _classCaps.length == _vestingDurations.length,
+                _classCaps.length == _vestingDurations.length &&
+                _classCaps.length == _classVestingStartTime.length &&
+                _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-
             require(
                 endTime < _classVestingStartTime[i],
                 "Seed: vesting start time can't be less than endTime"
+            );
+            require(
+                _classFee[i] < MAX_FEE,
+                "Seed: fee cannot be more than 45%"
             );
 
             // The maximum required amount of the seed tokens to satisfy
@@ -278,11 +304,11 @@ contract Seed {
                 _prices[i],
                 _vestingDurations[i],
                 _classVestingStartTime[i],
+                _classFee[i],
                 0,
                 seedRequired,
-                (seedRequired * fee) / PRECISION));
+                (seedRequired * _classFee[i]) / PRECISION));
         }
-
     }
 
     /**
@@ -300,17 +326,19 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
-        
+
         // Checks if contributor has exceeded his personal or class cap.
-        require((userClass.fundingCollected + _fundingAmount) <= userClass.classCap,
+        require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
         require((funders[msg.sender].fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached");
+
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: only allowed during distribution period"
         );
+
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
@@ -323,7 +351,7 @@ contract Seed {
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
         // feeAmount is an amount of fee we are going to get in seedTokens
-        uint256 feeAmount = (seedAmount * fee) / PRECISION;
+        uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
@@ -338,8 +366,7 @@ contract Seed {
         );
 
         fundingCollected += _fundingAmount;
-        classes[funders[msg.sender].class].fundingCollected += _fundingAmount;
-
+        classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
         feeRemainder -= feeAmount;
@@ -402,11 +429,13 @@ contract Seed {
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
         );
-        uint256 feeAmountOnClaim = (_claimAmount * fee) / PRECISION;
+        uint256 currentClassFee = classes[currentId].classFee;
+        uint256 feeAmountOnClaim = (_claimAmount * currentClassFee) / PRECISION;        
 
         funders[_funder].totalClaimed += _claimAmount;
 
-        seedClaimed += _claimAmount;
+        seedClaimed += _claimAmount;    
+        feeClaimed += feeAmountOnClaim; 
         require(
             seedToken.transfer(beneficiary, feeAmountOnClaim) &&
                 seedToken.transfer(_funder, _claimAmount),
@@ -440,7 +469,6 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
-        classes[tokenFunder.class].fundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
@@ -624,8 +652,8 @@ contract Seed {
     /**
      * @dev                     Amount of seed tokens claimed as fee
      */
-    function feeClaimed() public view returns (uint256) {
-        return (seedClaimed * fee) / PRECISION;
+    function allFeeClaimed() public view returns (uint256) {
+        return feeClaimed;
     }
 
     /**
@@ -637,7 +665,11 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].totalClaimed * fee) / PRECISION;
+        FunderPortfolio storage tokenFunder = funders[_funder];
+        uint8 currentId = tokenFunder.class;
+        uint256 currentFee = classes[currentId].classFee; 
+
+        return (funders[_funder].totalClaimed * currentFee) / PRECISION;
     }
 
     /**
@@ -645,7 +677,11 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        return (seedAmountForFunder(_funder) * fee) / PRECISION;
+        FunderPortfolio storage tokenFunder = funders[_funder];
+        uint8 currentId = tokenFunder.class;
+        uint256 currentFee = classes[currentId].classFee; 
+
+        return (seedAmountForFunder(_funder) * currentFee) / PRECISION;
     }
 
     /**
@@ -671,17 +707,19 @@ contract Seed {
         uint256 individualCap,
         uint256 price,
         uint256 vestingDuration,
-        uint256 fundingCollected,
+        uint256 classFundingCollected,
         uint256 classVestingStartTime,
+        uint256 classFee,
         uint256 seedAmountRequired,
         uint256 feeAmountRequired)
-   {
+    {
         classCap = classes[_id].classCap;
         individualCap = classes[_id].individualCap;
         price = classes[_id].price;
         vestingDuration = classes[_id].vestingDuration;
-        fundingCollected = classes[_id].fundingCollected;
+        classFundingCollected = classes[_id].classFundingCollected;
         classVestingStartTime = classes[_id].classVestingStartTime;
+        classFee = classes[_id].classFee;
         seedAmountRequired = classes[_id].seedAmountRequired;
         feeAmountRequired = classes[_id].feeAmountRequired;
     }

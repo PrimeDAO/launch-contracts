@@ -76,8 +76,10 @@ describe("Contract: Seed", async () => {
   const tenDaysInSeconds = time.duration.days(10);
 
   const CLASS_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("100000000000000000000");
+  const CLASS_SMALL_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("20000000000000000000");
   const CLASS_VESTING_DURATION =  10000000;
   const CLASS_VESTING_START_TIME = 1700000000;
+  const CLASS_FEE = parseEther("0.02").toString(); // 2%
   const e_twenty = 1e12;
   const e_fourteen = 1e14;
 
@@ -150,8 +152,8 @@ describe("Contract: Seed", async () => {
                 [seedToken.address, fundingToken.address],
                 [softCap, hardCap],
                 price,
-                (await startTime.add(await time.duration.days(2))).toNumber(),
-                endTime.toNumber(),
+                (await startTime.add(await time.duration.hours(12))).toNumber(),
+                (await endTime.add(await time.duration.hours(10))).toNumber(),
                 vestingDuration.toNumber(),
                 vestingCliff.toNumber(),
                 permissionedSeed,
@@ -162,7 +164,7 @@ describe("Contract: Seed", async () => {
             // endTime = 1648821001 --> 1700000000 = CLASS_VESTING_START_TIME
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await expectRevert(
                 alternativeSetup.seed
                     .connect(randomSigner)
@@ -174,7 +176,6 @@ describe("Contract: Seed", async () => {
 
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens
-
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -198,6 +199,9 @@ describe("Contract: Seed", async () => {
           );
           expect((await setup.seed.softCap()).toString()).to.equal(
               softCap.toString()
+          );
+          expect((await setup.seed.price()).toString()).to.equal(
+              price.toString()
           );
           expect(await setup.seed.permissionedSeed()).to.equal(
               permissionedSeed
@@ -278,7 +282,7 @@ describe("Contract: Seed", async () => {
         it("it cannot buy if not funded", async () => {
           await setup.seed
               .connect(admin)
-              .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await expectRevert(
               setup.seed.connect(buyer1).buy(buyAmount),
               "Seed: sufficient seeds not provided"
@@ -330,10 +334,64 @@ describe("Contract: Seed", async () => {
           );
         });
         it("cannot buy more than personal maximum allows", async () => {
-          await setup.seed.addClass(hardCap, e_twenty, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-          await setup.seed.connect(admin).setClass(buyer3.address, 2);
+          const alternativeSetup = await deploy();
+          const CustomERC20MockFactory = await ethers.getContractFactory(
+              "CustomERC20Mock",
+              setup.roles.prime
+          );
+          const alternativeFundingToken = await CustomERC20MockFactory.deploy(
+              "DAI Stablecoin",
+              "DAI"
+          );
+          const fundingTokenDecimal = await getDecimals(
+              alternativeFundingToken
+          );
+          const getFundingAmounts = getTokenAmount(fundingTokenDecimal);
+          const softCap = getFundingAmounts("10").toString();
+          const hardCap = getFundingAmounts("102").toString();
+          const price = parseUnits(
+              "0.01",
+              parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
+          ).toString();
+          const biggerStartTime = startTime.add(await time.duration.hours(1));
+          const biggerEndTime = endTime.add(await time.duration.hours(2));
+          await alternativeSetup.seed.initialize(
+              beneficiary.address,
+              admin.address,
+              [seedToken.address, alternativeFundingToken.address],
+              [softCap, hardCap],
+              price,
+              biggerStartTime.toNumber(),
+              biggerEndTime.toNumber(),
+              vestingDuration.toNumber(),
+              vestingCliff.toNumber(),
+              permissionedSeed,
+              fee
+          );
+          await alternativeSetup.seed
+              .connect(admin)
+              .addClass(hardCap, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
+          await alternativeFundingToken
+              .connect(root)
+              .transfer(buyer1.address, getFundingAmounts("104"));
+          await alternativeFundingToken
+              .connect(buyer1)
+              .approve(alternativeSetup.seed.address, getFundingAmounts("104"));
+          await seedToken
+              .connect(root)
+              .transfer(
+                  alternativeSetup.seed.address,
+                  requiredSeedAmount.toString()
+          );
+          await alternativeSetup.seed.connect(admin).setClass(buyer1.address, 1);
+
+          time.increase(await time.duration.hours(1));
+
+          await alternativeSetup.seed.connect(buyer1).buy(CLASS_SMALL_PERSONAL_FUNDING_LIMIT);
+
           await expectRevert(
-              setup.seed.connect(buyer3).buy(e_fourteen),
+            alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("4")),
               "Seed: maximum personal funding reached"
           );
         });
@@ -382,14 +440,81 @@ describe("Contract: Seed", async () => {
           ).to.equal("0");
         });
         it("cannot buy more than maximum target", async () => {
-          await setup.seed.addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
-          await setup.seed.setClass(buyer3.address, 3);
-          await expectRevert(
-              setup.seed
-                  .connect(buyer3)
-                  .buy(hardCap),
-              "Seed: amount exceeds contract sale hardCap"
-          );
+            const alternativeSetup = await deploy();
+            const CustomERC20MockFactory = await ethers.getContractFactory(
+                "CustomERC20Mock",
+                setup.roles.prime
+            );
+            const alternativeFundingToken = await CustomERC20MockFactory.deploy(
+                "DAI Stablecoin",
+                "DAI"
+            );
+            const fundingTokenDecimal = await getDecimals(
+                alternativeFundingToken
+            );
+            const getFundingAmounts = getTokenAmount(fundingTokenDecimal);
+            const softCap = getFundingAmounts("10").toString();
+            const hardCap = getFundingAmounts("102").toString();
+            const price = parseUnits(
+                "0.01",
+                parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
+            ).toString();
+            const biggerStartTime = startTime.add(await time.duration.hours(2));
+            const biggerEndTime = endTime.add(await time.duration.hours(3));
+            await alternativeSetup.seed.initialize(
+                beneficiary.address,
+                admin.address,
+                [seedToken.address, alternativeFundingToken.address],
+                [softCap, hardCap],
+                price,
+                biggerStartTime.toNumber(),
+                biggerEndTime.toNumber(),
+                vestingDuration.toNumber(),
+                vestingCliff.toNumber(),
+                permissionedSeed,
+                fee
+            );
+            await alternativeSetup.seed
+                .connect(admin)
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+                
+            await alternativeSetup.seed.addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
+            await alternativeFundingToken
+                .connect(root)
+                .transfer(buyer1.address, getFundingAmounts("102"));
+            await alternativeFundingToken
+                .connect(buyer1)
+                .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
+            await alternativeFundingToken
+                .connect(root)
+                .transfer(buyer3.address, getFundingAmounts("102"));
+            await alternativeFundingToken
+                .connect(buyer3)
+                .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
+            await seedToken
+                .connect(root)
+                .transfer(
+                    alternativeSetup.seed.address,
+                    requiredSeedAmount.toString()
+            );
+            await alternativeSetup.seed.connect(admin).setClass(buyer1.address, 0);
+            await alternativeSetup.seed.connect(admin).setClass(buyer3.address, 2);
+            
+            await alternativeSetup.seed.setClass(buyer1.address, 1);
+
+            time.increase(await time.duration.hours(1));
+
+            await alternativeSetup.seed
+                .connect(buyer1)
+                .buy(softCap);
+
+            await expectRevert(
+                alternativeSetup.seed
+                    .connect(buyer3)
+                    .buy(hardCap),
+                "Seed: amount exceeds contract sale hardCap"
+            );
         });
         it("updates lock when it buys tokens", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
@@ -425,7 +550,7 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 604769;
+          const timeDifference = 597546; //1649332997 - 1648735451 = 597546
           const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
@@ -484,7 +609,7 @@ describe("Contract: Seed", async () => {
 
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
 
             const requiredAmount = (
                 await alternativeSetup.seed.seedAmountRequired()
@@ -500,7 +625,7 @@ describe("Contract: Seed", async () => {
                 );
             await alternativeSetup.seed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
                 "Seed: funding token transferFrom failed"
@@ -531,7 +656,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -550,7 +675,7 @@ describe("Contract: Seed", async () => {
 
           await setup.seed
               .connect(admin)
-              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);   
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
         });
 
         it("is not possible to buy", async () => {
@@ -583,13 +708,14 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
-          const timeDifference = 604769; // vestingStartTime - currentClassVestingStartTime
+          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
               .add(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
+              
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -669,7 +795,7 @@ describe("Contract: Seed", async () => {
           );
         });
         it("updates the amount of seed transfered as fee to beneficiary", async () => {
-          expect((await setup.seed.feeClaimed()).toString()).to.equal(
+          expect((await setup.seed.allFeeClaimed()).toString()).to.equal(
               feeAmount.toString()
           );
         });
@@ -695,9 +821,8 @@ describe("Contract: Seed", async () => {
       });
       context("» claim after vesting duration", async () => {
         before("!! deploy new contract + top up buyer balance", async () => {
-          let newStartTime = await time.latest();
-          let newEndTime = await newStartTime.add(await time.duration.days(7));
-
+          let newStartTime = (await time.latest()).add(await time.duration.days(1));
+          let newEndTime = await newStartTime.add(await time.duration.days(3));
           setup.data.seed = await init.getContractInstance(
               "Seed",
               setup.roles.prime
@@ -725,7 +850,6 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
-
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -738,40 +862,42 @@ describe("Contract: Seed", async () => {
               vestingCliff.toNumber(),
               permissionedSeed,
               fee
-          );
+          );    
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
 
           await setup.data.seed
               .connect(admin)
-              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+        });
+
+        it("it cannot claim before currentVestingStartTime", async () => {  
+          await setup.data.seed
+              .connect(admin)
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+
+          await setup.data.seed
+              .connect(admin)
+              .setClass(buyer1.address, 3);
+
+          time.increase(await time.duration.days(1));
 
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
-        });
 
-        it("it cannot claim before currentVestingStartTime", async () => {
-  
-          await setup.data.seed
-              .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000);
+          await setup.data.seed 
+              .connect(buyer1)
+              .buy(new BN(buyAmount)).toString();
 
-          await setup.data.seed
-              .connect(admin)
-              .setClass(buyer1.address, 2);
-
-          time.increase(await time.duration.days(8));
-          // await time.increase(eightyNineDaysInSeconds);
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
-                  .claim(buyer1.address, (new BN(twoBN)).toString()),
+                  .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
               "Seed: vesting start time for this class is not started yet"
           );
         });
-    
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
           time.increase(vestingDuration.toNumber());
@@ -799,7 +925,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.feeClaimed();
+          const feeClaimed = await setup.data.seed.allFeeClaimed();
           expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -860,7 +986,9 @@ describe("Contract: Seed", async () => {
 
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
+
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
@@ -895,7 +1023,7 @@ describe("Contract: Seed", async () => {
           // expect(await receipt.args[1].toString()).to.equal(new BN(buySeedAmount).mul(twoBN).toString());
         });
         it("it claims all the fee for a buyer's claim", async () => {
-          const fee = await setup.data.seed.feeForFunder(buyer2.address); //calculates too much; calculates for ALL, not for claimable
+          const fee = await setup.data.seed.feeForFunder(buyer2.address);
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
           const dividedFee = fee / divisor;
@@ -906,7 +1034,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.feeClaimed();
+          const feeClaimed = await setup.data.seed.allFeeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
@@ -956,7 +1084,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1053,7 +1181,8 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
           await setup.data.seed.connect(buyer2).buy(smallBuyAmount);
         });
         it("it cannot return funding tokens if not bought", async () => {
@@ -1159,7 +1288,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
 
           await alternativeFundingToken
               .connect(root)
@@ -1213,7 +1342,8 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
           await fundingToken
               .connect(buyer2)
               .approve(setup.data.seed.address, smallBuyAmount);
@@ -1307,7 +1437,8 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
           await fundingToken
               .connect(root)
               .transfer(buyer1.address, getFundingAmounts("102"));
@@ -1378,7 +1509,9 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
+
           await fundingToken
               .connect(buyer2)
               .approve(setup.data.seed.address, buyAmount);
@@ -1454,7 +1587,8 @@ describe("Contract: Seed", async () => {
 
               await setup.data.seed
                   .connect(admin)
-                  .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                  .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+
               await fundingToken
                   .connect(buyer2)
                   .approve(setup.data.seed.address, buyAmount);
@@ -1534,7 +1668,7 @@ describe("Contract: Seed", async () => {
       before("!! setup", async () => {
         await setup.seed
             .connect(admin)
-            .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+            .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
       })
       context("» add class", () => {
         it("it adds class", () => {
@@ -1542,10 +1676,19 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                  .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
               expect(
                   (await setup.seed.getClass(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
+            });
+            it("it reverts when fee >= 45% for Customer class", async () => {
+              const feeTooBig = parseEther("0.45").toString(); // 45%
+              await expectRevert( 
+                  setup.seed
+                      .connect(admin)
+                      .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, feeTooBig),
+                  "Seed: fee cannot be more than 45%"
+              );
             });
           });
         });
@@ -1554,10 +1697,19 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, 17000000000]);
+                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
               expect(
                   (await setup.seed.getClass(3))[1]
               ).to.equal((ethers.BigNumber.from(e_twenty)));
+            });
+            it("it reverts when fee >= 45% for Customer class", async () => {
+              const feeTooBig = parseEther("0.45").toString(); // 45%
+              await expectRevert( 
+                  setup.seed
+                      .connect(admin)
+                      .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [feeTooBig, feeTooBig]),
+                  "Seed: fee cannot be more than 45%"
+              );
             });
           });
         });
@@ -1566,12 +1718,13 @@ describe("Contract: Seed", async () => {
           context("» generics", () => {
             it("it adds Customer class", async () => {
               const arr1 = Array.from(Array(101).keys());
-              const arr2 = Array.from(Array(101).fill(CLASS_VESTING_DURATION));
-              const arr3 = Array.from(Array(101).fill(CLASS_VESTING_START_TIME));
+              const cvdArr = Array.from(Array(101).fill(CLASS_VESTING_DURATION));
+              const cvstArr = Array.from(Array(101).fill(CLASS_VESTING_START_TIME));
+              const feeArr = Array.from(Array(101).fill(CLASS_FEE));
               await expectRevert( 
                   setup.seed
                       .connect(admin)
-                      .addClassBatch(arr1, arr1, arr1, arr2, arr3),
+                      .addClassBatch(arr1, arr1, arr1, cvdArr, cvstArr, feeArr),
                   "Seed: Can't add batch with more then 100 classes"
               );
             });
@@ -1584,7 +1737,7 @@ describe("Contract: Seed", async () => {
               await expectRevert(
                   setup.seed
                       .connect(admin)
-                      .addClassBatch([hardCap,e_twenty], [e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME]),
+                      .addClassBatch([hardCap,e_twenty], [e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]),
               "Seed: All provided arrays should be same size");
             });
           });
@@ -1602,7 +1755,7 @@ describe("Contract: Seed", async () => {
           await expectRevert(
               setup.seed
                   .connect(admin)
-                  .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, endTime.toString()),
+                  .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, endTime.toString(), CLASS_FEE),
               "Seed: vesting start time can't be less than endTime"
           );
         });
@@ -1610,7 +1763,7 @@ describe("Contract: Seed", async () => {
           await expectRevert(
             setup.seed
                 .connect(admin)
-                .addClassBatch([hardCap,e_twenty], [e_twenty, e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [endTime.toString(), startTime.toString()]),
+                .addClassBatch([hardCap,e_twenty], [e_twenty, e_twenty], [e_twenty,1e6], [CLASS_VESTING_DURATION,10000], [endTime.toString(), startTime.toString()], [CLASS_FEE, CLASS_FEE]),
             "Seed: vesting start time can't be less than endTime"
           );
         });
@@ -1747,7 +1900,7 @@ describe("Contract: Seed", async () => {
             );
             await alternativeSeed
                 .connect(admin)
-                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await time.increase(tenDaysInSeconds);
             await alternativeSeed.close();
             await expectRevert(
@@ -1803,7 +1956,7 @@ describe("Contract: Seed", async () => {
             await alternativeSeed.close();
             await alternativeSeed
                 .connect(admin)
-                .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+                .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await expectRevert(
                 alternativeSeed.connect(admin).whitelist(buyer1.address, 0),
                 "Seed: should not be closed"
@@ -1864,7 +2017,7 @@ describe("Contract: Seed", async () => {
           );
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
 
         });
         it("can not withdraw before minumum funding amount is met", async () => {
@@ -1899,6 +2052,54 @@ describe("Contract: Seed", async () => {
           await expectRevert(
               setup.seed.connect(buyer1).withdraw(),
               "Seed: caller should be admin"
+          );
+        });
+      });
+      context("» change class", () => {
+        before("!! deploy new contract", async () => {
+          let newStartTime = (await time.latest()).add(await time.duration.days(1));
+          let newEndTime = await newStartTime.add(await time.duration.days(1));
+          let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
+
+          setup.data.seed = await init.getContractInstance(
+              "Seed",
+              setup.roles.prime
+          );
+
+          await seedToken
+              .connect(root)
+              .transfer(setup.data.seed.address, requiredSeedAmount.toString());
+          await fundingToken
+              .connect(root)
+              .transfer(buyer2.address, buyAmount.toString());
+          await fundingToken
+              .connect(buyer2)
+              .approve(setup.data.seed.address, buyAmount.toString());
+
+          setup.data.seed.initialize(
+              beneficiary.address,
+              admin.address,
+              [seedToken.address, fundingToken.address],
+              [softCap, hardCap],
+              price,
+              newStartTime.toNumber(),
+              newEndTime.toNumber(),
+              vestingDuration.toNumber(),
+              vestingCliff.toNumber(),
+              permissionedSeed,
+              fee
+          );
+          await setup.data.seed
+              .connect(admin)
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
+        });
+        it("it reverts when trying to set class when vesting is already started", async () => {
+          await time.increase(time.duration.days(2));
+          await expectRevert(
+              setup.seed
+                  .connect(admin)
+                  .setClass(buyer2.address, 0),
+              "Seed: vesting is already started"
           );
         });
       });
@@ -1975,14 +2176,13 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          // await seed.connect(admin)
-          //     .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
           expect(await seed.initialized()).to.equal(true);
           expect(await seed.beneficiary()).to.equal(beneficiary.address);
           expect(await seed.admin()).to.equal(admin.address);
           expect(await seed.seedToken()).to.equal(seedToken.address);
           expect(await seed.fundingToken()).to.equal(fundingToken.address);
           expect((await seed.softCap()).toString()).to.equal(softCap);
+          expect((await seed.price()).toString()).to.equal(price);
           expect(await seed.permissionedSeed()).to.equal(permissionedSeed);
           expect((await seed.fee()).toString()).to.equal(fee.toString());
           expect(await seed.closed()).to.equal(false);
@@ -2039,7 +2239,7 @@ describe("Contract: Seed", async () => {
         });
         it("reverts when unwhitelist account buys", async () => {
           await seed.connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await expectRevert(
               seed.connect(buyer1).buy(getFundingAmounts("1").toString()),
               "Seed: sender has no rights"
@@ -2139,7 +2339,7 @@ describe("Contract: Seed", async () => {
           );
           await alternativeSetup.seed
               .connect(admin)
-              .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+              .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await seedToken
               .connect(root)
               .transfer(
@@ -2152,7 +2352,7 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer2)
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
-          await alternativeSetup.seed.connect(admin).addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          await alternativeSetup.seed.connect(admin).addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
           await alternativeSetup.seed.connect(admin).whitelist(buyer2.address, 0);
           await alternativeSetup.seed
               .connect(buyer2)
@@ -2235,7 +2435,7 @@ describe("Contract: Seed", async () => {
       );
       await setup.seed
           .connect(admin)
-          .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
       await fundingToken
           .connect(root)
           .transfer(buyer1.address, getFundingAmounts("102"));
@@ -2338,7 +2538,7 @@ describe("Contract: Seed", async () => {
       );
       await setup.seed
           .connect(admin)
-          .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME);
+          .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
       await fundingToken
           .connect(root)
           .transfer(buyer1.address, getFundingAmounts("102"));
