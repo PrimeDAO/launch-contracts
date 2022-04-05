@@ -2323,15 +2323,7 @@ describe("Contract: Seed", async () => {
         ).to.equal(
             Math.floor((buySmallSeedAmount * price) / PRECISION).toString()
         );      
-        
-        // await expect(setup.data.seed.connect(buyer1).buy(smallBuyAmount))
-        //     .to.emit(setup.data.seed, "SeedsPurchased")
-        //     .withArgs(buyer1.address, smallSeedAmount);
-        // expect(
-        //     (await fundingToken.balanceOf(setup.data.seed.address)).toString()
-        // ).to.equal(
-        //     Math.floor(2 * ((buySmallSeedAmount * price) / PRECISION)).toString()
-        // );    
+          
       });
       it("cannot buy more than class 1 allows class funding", async () => { //test for different prices/results (delete this comment later)
         // console.log("current balance in 'it1' %s", (await fundingToken.balanceOf(setup.data.seed.address)).toString());
@@ -2399,7 +2391,7 @@ describe("Contract: Seed", async () => {
         // increase time
         await time.increase(time.duration.days(3));
         const claim = await setup.data.seed.calculateClaim(buyer3.address);
-        // console.log("claim %s", claim);
+        console.log("claim %s", claim);
         const currentVestingStartTime = (await setup.data.seed.getClass(1))[5]; // await setup.data.seed.vestingStartTime();
         const currentVestingDuration = (await setup.data.seed.getClass(1))[3];
         // const currentFee = (await setup.data.seed.getClass(1))[6];
@@ -2520,19 +2512,24 @@ describe("Contract: Seed", async () => {
                 feeAmountOnClaim.toString()
             );
       });
-    //   it("can only withdraw after vesting starts", async () => {
-    //     await time.increase(time.duration.days(7));
-    //     await setup.data.seed.connect(admin).withdraw();
-    //     expect(
-    //         (await fundingToken.balanceOf(setup.data.seed.address)).toString()
-    //     ).to.equal(zero.toString());
-    //     expect(
-    //         (await fundingToken.balanceOf(admin.address)).toString()
-    //     ).to.equal(buyAmount);
-    //   });
+      it("can only withdraw after vesting starts", async () => {
+        await time.increase(time.duration.days(7));
+        await setup.data.seed.connect(admin).withdraw();
+        const a = await fundingToken.balanceOf(setup.data.seed.address).toString();
+        console.log(a);
+
+        expect(
+            (await fundingToken.balanceOf(setup.data.seed.address)).toString()
+        ).to.equal(zero.toString());
+        expect(
+            (await fundingToken.balanceOf(admin.address)).toString()
+        ).to.equal(smallBuyAmount);
+      });
       it("updates the amount of funding token withdrawn", async () => {
-        //need increase time for this to work
-        const withdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").add(twoHundredFourETH));
+        //need increase time for this to work //no. need to withdrat some amount
+        // await time.increase(time.duration.days(7));
+
+        const withdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").mul(3)); // 17 + 1 from buyer1 and 9 from buyer3
         console.log("withdrawAmount %s", withdrawAmount);        
         await expect(
             (await setup.data.seed.fundingWithdrawn()).toString()
