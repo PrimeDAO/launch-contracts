@@ -2392,7 +2392,7 @@ describe("Contract: Seed", async () => {
         await time.increase(time.duration.days(3));
         const claim = await setup.data.seed.calculateClaim(buyer3.address);
         console.log("claim %s", claim);
-        const currentVestingStartTime = (await setup.data.seed.getClass(1))[5]; // await setup.data.seed.vestingStartTime();
+        const currentVestingStartTime = (await setup.data.seed.getClass(1))[5];
         const currentVestingDuration = (await setup.data.seed.getClass(1))[3];
         // const currentFee = (await setup.data.seed.getClass(1))[6];
         // console.log("vestingStartTime %s", currentVestingStartTime);
@@ -2400,7 +2400,7 @@ describe("Contract: Seed", async () => {
         // console.log("new BN(smallBuyAmount) %s", new BN(smallBuyAmount));
         // console.log('fee %s', currentFee); 
 
-        const divisor = 100; //expectedClaim without divisor / claim = 2332989000000000 / 23329890000000
+        const divisor = 100; //expectedClaim without divisor / claim = 2332989000000000 / 23329890000000 = 100
         const expectedClaim = (await time.latest())
             .sub(new BN(currentVestingStartTime.toNumber()))
             // .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
@@ -2411,14 +2411,20 @@ describe("Contract: Seed", async () => {
         console.log("expectedClaim %s", expectedClaim);    
         expect(claim.toString()).to.equal(expectedClaim.toString());
       });
-    //   it("it returns amount of the fee", async () => {
-    //     await time.increase(time.duration.days(3));
+      it("it returns amount of the fee", async () => {
+        await time.increase(time.duration.days(3));
+        const currentClaimable = ethers.BigNumber.from("46657890000000"); // value from expectedClaim from 'it' above
 
-    //     let feeSent = await setup.data.seed
-    //         .connect(buyer3)
-    //         .callStatic.claim(buyer3.address, smallBuyAmount.toString());
-    //     expect(feeSent.toString()).to.equal(feeAmount.toString());
-    //   });
+        feeAmount = new BN(46657890000000)
+            .mul(new BN(CLASS_FEE))
+            .div(new BN(PRECISION.toString()));
+
+        console.log("fee amount %s", feeAmount);
+        let feeSent = await setup.data.seed
+            .connect(buyer3)
+            .callStatic.claim(buyer3.address, currentClaimable.toString());
+        expect(feeSent.toString()).to.equal(feeAmount.toString());
+      });
 
     //   it("it returns amount of the fee", async () => {
 
@@ -2447,43 +2453,6 @@ describe("Contract: Seed", async () => {
 
 
     //     expect(feeSent.toString()).to.equal(feeAmount.toString());
-    //   });
-    //   it("it withdraws tokens after time passes", async () => {
-    //     // claim lock
-    //     smallSeedAmount = new BN(smallBuyAmount)
-    //         .mul(new BN(PRECISION.toString()))
-    //         .div(new BN(price)); //class price
-
-    //     smallClaimAmount = new BN(ninetyTwoDaysInSeconds).mul(
-    //         new BN(smallSeedAmount)
-    //             .mul(new BN(twoBN))
-    //             .div(new BN(CLASS_VESTING_DURATION)));
-
-    //     smallFeeAmount = new BN(smallClaimAmount)
-    //         .mul(new BN(CLASS_FEE))
-    //         .div(new BN(PRECISION.toString()));
-
-
-
-    //     // feeAmountOnClaim = (_claimAmount * fee) / 100;
-    //     // feeAmount = new BN(getFundingAmounts("9")).toString()
-    //     //     .mul(new BN(CLASS_FEE))
-    //     //     .div(new BN(PRECISION.toString()));
-
-    //     const claimAmount = new BN(23329980000000); //from test 'calculates correct claim'
-    //     const feeAmountOnClaim = (claimAmount.toString() * CLASS_FEE) / 100;
-    //     await expect(
-    //         setup.data.seed
-    //             .connect(buyer3)
-    //             .claim(buyer3.address, claimAmount.toString())
-    //     )
-    //         .to.emit(setup.data.seed, "TokensClaimed")
-    //         .withArgs(
-    //             buyer3.address,
-    //             claimAmount.toString(),
-    //             beneficiary.address,
-    //             feeAmountOnClaim.toString()
-    //         );
     //   });
 
       it("claims all seeds after vesting duration", async () => {
@@ -2515,8 +2484,7 @@ describe("Contract: Seed", async () => {
       it("can only withdraw after vesting starts", async () => {
         await time.increase(time.duration.days(7));
         await setup.data.seed.connect(admin).withdraw();
-        const a = await fundingToken.balanceOf(setup.data.seed.address).toString();
-        console.log(a);
+        console.log(await fundingToken.balanceOf(setup.data.seed.address).toString());
 
         expect(
             (await fundingToken.balanceOf(setup.data.seed.address)).toString()
