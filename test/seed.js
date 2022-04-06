@@ -185,7 +185,6 @@ describe("Contract: Seed", async () => {
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens
 
-        //to fix errors about 'Seed: vesting is already started' we adding one day
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -2206,73 +2205,80 @@ describe("Contract: Seed", async () => {
       });
     });
     context("# few classes simultanuosly", () => {
-      before("!! deploy new contract", async () => {
-        let newStartTime = (await time.latest()).add(await time.duration.days(1));
-        let newEndTime = await newStartTime.add(await time.duration.days(1));
-        let newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
-        let localVestingCliff = time.duration.days(1); // 3 days
+        before("!! deploy new contract", async () => {
+            setup.data.seed = await init.getContractInstance(
+                "Seed",
+                setup.roles.prime
+            );  
 
-        let localVestingDuration = time.duration.days(4); // 1 year
-    //   vestingCliff = time.duration.days(90); // 3 months
+            setup.data.prevBalance = await seedToken.balanceOf(
+                beneficiary.address
+            );
 
-        setup.data.seed = await init.getContractInstance(
-            "Seed",
-            setup.roles.prime
-        );
-        await seedToken
-            .connect(root)
-            .transfer(setup.data.seed.address, requiredSeedAmount.toString());
-        await fundingToken
-            .connect(root)
-            .transfer(buyer1.address, getFundingAmounts("102"));
-        await fundingToken
-            .connect(buyer1)
-            .approve(setup.data.seed.address, getFundingAmounts("102"));
-        await fundingToken
-            .connect(root)
-            .transfer(buyer3.address, getFundingAmounts("102"));
-        await fundingToken
-            .connect(buyer3)
-            .approve(setup.data.seed.address, getFundingAmounts("102"));
+            newStartTime = (await time.latest()).add(await time.duration.days(1));
+            newEndTime = await newStartTime.add(await time.duration.days(1));
+            newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
+            localVestingCliff = time.duration.days(1);
+            localVestingDuration = time.duration.days(4);  
+            // SECOND_CLASS_VESTING_DURATION = CLASS_VESTING_DURATION * 2;  
+            SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
+        });
+        it("initializes", async () => {
+            // emulate creation & initialization via seedfactory & fund with seedTokens
 
-        setup.data.seed.initialize(
-            beneficiary.address,
-            admin.address,
-            [seedToken.address, fundingToken.address],
-            [softCap, hardCap],
-            price,
-            newStartTime.toNumber(),
-            newEndTime.toNumber(),
-            localVestingDuration.toNumber(),//vestingDuration.toNumber(),
-            localVestingCliff.toNumber(), // vestingCliff.toNumber(),
-            permissionedSeed,
-            fee
-        );
+            await seedToken
+                .connect(root)
+                .transfer(setup.data.seed.address, requiredSeedAmount.toString());
+            await fundingToken
+                .connect(root)
+                .transfer(buyer1.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(buyer1)
+                .approve(setup.data.seed.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(root)
+                .transfer(buyer3.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(buyer3)
+                .approve(setup.data.seed.address, getFundingAmounts("102"));
     
-        await setup.data.seed
-            .connect(admin)
-            // .addClass(CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
-            .addClass(CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
+            claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+                new BN(buySeedAmount)
+                    .mul(new BN(twoBN))
+                    .div(new BN(CLASS_VESTING_DURATION)));
+            feeAmount = new BN(claimAmount)
+                .mul(new BN(CLASS_FEE))
+                .div(new BN(PRECISION.toString()));
 
-        // const SECOND_CLASS_VESTING_DURATION = CLASS_VESTING_DURATION * 2;
-        let SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
-        await setup.data.seed //class 2
-            .connect(admin)
-            // .addClass(CLASS_SMALL_PERSONAL_FUNDING_LIMIT, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
-            // .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
-            .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+            setup.data.seed.initialize(
+                beneficiary.address,
+                admin.address,
+                [seedToken.address, fundingToken.address],
+                [softCap, hardCap],
+                price,
+                newStartTime.toNumber(),
+                newEndTime.toNumber(),
+                localVestingDuration.toNumber(),//vestingDuration.toNumber(),
+                localVestingCliff.toNumber(), // vestingCliff.toNumber(),
+                permissionedSeed,
+                fee
+            );
+        });
+        it("adds new classes", async () => {
+            await setup.data.seed
+                .connect(admin)
+                // .addClass(CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);
+                .addClass(CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
 
-        claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
-            new BN(buySeedAmount)
-                .mul(new BN(twoBN))
-                .div(new BN(CLASS_VESTING_DURATION)));
-        feeAmount = new BN(claimAmount)
-            .mul(new BN(CLASS_FEE))
-            .div(new BN(PRECISION.toString()));
-      })
+            await setup.data.seed //class 2
+                .connect(admin)
+                // .addClass(CLASS_SMALL_PERSONAL_FUNDING_LIMIT, CLASS_SMALL_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+                // .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+                .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+        });
       it("it changes Customer class 1", async () => {
-        let newClassVestingStartTime = (await setup.data.seed.getClass(1))[5];
-        let localVestingDuration = time.duration.days(4);
+        // let newClassVestingStartTime = (await setup.data.seed.getClass(1))[5];
+        // let localVestingDuration = time.duration.days(4);
         await setup.data.seed
             .connect(admin)
             // .changeClass(1, CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);   
@@ -2465,11 +2471,7 @@ describe("Contract: Seed", async () => {
       it("claims all seeds after vesting duration buyer3", async () => {
         await time.increase(time.duration.days(4));
 
-        setup.data.prevBalance = await seedToken.balanceOf(
-            beneficiary.address
-        );
-
-        smallBuyAmount = getFundingAmounts("9").toString();
+        let smallBuyAmount = getFundingAmounts("9").toString();
         // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
         const divisor = 1000000000;
         const claimTemp = new BN(smallBuyAmount).mul(new BN(twoBN)).div(new BN(divisor)).div(new BN(2)).toString();
@@ -2493,11 +2495,7 @@ describe("Contract: Seed", async () => {
             );
       });
       it("claims all seeds after vesting duration buyer1", async () => {
-        setup.data.prevBalance = await seedToken.balanceOf(
-            beneficiary.address
-        );
-
-        smallBuyAmount = getFundingAmounts("18").toString();
+        let smallBuyAmount = getFundingAmounts("18").toString();
         // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
         const divisor = 1000000000;
         const claimTemp = new BN(smallBuyAmount).mul(new BN(twoBN)).div(new BN(divisor)).div(new BN(2)).toString();
@@ -2519,7 +2517,6 @@ describe("Contract: Seed", async () => {
                 feeAmountOnClaim.toString()
             );
       });
-
       it("can only withdraw after vesting starts", async () => { //need to withdraw from buyer1 and buyer3 first
         // 780000000000000000 - 3* 90000000000000000 = 510000000000000000
         // 510000000000000000 - base seed balance
@@ -2818,6 +2815,358 @@ describe("Contract: Seed", async () => {
         });
       });
     });
+    context("# few classes simultanuosly whitelisted version", () => {
+        before("!! deploy new contract", async () => {
+            seed = await init.getContractInstance("Seed", setup.roles.prime);
+            setup;  
+
+            newStartTime = (await time.latest()).add(await time.duration.days(1));
+            newEndTime = await newStartTime.add(await time.duration.days(1));
+            newClassVestingStartTime = await newEndTime.add(await time.duration.days(1));
+            localVestingCliff = time.duration.days(1);
+            localVestingDuration = time.duration.days(4);    
+            SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
+        });
+        it("initializes", async () => {
+            // emulate creation & initialization via seedfactory & fund with seedTokens
+
+            await seedToken
+                .connect(root)
+                .transfer(seed.address, requiredSeedAmount.toString());
+
+            await fundingToken
+                .connect(root)
+                .transfer(buyer1.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(buyer1)
+                .approve(seed.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(root)
+                .transfer(buyer3.address, getFundingAmounts("102"));
+            await fundingToken
+                .connect(buyer3)
+                .approve(seed.address, getFundingAmounts("102"));
+    
+                claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+                    new BN(buySeedAmount)
+                        .mul(new BN(twoBN))
+                        .div(new BN(CLASS_VESTING_DURATION)));
+                feeAmount = new BN(claimAmount)
+                    .mul(new BN(CLASS_FEE))
+                    .div(new BN(PRECISION.toString()));
+
+          permissionedSeed = true;
+            await seed.initialize(
+                beneficiary.address,
+                admin.address,
+                [seedToken.address, fundingToken.address],
+                [softCap, hardCap],
+                price,
+                startTime.toNumber(),
+                endTime.toNumber(),
+                localVestingDuration.toNumber(),//vestingDuration.toNumber(),
+                localVestingCliff.toNumber(), // vestingCliff.toNumber(),
+                permissionedSeed,
+                fee
+            );
+        });
+        it("adds new classes", async () => {
+            await seed
+              .connect(admin)
+              .addClass(CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
+  
+            await seed //class 2
+              .connect(admin)
+              // .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, SECOND_CLASS_VESTING_DURATION, SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+              .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE); //change to different params
+        });
+        it("it changes Customer class 1", async () => {
+            // console.log(await newSetup.seed.endTime.toString);
+        // const newClassVestingStartTime = (await newSetup.seed.endTime).add(await time.duration.days(1));
+          let newClassVestingStartTime = (await seed.getClass(1))[5];
+          let localVestingDuration = time.duration.days(4);
+          await seed
+              .connect(admin)
+              // .changeClass(1, CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, newClassVestingStartTime.toNumber(), CLASS_FEE);   
+              .changeClass(1, CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);   
+          expect(
+              (await seed.getClass(1))[1]
+          ).to.equal((ethers.BigNumber.from(CLASS_18_PERSONAL_FUNDING_LIMIT)));
+        });
+        it("it sets class", async () => {
+          await seed
+              .connect(admin)
+              .whitelist(buyer1.address, 2);
+          await seed
+              .connect(admin)
+              .whitelist(buyer3.address, 1); 
+  
+          expect(
+              (await seed.funders(buyer1.address))[0].toString()
+          ).to.equal(ethers.BigNumber.from(2).toString());
+          expect(
+              (await seed.funders(buyer3.address))[0].toString()
+          ).to.equal(ethers.BigNumber.from(1).toString());
+        });
+        it("it buys tokens for classes buyer3", async () => {
+          await time.increase(time.duration.days(1));
+          // seedAmount = (buyAmount*PRECISION)/price;
+          // smallBuyAmount = getFundingAmounts("9").toString();
+          buySmallSeedAmount = getSeedAmounts("900").toString();
+  
+          smallSeedAmount = new BN(smallBuyAmount)
+              .mul(new BN(PRECISION.toString()))
+              .div(new BN(price)); //class price
+  
+          smallClaimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+              new BN(smallSeedAmount)
+                  .mul(new BN(twoBN))
+                  .div(new BN(CLASS_VESTING_DURATION))
+          );
+          smallFeeAmount = new BN(smallClaimAmount)
+              .mul(new BN(CLASS_FEE))
+              .div(new BN(PRECISION.toString()));
+  
+          // console.log("current balance %s", (await fundingToken.balanceOf(setup.data.seed.address)).toString());
+          // console.log("seedAmount %s",(seedAmount).toString());
+          // console.log("CLASS_18_PERSONAL_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+          // console.log("smallBuyAmount %s", (smallBuyAmount).toString());
+          // console.log("smallSeedAmount %s", (smallSeedAmount).toString());
+  
+          await expect(seed.connect(buyer3).buy(smallBuyAmount))
+              .to.emit(seed, "SeedsPurchased")
+              .withArgs(buyer3.address, smallSeedAmount);
+          expect(
+              (await fundingToken.balanceOf(seed.address)).toString()
+          ).to.equal(
+              Math.floor((buySmallSeedAmount * price) / PRECISION).toString()
+          );     
+          console.log("!!! %s" ,Math.floor((buySmallSeedAmount * price) / PRECISION).toString()) ;
+            
+        });
+        it("cannot buy more than class 1 allows class funding", async () => { //test for different prices/results (delete this comment later)
+          // console.log("current balance in 'it1' %s", (await fundingToken.balanceOf(setup.data.seed.address)).toString());
+          // console.log("CLASS_1_CLASS_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+          // console.log(s'getClass(1))[1] %s', (await setup.data.seed.getClass(1))[1]);
+  
+          await expectRevert(
+            seed
+                .connect(buyer3)
+                .buy(getFundingAmounts("10")),
+            "Seed: maximum class funding reached"
+          );
+        });
+        it("cannot withdraw before minumum funding amount is met", async () => {
+          await expectRevert(
+            seed.connect(admin).withdraw(),
+              "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
+          );
+        });
+        it("it cannot claim when minimum funding amount not met", async () => {
+          await expectRevert(
+            seed.
+                  connect(buyer1)
+                  .claim(buyer1.address, claimAmount.toString()), 
+              "Seed: minimum funding amount not met"
+          );
+        }); 
+        it("cannot buy more than class 2 allows personal funding", async () => { //test for different prices/results (delete this comment later)
+          // smallBuyAmount = getFundingAmounts("9").toString();
+          await setup.seed.connect(buyer1).buy(getFundingAmounts("1"));
+          // console.log("CLASS_2_PERSONAL_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+          // console.log('getClass(2))[1] %s', (await setup.data.seed.getClass(2))[1]);
+          await expectRevert(
+              setup.seed.connect(buyer1).buy(CLASS_18_PERSONAL_FUNDING_LIMIT),
+              "Seed: maximum personal funding reached"
+          )
+          await expect(setup.seed.connect(buyer1).buy(getFundingAmounts("17"))); //was necessary to buy this somewhere
+        });
+      //   it("it buys tokens for classes buyer1", async () => {
+      //     // await time.increase(time.duration.days(1));
+      //     // seedAmount = (buyAmount*PRECISION)/price;
+      //     smallBuyAmount = getFundingAmounts("17").toString();
+      //     buySmallSeedAmount = getSeedAmounts("170").toString();
+      //     // buySmallSeedAmountPlusOne =
+  
+      //     smallSeedAmount = new BN(smallBuyAmount)
+      //         .mul(new BN(PRECISION.toString()))
+      //         .div(new BN(price)); //class price
+  
+      //     smallClaimAmount = new BN(ninetyTwoDaysInSeconds).mul(
+      //         new BN(smallSeedAmount)
+      //             .mul(new BN(twoBN))
+      //             .div(new BN(SECOND_CLASS_VESTING_DURATION))
+      //     );
+      //     smallFeeAmount = new BN(smallClaimAmount)
+      //         .mul(new BN(SECOND_CLASS_FEE))
+      //         .div(new BN(PRECISION.toString()));
+  
+      //         console.log( Math.floor(((buySmallSeedAmount) * price) / PRECISION).toString());
+      //     await expect(setup.data.seed.connect(buyer1).buy(smallBuyAmount))
+      //         .to.emit(setup.data.seed, "SeedsPurchased")
+      //         .withArgs(buyer1.address, smallSeedAmount);
+      //     expect(
+      //         (await fundingToken.balanceOf(setup.data.seed.address)).toString()
+      //     ).to.equal(
+      //         Math.floor(((buySmallSeedAmount) * price) / PRECISION).toString() //if let this 'it' be - need to fix calculations
+      //     );      
+            
+      //   });
+  
+        it("it cannot claim when vesting start time for this class is not started yet buyer3", async () => {
+          // console.log("current balance in 'it' %s", (await fundingToken.balanceOf(setup.data.seed.address)).toString());
+          // console.log("buyer1 balance in 'it' %s", (await fundingToken.balanceOf(buyer1.address)).toString());
+          // console.log(getFundingAmounts("9").toString());
+  
+          await time.increase(time.duration.days(1));
+          await expectRevert(
+              setup.seed.
+                  connect(buyer3)
+                  .claim(buyer3.address, claimAmount.toString()), 
+              "Seed: vesting start time for this class is not started yet"
+          );
+        });   
+        it("it cannot claim before vestingCliff buyer3", async () => {
+          await time.increase(time.duration.days(1));
+  
+          await expectRevert(
+              setup.seed
+                  .connect(buyer3)
+                  .claim(buyer3.address, claimAmount.toString()),
+              "Seed: amount claimable is 0"
+          );
+        });
+        it("calculates correct claim", async () => {
+          // increase time
+          await time.increase(time.duration.days(3));
+          const claim = await setup.data.seed.calculateClaim(buyer3.address);
+          console.log("claim %s", claim);
+          const currentVestingStartTime = (await setup.seed.getClass(1))[5];
+          const currentVestingDuration = (await setup.seed.getClass(1))[3];
+          // const currentFee = (await setup.data.seed.getClass(1))[6];
+          // console.log("vestingStartTime %s", currentVestingStartTime);
+          // console.log("currentVestingDuration %s", currentVestingDuration);
+          // console.log("new BN(smallBuyAmount) %s", new BN(smallBuyAmount));
+          // console.log('fee %s', currentFee); 
+  
+          const divisor = 100; //expectedClaim without divisor / claim = 2332989000000000 / 23329890000000 = 100
+          const expectedClaim = (await time.latest())
+              .sub(new BN(currentVestingStartTime.toNumber()))
+              // .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
+              .mul(new BN(smallBuyAmount)).div(new BN(divisor))
+              // .mul(new BN(currentFee.toString()))
+              .div(new BN(currentVestingDuration.toNumber()));
+  
+          console.log("expectedClaim %s", expectedClaim);    
+          expect(claim.toString()).to.equal(expectedClaim.toString());
+        });
+        it("it returns amount of the fee", async () => {
+          await time.increase(time.duration.days(3));
+          const currentClaimable = ethers.BigNumber.from("46657890000000"); // value from expectedClaim from 'it' above
+  
+          feeAmount = new BN(46657890000000)
+              .mul(new BN(CLASS_FEE))
+              .div(new BN(PRECISION.toString()));
+  
+          console.log("fee amount %s", feeAmount);
+          let feeSent = await setup.seed
+              .connect(buyer3)
+              .callStatic.claim(buyer3.address, currentClaimable.toString());
+          expect(feeSent.toString()).to.equal(feeAmount.toString());
+        });
+        it("claims all seeds after vesting duration buyer3", async () => {
+          await time.increase(time.duration.days(4));
+  
+          setup.prevBalance = await seedToken.balanceOf(
+              beneficiary.address
+          );
+  
+          smallBuyAmount = getFundingAmounts("9").toString();
+          // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
+          const divisor = 1000000000;
+          const claimTemp = new BN(smallBuyAmount).mul(new BN(twoBN)).div(new BN(divisor)).div(new BN(2)).toString();
+          console.log("claimTemp buyer3 %s", claimTemp);
+  
+          feeAmountOnClaim = new BN(claimTemp)
+              .mul(new BN(CLASS_FEE))
+              .div(new BN(PRECISION.toString()));
+  
+          await expect(
+              setup.seed
+                  .connect(buyer3)
+                  .claim(buyer3.address, claimTemp.toString())
+          )
+              .to.emit(setup.seed, "TokensClaimed")
+              .withArgs(
+                  buyer3.address,
+                  claimTemp.toString(),
+                  beneficiary.address,
+                  feeAmountOnClaim.toString()
+              );
+        });
+        it("claims all seeds after vesting duration buyer1", async () => {
+          setup.prevBalance = await seedToken.balanceOf(
+              beneficiary.address
+          );
+  
+          smallBuyAmount = getFundingAmounts("18").toString();
+          // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
+          const divisor = 1000000000;
+          const claimTemp = new BN(smallBuyAmount).mul(new BN(twoBN)).div(new BN(divisor)).div(new BN(2)).toString();
+          console.log("claimTemp buyer1 %s", claimTemp);
+          feeAmountOnClaim = new BN(claimTemp)
+              .mul(new BN(SECOND_CLASS_FEE))
+              .div(new BN(PRECISION.toString()));
+  
+          await expect(
+              setup.seed
+                  .connect(buyer1)
+                  .claim(buyer1.address, claimTemp.toString())
+          )
+              .to.emit(setup.seed, "TokensClaimed")
+              .withArgs(
+                  buyer1.address,
+                  claimTemp.toString(),
+                  beneficiary.address,
+                  feeAmountOnClaim.toString()
+              );
+        });
+        it("can only withdraw after vesting starts", async () => { //need to withdraw from buyer1 and buyer3 first
+          // 780000000000000000 - 3* 90000000000000000 = 510000000000000000
+          // 510000000000000000 - base seed balance
+          // 3* 90000000000000000 - from buyer1 and buyer3
+          
+          // console.log(requiredSeedAmount.toString());
+          await setup.seed.connect(admin).withdraw();
+  
+          // console.log("balanceOf(setup.data.seed.address) %s",await fundingToken.balanceOf(setup.data.seed.address).toString());//not showing
+          // console.log("balanceOf(admin.address) %s",await fundingToken.balanceOf(admin.address).toString());//not showing
+          expect(
+              (await fundingToken.balanceOf(setup.seed.address)).toString()
+          ).to.equal(zero.toString()); //correct
+  
+          const expectedBalance = ethers.BigNumber.from(buyAmount) // expectedBalance = 61; 78 - 61 = 17 - withdrawed by buyer1
+              .add(ethers.BigNumber.from(getFundingAmounts("9")))
+              .add(ethers.BigNumber.from(getFundingAmounts("1")));
+              // .add(ethers.BigNumber.from(getFundingAmounts("17"))); // 78 - 61 = 17 - withdrawed by buyer1
+  
+          // console.log(expectedBalance);
+          expect(
+              (await fundingToken.balanceOf(admin.address)).toString() 
+          ).to.equal(expectedBalance);//fails --> so fundingToken.balanceOf(admin.address) = 780000000000000000
+        });
+        it("updates the amount of funding token withdrawn", async () => {
+          //need increase time for this to work //no. need to withdrat some amount
+          // await time.increase(time.duration.days(7));
+  
+          const maxWithdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").mul(3)); // 17 + 1 from buyer1 and 9 from buyer3
+          const expectedWithdrawAmount = maxWithdrawAmount.sub(ethers.BigNumber.from(getFundingAmounts("17"))); // 17 - withdrawed by buyer1
+          console.log("expectedWithdrawAmount %s", expectedWithdrawAmount);        
+          await expect(
+              (await setup.seed.fundingWithdrawn()).toString()
+          ).to.equal(expectedWithdrawAmount);
+        });
+      });
   });
   context("» price test of tokens with decimals 6", () => {
     before("!! setup", async () => {
