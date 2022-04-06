@@ -6,7 +6,11 @@
   "scripts": {
     "test": "hardhat test",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
-    "coverage": "hardhat coverage"
+    "coverage": "hardhat coverage",
+    "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
+    "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
+    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags",
+    "deploy:contracts:arbitrum": "npx hardhat deploy --network arbitrum --tags Export,$npm_config_tags"
   },
   "repository": {
     "type": "git",
