@@ -20,6 +20,7 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -256,6 +257,7 @@ contract Seed {
             "Seed: vesting is already started"
         );
         funders[_address].class = _class;
+        // console.log("_class %s", _class);
     }
 
     /**
@@ -279,7 +281,8 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-
+        console.log(block.timestamp);
+        console.log(startTime);
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -367,8 +370,16 @@ contract Seed {
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
+        // console.log();
+        // console.log();
         ContributorClass memory userClass = classes[funders[msg.sender].class];
+        console.log("fundingCollected before require %s", fundingCollected);
+
         require(!maximumReached, "Seed: maximum funding reached");
+
+        console.log("userClass id %s", funders[msg.sender].class);
+        console.log("userClass.classCap %s", userClass.classCap);
+        console.log("userClass.classFundingCollected + _fundingAmount %s", userClass.classFundingCollected + _fundingAmount);
 
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
@@ -414,9 +425,15 @@ contract Seed {
         seedRemainder -= seedAmount;
         feeRemainder -= feeAmount;
 
+        console.log("fundingCollected %s", fundingCollected);
+        console.log("softCap %s",softCap);
+
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
+        console.log("fundingCollected %s", fundingCollected);
+        console.log("hardCap %s",hardCap);
+
         if (fundingCollected >= hardCap) {
             maximumReached = true;
             classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
@@ -456,10 +473,14 @@ contract Seed {
         FunderPortfolio storage tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
+        console.log("endTime %s", endTime);
+        console.log("block.timestamp %s", block.timestamp);
         require(
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
         );
+        console.log("currentClassVestingStartTime %s", currentClassVestingStartTime);
+        console.log("block.timestamp %s", block.timestamp);
         require(
             currentClassVestingStartTime < block.timestamp,
             "Seed: vesting start time for this class is not started yet"
@@ -468,6 +489,8 @@ contract Seed {
 
         amountClaimable = calculateClaim(_funder);
         require(amountClaimable > 0, "Seed: amount claimable is 0");
+        console.log("amountClaimable %s", amountClaimable);
+        console.log("_claimAmount %s", _claimAmount);
         require(
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
@@ -669,23 +692,34 @@ contract Seed {
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
+        console.log("CC block.timestamp %s", block.timestamp);
+        console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
+
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
+        // console.log("CC elapsedSeconds %s", elapsedSeconds);
+        // console.log("CC vestingCliff %s", vestingCliff);
 
         if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
         uint256 currentVestingDuration = classes[currentId].vestingDuration; 
+        // console.log("CC totalClaimed %s", tokenFunder.totalClaimed);
 
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
+            // console.log("CC 2");
+            // console.log(elapsedSeconds);
+            // console.log(seedAmountForFunder(_funder));
+            // console.log("currentVestingDuration %s",currentVestingDuration);
+            // console.log("claimed %s", tokenFunder.totalClaimed);
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
 
@@ -738,7 +772,11 @@ contract Seed {
         view
         returns (uint256)
     {
-        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price; //price;
+        // console.log("SAFF B");
+        // console.log(funders[_funder].fundingAmount);
+        // console.log(PRECISION);
+        // console.log("SAFF E");
+        return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
     }
 
     /**
