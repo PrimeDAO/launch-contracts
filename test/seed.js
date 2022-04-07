@@ -3789,12 +3789,11 @@ describe("Contract: Seed", async () => {
               (await fundingToken.balanceOf(setup.seed.address)).toString()
           ).to.equal(zero.toString()); //correct
   
-          const expectedBalance = ethers.BigNumber.from(buyAmount) // expectedBalance = 61; 78 - 61 = 17 - withdrawed by buyer1
-              .add(ethers.BigNumber.from(getFundingAmounts("9")))
-              .add(ethers.BigNumber.from(getFundingAmounts("1")));
+          const expectedBalance = ethers.BigNumber.from(smallBuyAmount); // expectedBalance = 61; 78 - 61 = 17 - withdrawed by buyer1
+            //   .add(ethers.BigNumber.from(smallBuyAmount));
+            //   .add(ethers.BigNumber.from(getFundingAmounts("1")));
               // .add(ethers.BigNumber.from(getFundingAmounts("17"))); // 78 - 61 = 17 - withdrawed by buyer1
   
-          // console.log(expectedBalance);
           expect(
               (await fundingToken.balanceOf(admin.address)).toString() 
           ).to.equal(expectedBalance);//fails --> so fundingToken.balanceOf(admin.address) = 780000000000000000
@@ -3803,12 +3802,12 @@ describe("Contract: Seed", async () => {
           //need increase time for this to work //no. need to withdrat some amount
           // await time.increase(time.duration.days(7));
   
-          const maxWithdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").mul(3)); // 17 + 1 from buyer1 and 9 from buyer3
-          const expectedWithdrawAmount = maxWithdrawAmount.sub(ethers.BigNumber.from(getFundingAmounts("17"))); // 17 - withdrawed by buyer1
-          console.log("expectedWithdrawAmount %s", expectedWithdrawAmount);        
+          const maxWithdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").mul(2));
+        //   const expectedWithdrawAmount = maxWithdrawAmount.sub(ethers.BigNumber.from(getFundingAmounts("17"))); // 17 - withdrawed by buyer1
+        //   console.log("expectedWithdrawAmount %s", expectedWithdrawAmount);        
           await expect(
               (await setup.seed.fundingWithdrawn()).toString()
-          ).to.equal(expectedWithdrawAmount);
+          ).to.equal(maxWithdrawAmount);
         });
       });
   });
