@@ -42,7 +42,7 @@ describe("Contract: Seed", async () => {
   let softCap;
   let hardCap;
   let price;
-  let secondClassPrice; //new
+//   let secondClassPrice; //new
   let buyAmount;
   let smallBuyAmount;
   let buySeedAmount;
@@ -81,7 +81,7 @@ describe("Contract: Seed", async () => {
   const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
   const CLASS_20_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("200000000000000000").toString(); 
   const CLASS_VESTING_DURATION =  10000000;
-  const SECOND_CLASS_VESTING_DURATION = 20000000; //CLASS_VESTING_DURATION * 2;
+//   const SECOND_CLASS_VESTING_DURATION = 20000000; //CLASS_VESTING_DURATION * 2;
   const CLASS_VESTING_START_TIME = 1700000000;
   const CLASS_FEE = parseEther("0.02").toString(); // 2%
 //   const SECOND_CLASS_FEE = parseEther("0.20").toString(); //20% // 44% //when it's 0.21 or more - reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block) appears
