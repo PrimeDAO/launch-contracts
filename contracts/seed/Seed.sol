@@ -281,8 +281,8 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-        console.log(block.timestamp);
-        console.log(startTime);
+        // console.log(block.timestamp);
+        // console.log(startTime);
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -372,13 +372,13 @@ contract Seed {
         );
 
         ContributorClass memory userClass = classes[funders[msg.sender].class];
-        console.log("fundingCollected before require %s", fundingCollected);
+        // console.log("fundingCollected before require %s", fundingCollected);
 
         require(!maximumReached, "Seed: maximum funding reached");
 
-        console.log("userClass id %s", funders[msg.sender].class);
-        console.log("userClass.classCap %s", userClass.classCap);
-        console.log("userClass.classFundingCollected + _fundingAmount %s", userClass.classFundingCollected + _fundingAmount);
+        // console.log("userClass id %s", funders[msg.sender].class);
+        // console.log("userClass.classCap %s", userClass.classCap);
+        // console.log("userClass.classFundingCollected + _fundingAmount %s", userClass.classFundingCollected + _fundingAmount);
 
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
@@ -402,13 +402,13 @@ contract Seed {
 
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
-        console.log("seedAmount %s",seedAmount);
-        console.log("userClass.price %s",userClass.price);
+        // console.log("seedAmount %s",seedAmount);
+        // console.log("userClass.price %s",userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         // uint256 feeAmount = (seedAmount * fee) / PRECISION;
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;    
-        console.log("feeAmount %s",feeAmount);
+        // console.log("feeAmount %s",feeAmount);
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
@@ -438,8 +438,8 @@ contract Seed {
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
-        console.log("fundingCollected %s", fundingCollected);
-        console.log("hardCap %s",hardCap);
+        // console.log("fundingCollected %s", fundingCollected);
+        // console.log("hardCap %s",hardCap);
 
         if (fundingCollected >= hardCap) {
             maximumReached = true;
@@ -464,7 +464,7 @@ contract Seed {
 
         emit SeedsPurchased(msg.sender, seedAmount);
 
-        console.log("seedAmount %s", seedAmount);
+        // console.log("seedAmount %s", seedAmount);
 
         return (seedAmount, feeAmount);
     }
@@ -498,8 +498,8 @@ contract Seed {
 
         amountClaimable = calculateClaim(_funder);
         require(amountClaimable > 0, "Seed: amount claimable is 0");
-        console.log("amountClaimable %s", amountClaimable);
-        console.log("_claimAmount %s", _claimAmount);
+        // console.log("amountClaimable %s", amountClaimable);
+        // console.log("_claimAmount %s", _claimAmount);
         require(
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
@@ -701,8 +701,8 @@ contract Seed {
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
-        console.log("CC block.timestamp %s", block.timestamp);
-        console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
+        // console.log("CC block.timestamp %s", block.timestamp);
+        // console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
 
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
