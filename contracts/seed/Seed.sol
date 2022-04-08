@@ -429,9 +429,18 @@ contract Seed {
         console.log("feeRemainder %s", feeRemainder);
         console.log("feeAmount %s", feeAmount);
 
-        feeRemainder -= feeAmount; //here it craches (about fee)
-        console.log("pass  8");
+        ////---------------------------
+        if (feeRemainder == 0){
+        }else if (feeRemainder - feeAmount < 0){
+            feeAmount = feeAmount - feeRemainder;
+            feeRemainder -= feeAmount;
+        }else{
+            feeRemainder -= feeAmount;
+        }
+        ////---------------------------
+        // feeRemainder -= feeAmount; //here it craches (about fee)
 
+        console.log("pass  8");
         console.log("fundingCollected %s", fundingCollected);
         console.log("softCap %s",softCap);
 

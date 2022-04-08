@@ -3557,7 +3557,9 @@ describe("Contract: Seed", async () => {
         vestingDuration = time.duration.days(365); // 1 year
         vestingCliff = time.duration.days(90); // 3 months
         permissionedSeed = false;
-        fee = parseEther("0.2").toString(); // 2%
+        fee = parseEther("0.2").toString(); // 20%
+        // fee = parseEther("0.44").toString(); // 44%
+
         metadata = `0x`;
   
         buySeedFee = new BN(buySeedAmount)
