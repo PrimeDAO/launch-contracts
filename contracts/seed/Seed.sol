@@ -370,8 +370,7 @@ contract Seed {
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
-        // console.log();
-        // console.log();
+
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         console.log("fundingCollected before require %s", fundingCollected);
 
@@ -400,19 +399,22 @@ contract Seed {
             );
             isFunded = true;
         }
+
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
+        console.log("seedAmount %s",seedAmount);
+        console.log("userClass.price %s",userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         // uint256 feeAmount = (seedAmount * fee) / PRECISION;
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;    
+        console.log("feeAmount %s",feeAmount);
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
             seedAmount >= vestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
-
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,
@@ -423,7 +425,12 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-        feeRemainder -= feeAmount;
+        console.log("pass  7");
+        console.log("feeRemainder %s", feeRemainder);
+        console.log("feeAmount %s", feeAmount);
+
+        feeRemainder -= feeAmount; //here it craches (about fee)
+        console.log("pass  8");
 
         console.log("fundingCollected %s", fundingCollected);
         console.log("softCap %s",softCap);
@@ -457,6 +464,8 @@ contract Seed {
 
         emit SeedsPurchased(msg.sender, seedAmount);
 
+        console.log("seedAmount %s", seedAmount);
+
         return (seedAmount, feeAmount);
     }
 
@@ -473,14 +482,14 @@ contract Seed {
         FunderPortfolio storage tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-        console.log("endTime %s", endTime);
-        console.log("block.timestamp %s", block.timestamp);
+        // console.log("endTime %s", endTime);
+        // console.log("block.timestamp %s", block.timestamp);
         require(
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
         );
-        console.log("currentClassVestingStartTime %s", currentClassVestingStartTime);
-        console.log("block.timestamp %s", block.timestamp);
+        // console.log("currentClassVestingStartTime %s", currentClassVestingStartTime);
+        // console.log("block.timestamp %s", block.timestamp);
         require(
             currentClassVestingStartTime < block.timestamp,
             "Seed: vesting start time for this class is not started yet"
