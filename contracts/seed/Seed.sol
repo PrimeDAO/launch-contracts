@@ -400,20 +400,25 @@ contract Seed {
         }
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
+        console.log("seedAmount %s",seedAmount);
+        console.log("PRECISION %s",PRECISION);
+        console.log("userClass.price %s", userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
+        console.log("feeAmount %s",feeAmount);
+        console.log("classes[funders[msg.sender].class].classFee %s",classes[funders[msg.sender].class].classFee);
+        console.log("PRECISION %s",PRECISION);
+
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
             seedAmount >= vestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
-        console.log("feeRemainder %s",feeRemainder);
-        console.log("feeAmount %s",feeAmount);
-        console.log("_fundingAmount %s",_fundingAmount);
-        console.log("fundingCollected + _fundingAmount %s",fundingCollected+ _fundingAmount);
-        console.log("hardCap %s",hardCap);
+        // console.log("_fundingAmount %s",_fundingAmount);
+        // console.log("fundingCollected + _fundingAmount %s",fundingCollected+ _fundingAmount);
+        // console.log("hardCap %s",hardCap);
 
         // total fundingAmount should not be greater than the hardCap
         require(
@@ -426,12 +431,13 @@ contract Seed {
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
 
-        console.log(feeRemainder);
-        console.log(feeAmount);
-
+        console.log("\nfeeRemainder %s",feeRemainder);
+        console.log("feeAmount %s",feeAmount);
         if (feeRemainder == 0){
+            console.log("ONE");
             feeAmount = 0;
         }else if (feeRemainder < feeAmount){
+            console.log("TWO");
             feeRemainder -= feeRemainder;
             feeAmount = 0;
         }else{

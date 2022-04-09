@@ -123,14 +123,11 @@ describe("Contract: Seed", async () => {
       smallBuyAmount = getFundingAmounts("9").toString();
       buySeedAmount = getSeedAmounts("5100").toString();
       startTime = await time.latest();
-    //   startTime = (await time.latest()).add(await time.duration.days(1));
-
       endTime = await startTime.add(await time.duration.days(7));
       vestingDuration = time.duration.days(365); // 1 year
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
-    //   fee = parseEther("0.44").toString(); // 44%
 
       metadata = `0x`;
 
@@ -458,11 +455,15 @@ describe("Contract: Seed", async () => {
         });
         it("it returns amount of the fee when feeRemainder = 0", async () => {
             // expectedFeeAmount expected == feeRemainder = 102000000000000
+            //23181818181818180 * 44 / 100 / 100 = 102000000000000.0
+            //231818181818181 * 0.44 = 101999999999999.64 --> that's why
+            //231818181818182 * 0.44 = 1020000000000.0009 --> need to add 100 or 20 (but both leads to "Seed: maximum class funding reached")
             let expectedFeeAmount = ethers.BigNumber.from("102000000000000");
             let classPrice = price; 
-            let classFee = parseEther("0.44").toString(); // 44% //SECOND_CLASS_FEE
-            let currentBuyAmount = expectedFeeAmount * classPrice / classFee + ethers.BigNumber.from("1");
-
+            let classFee = parseEther("0.44").toString(); //SECOND_CLASS_FEE
+            let currentBuyAmount = expectedFeeAmount * classPrice / classFee + ethers.BigNumber.from("20");
+            console.log("JS currentBuyAmount %s \n", currentBuyAmount);
+            
             let { ["1"]: feeAmount } = await setup.seed
                 .connect(buyer4)
                 .callStatic.buy(currentBuyAmount.toString());
@@ -592,7 +593,7 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 597482; //1649498095 - 1650095577 = 597482// 597546; //1649332997 - 1648735451 = 597546
+          const timeDifference = 597482; //1649498095 - 1650095577 = 597482
           const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
