@@ -378,6 +378,10 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
+        console.log("userClass %s",funders[msg.sender].class);
+        console.log("userClass.classCap %s",userClass.classCap);
+        console.log("userClass.classFundingCollected + _fundingAmount %s",userClass.classFundingCollected + _fundingAmount);
+
         // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
