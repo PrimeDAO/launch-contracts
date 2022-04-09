@@ -877,7 +877,7 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("27000000000"), CLASS_FEE);
-"
+
           await setup.data.seed
               .connect(admin)
               .setClass(buyer1.address, 3);
