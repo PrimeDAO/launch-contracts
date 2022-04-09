@@ -865,7 +865,6 @@ describe("Contract: Seed", async () => {
               permissionedSeed,
               fee
           );
-          console.log("After after there");
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("21000000000"), CLASS_FEE);
@@ -905,6 +904,7 @@ describe("Contract: Seed", async () => {
                   .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
               "Seed: vesting start time for this class is not started yet"
           );
+          console.log("After after there");
         });
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
