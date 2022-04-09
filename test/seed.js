@@ -884,7 +884,7 @@ describe("Contract: Seed", async () => {
               .setClass(buyer1.address, 3);
 
 
-          await time.increase(await time.duration.days(1));
+          time.increase(await time.duration.days(1));
 
           await setup.data.seed
               .connect(buyer2)
