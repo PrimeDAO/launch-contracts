@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -260,7 +259,6 @@ contract Seed {
             "Seed: vesting is already started"
         );
         funders[_address].class = _class;
-        // console.log("_class %s", _class);
     }
 
     /**
@@ -284,8 +282,6 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-        // console.log(block.timestamp);
-        // console.log(startTime);
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -377,13 +373,7 @@ contract Seed {
         );
 
         ContributorClass memory userClass = classes[funders[msg.sender].class];
-        // console.log("fundingCollected before require %s", fundingCollected);
-
         require(!maximumReached, "Seed: maximum funding reached");
-
-        // console.log("userClass id %s", funders[msg.sender].class);
-        // console.log("userClass.classCap %s", userClass.classCap);
-        // console.log("userClass.classFundingCollected + _fundingAmount %s", userClass.classFundingCollected + _fundingAmount);
 
         // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
@@ -408,8 +398,6 @@ contract Seed {
 
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
-        // console.log("seedAmount %s",seedAmount);
-        // console.log("userClass.price %s",userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
@@ -429,10 +417,6 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-        console.log("pass  7");
-        console.log("feeRemainder %s", feeRemainder);
-        console.log("feeAmount %s", feeAmount);
-
         ////--------------------------- added in specific issue and branch
         // if (feeRemainder == 0){
         // }else if (feeRemainder - feeAmount < 0){
@@ -444,15 +428,9 @@ contract Seed {
         ////---------------------------
         feeRemainder -= feeAmount; //here it craches (about fee)
 
-        console.log("pass  8");
-        console.log("fundingCollected %s", fundingCollected);
-        console.log("softCap %s",softCap);
-
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
-        // console.log("fundingCollected %s", fundingCollected);
-        // console.log("hardCap %s",hardCap);
 
         if (fundingCollected >= hardCap) {
             maximumReached = true;
@@ -477,8 +455,6 @@ contract Seed {
 
         emit SeedsPurchased(msg.sender, seedAmount);
 
-        // console.log("seedAmount %s", seedAmount);
-
         return (seedAmount, feeAmount);
     }
 
@@ -495,14 +471,10 @@ contract Seed {
         FunderPortfolio storage tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-        // console.log("endTime %s", endTime);
-        // console.log("block.timestamp %s", block.timestamp);
         require(
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
         );
-        // console.log("currentClassVestingStartTime %s", currentClassVestingStartTime);
-        // console.log("block.timestamp %s", block.timestamp);
         require(
             currentClassVestingStartTime < block.timestamp,
             "Seed: vesting start time for this class is not started yet"
@@ -511,8 +483,6 @@ contract Seed {
 
         amountClaimable = calculateClaim(_funder);
         require(amountClaimable > 0, "Seed: amount claimable is 0");
-        // console.log("amountClaimable %s", amountClaimable);
-        // console.log("_claimAmount %s", _claimAmount);
         require(
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
@@ -713,34 +683,23 @@ contract Seed {
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
-        // console.log("CC block.timestamp %s", block.timestamp);
-        // console.log("CC currentClassVestingStartTime %s", currentClassVestingStartTime);
-
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
-        // console.log("CC elapsedSeconds %s", elapsedSeconds);
-        // console.log("CC vestingCliff %s", vestingCliff);
 
         if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
         uint256 currentVestingDuration = classes[currentId].vestingDuration; 
-        // console.log("CC totalClaimed %s", tokenFunder.totalClaimed);
 
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
-            // console.log("CC 2");
-            // console.log(elapsedSeconds);
-            // console.log(seedAmountForFunder(_funder));
-            // console.log("currentVestingDuration %s",currentVestingDuration);
-            // console.log("claimed %s", tokenFunder.totalClaimed);
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
 
