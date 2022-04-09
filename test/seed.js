@@ -866,18 +866,18 @@ describe("Contract: Seed", async () => {
           );    
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("27000000000"), CLASS_FEE);
 
           await setup.data.seed
               .connect(admin)
-              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
+              .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, ethers.BigNumber.from("27000000000"), CLASS_FEE);
         });
 
         it("it cannot claim before currentVestingStartTime", async () => {  
           await setup.data.seed
               .connect(admin)
-              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, 2700000000, CLASS_FEE);
-
+              .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("27000000000"), CLASS_FEE);
+"
           await setup.data.seed
               .connect(admin)
               .setClass(buyer1.address, 3);
