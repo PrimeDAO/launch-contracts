@@ -417,16 +417,7 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-        ////--------------------------- added in specific issue and branch
-        // if (feeRemainder == 0){
-        // }else if (feeRemainder - feeAmount < 0){
-        //     feeAmount = feeAmount - feeRemainder;
-        //     feeRemainder -= feeAmount;
-        // }else{
-        //     feeRemainder -= feeAmount;
-        // }
-        ////---------------------------
-        feeRemainder -= feeAmount; //here it craches (about fee)
+        feeRemainder -= feeAmount; //here it craches for some conditions (about fee). added in specific issue and branch
 
         if (fundingCollected >= softCap) {
             minimumReached = true;
