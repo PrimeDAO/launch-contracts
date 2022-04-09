@@ -20,6 +20,7 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -255,6 +256,8 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
+        console.log(block.timestamp);
+        console.log(startTime);
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -406,6 +409,11 @@ contract Seed {
             seedAmount >= vestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
+        console.log("feeRemainder %s",feeRemainder);
+        console.log("feeAmount %s",feeAmount);
+        console.log("_fundingAmount %s",_fundingAmount);
+        console.log("fundingCollected + _fundingAmount %s",fundingCollected+ _fundingAmount);
+        console.log("hardCap %s",hardCap);
 
         // total fundingAmount should not be greater than the hardCap
         require(
@@ -418,15 +426,20 @@ contract Seed {
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
 
+        console.log(feeRemainder);
+        console.log(feeAmount);
+
         if (feeRemainder == 0){
             feeAmount = 0;
-        }else if (feeRemainder - feeAmount < 0){
-            feeAmount = feeAmount - feeRemainder;
-            feeRemainder -= feeAmount;
+        }else if (feeRemainder < feeAmount){
+            feeRemainder -= feeRemainder;
             feeAmount = 0;
         }else{
             feeRemainder -= feeAmount;
         }
+
+        console.log(feeRemainder);
+        console.log(feeAmount);
 
         if (fundingCollected >= softCap) {
             minimumReached = true;
