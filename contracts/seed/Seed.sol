@@ -43,10 +43,10 @@ contract Seed {
     IERC20 public seedToken;
     IERC20 public fundingToken;
     uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
 
     bytes public metadata; // IPFS Hash
 
+    uint256 internal constant MAX_FEE = 45 / 100 *10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee) 
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -229,6 +229,9 @@ contract Seed {
             _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
         );
+
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
         uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
                     _classCap,
@@ -342,7 +345,9 @@ contract Seed {
                 _classFee[i] < MAX_FEE,
                 "Seed: fee cannot be more than 45%"
             );
-            
+
+            // The maximum required amount of the seed tokens to satisfy
+            // the maximum possible classCap is calculated.
             uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
             classes.push(ContributorClass(
                 _classCaps[i],
@@ -380,6 +385,7 @@ contract Seed {
         // console.log("userClass.classCap %s", userClass.classCap);
         // console.log("userClass.classFundingCollected + _fundingAmount %s", userClass.classFundingCollected + _fundingAmount);
 
+        // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
 
@@ -406,9 +412,7 @@ contract Seed {
         // console.log("userClass.price %s",userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
-        // uint256 feeAmount = (seedAmount * fee) / PRECISION;
-        uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;    
-        // console.log("feeAmount %s",feeAmount);
+        uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
@@ -520,7 +524,6 @@ contract Seed {
 
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
-
         require(
             seedToken.transfer(beneficiary, feeAmountOnClaim) &&
                 seedToken.transfer(_funder, _claimAmount),
@@ -749,8 +752,7 @@ contract Seed {
      * @dev                     Amount of seed tokens claimed as fee
      */
     function allFeeClaimed() public view returns (uint256) {
-
-        return feeClaimed;//(seedClaimed * fee) / PRECISION; 
+        return feeClaimed;
     }
 
     /**
@@ -790,10 +792,6 @@ contract Seed {
         view
         returns (uint256)
     {
-        // console.log("SAFF B");
-        // console.log(funders[_funder].fundingAmount);
-        // console.log(PRECISION);
-        // console.log("SAFF E");
         return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
     }
 
