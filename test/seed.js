@@ -828,7 +828,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          console.log("Here");
 
           await seedToken
               .connect(root)
@@ -840,7 +839,6 @@ describe("Contract: Seed", async () => {
                   await fundingToken.balanceOf(buyer2.address)
               );
 
-          console.log("There");
           await fundingToken
               .connect(root)
               .transfer(
@@ -854,7 +852,6 @@ describe("Contract: Seed", async () => {
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
 
-          console.log("After there");
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -876,6 +873,7 @@ describe("Contract: Seed", async () => {
           await setup.data.seed
               .connect(admin)
               .addClass(e_fourteen, e_twenty, e_twenty, CLASS_VESTING_DURATION, ethers.BigNumber.from("21000000000"), CLASS_FEE);
+          console.log("Here");
         });
 
         it("it cannot claim before currentVestingStartTime", async () => {  
@@ -887,6 +885,8 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .setClass(buyer1.address, 3);
 
+          console.log("There");
+
           time.increase(await time.duration.days(1));
 
           await setup.data.seed
@@ -896,6 +896,8 @@ describe("Contract: Seed", async () => {
           await setup.data.seed 
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
+
+          console.log("After there");
 
           await expectRevert(
               setup.data.seed
