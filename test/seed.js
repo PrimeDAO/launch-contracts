@@ -884,7 +884,6 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .setClass(buyer1.address, 3);
 
-          console.log("There");
 
           time.increase(await time.duration.days(1));
 
@@ -895,16 +894,14 @@ describe("Contract: Seed", async () => {
           await setup.data.seed 
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
-
-          console.log("After there");
+=
 
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
-                  .claim(buyer1.address, new BN(softCap).mul(new BN(twoBN)).toString()),
+                  .claim(buyer1.address, ethers.BigNumber.from(softCap).mul(ethers.BigNumber.from(twoBN))),
               "Seed: vesting start time for this class is not started yet"
           );
-          console.log("After after there");
         });
         it("claims all seeds after vesting duration", async () => {
           time.increase(await time.duration.days(7));
