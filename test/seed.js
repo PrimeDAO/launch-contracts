@@ -42,7 +42,6 @@ describe("Contract: Seed", async () => {
   let softCap;
   let hardCap;
   let price;
-//   let secondClassPrice; //new
   let buyAmount;
   let smallBuyAmount;
   let buySeedAmount;
@@ -81,10 +80,8 @@ describe("Contract: Seed", async () => {
   const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
   const CLASS_20_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("200000000000000000").toString(); 
   const CLASS_VESTING_DURATION =  10000000;
-//   const SECOND_CLASS_VESTING_DURATION = 20000000; //CLASS_VESTING_DURATION * 2;
   const CLASS_VESTING_START_TIME = 1700000000;
   const CLASS_FEE = parseEther("0.02").toString(); // 2%
-//   const SECOND_CLASS_FEE = parseEther("0.21").toString(); //21% // 44% //when it's 0.22 or more - reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block) appears
   const SECOND_CLASS_FEE = parseEther("0.44").toString(); //44% 
   const e_twenty = 1e12;
   const e_fourteen = 1e14;
@@ -3037,10 +3034,6 @@ describe("Contract: Seed", async () => {
               );
         });
         it("can only withdraw after vesting starts", async () => {
-          // 780000000000000000 - 3* 90000000000000000 = 510000000000000000
-          // 510000000000000000 - base seed balance
-          // 3* 90000000000000000 - from buyer1 and buyer3
-          
           await setup.seed.connect(admin).withdraw();
           expect(
               (await fundingToken.balanceOf(setup.seed.address)).toString()
@@ -3050,11 +3043,10 @@ describe("Contract: Seed", async () => {
        
           expect(
               (await fundingToken.balanceOf(admin.address)).toString() 
-          ).to.equal(expectedBalance);//fails --> so fundingToken.balanceOf(admin.address) = 780000000000000000
+          ).to.equal(expectedBalance);
         });
         it("updates the amount of funding token withdrawn", async () => {
           const maxWithdrawAmount = ethers.BigNumber.from(getFundingAmounts("9").mul(2));
-        //   const expectedWithdrawAmount = maxWithdrawAmount.sub(ethers.BigNumber.from(getFundingAmounts("17"))); // 17 - withdrawed by buyer1
           await expect(
               (await setup.seed.fundingWithdrawn()).toString()
           ).to.equal(maxWithdrawAmount);
