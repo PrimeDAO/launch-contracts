@@ -828,6 +828,7 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
+          console.log("Here");
 
           await seedToken
               .connect(root)
@@ -838,6 +839,8 @@ describe("Contract: Seed", async () => {
                   buyer3.address,
                   await fundingToken.balanceOf(buyer2.address)
               );
+
+          console.log("There");
           await fundingToken
               .connect(root)
               .transfer(
@@ -850,6 +853,8 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
+
+          console.log("After there");
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -862,7 +867,8 @@ describe("Contract: Seed", async () => {
               vestingCliff.toNumber(),
               permissionedSeed,
               fee
-          );    
+          );
+          console.log("After after there");
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("21000000000"), CLASS_FEE);
