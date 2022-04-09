@@ -828,7 +828,6 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
 
           await seedToken
               .connect(root)
@@ -839,6 +838,7 @@ describe("Contract: Seed", async () => {
                   buyer3.address,
                   await fundingToken.balanceOf(buyer2.address)
               );
+
           await fundingToken
               .connect(root)
               .transfer(
@@ -851,6 +851,7 @@ describe("Contract: Seed", async () => {
                   setup.data.seed.address,
                   new BN(buyAmount).mul(new BN(twoBN)).toString()
               );
+
           await setup.data.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -863,7 +864,7 @@ describe("Contract: Seed", async () => {
               vestingCliff.toNumber(),
               permissionedSeed,
               fee
-          );    
+          );
           await setup.data.seed
               .connect(admin)
               .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, ethers.BigNumber.from("21000000000"), CLASS_FEE);
@@ -882,15 +883,13 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .setClass(buyer1.address, 3);
 
-          time.increase(await time.duration.days(1));
+
+          await time.increase(await time.duration.days(1));
 
           await setup.data.seed
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
-          await setup.data.seed 
-              .connect(buyer1)
-              .buy(new BN(buyAmount)).toString();
 
           await expectRevert(
               setup.data.seed
