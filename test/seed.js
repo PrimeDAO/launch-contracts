@@ -3220,21 +3220,16 @@ describe("Contract: Seed", async () => {
                 .mul(new BN(PRECISION.toString()))
                 .div(new BN(price_class1));
   
-            // console.log("seedAmount js %s", seedAmount);
             await expect(setup.seed.connect(buyer3).buy(smallBuyAmount))
                 .to.emit(setup.seed, "SeedsPurchased")
-                .withArgs(buyer3.address, seedAmount);//its correct
-
-            // console.log("fundingToken.balanceOf(setup.seed.address)) js %s", (await fundingToken.balanceOf(setup.seed.address)).toString());
-            // console.log("Math.floor((buySmallSeedAmount * price_class1) / PRECISION) js %s", Math.floor((buySmallSeedAmount * price_class1) / PRECISION).toString());
-
+                .withArgs(buyer3.address, seedAmount);
             expect(
                 (await fundingToken.balanceOf(setup.seed.address)).toString()
             ).to.equal(
                 Math.floor((buySmallSeedAmount * price) / PRECISION).toString()
             );
         });
-        it("cannot buy more than class 1 allows class funding", async () => { //test for different prices/results (delete this comment later)
+        it("cannot buy more than class 1 allows class funding", async () => {
           await expectRevert(
             setup.seed
                 .connect(buyer3)
@@ -3261,19 +3256,6 @@ describe("Contract: Seed", async () => {
             seedAmount = new BN(smallBuyAmount)
                 .mul(new BN(PRECISION.toString()))
                 .div(new BN(price));
-
-
-                // claimAmount_class2 = new BN(time.duration.days(1)).mul(
-                //     new BN(buySeedAmount)
-                //         // .mul(new BN(twoBN))
-                //         .mul(new BN(PRECISION.toString()))
-                //         .div(new BN(price))
-                //         .div(new BN(localVestingDuration)));
-                // feeAmount_class2 = new BN(claimAmount_class1)
-                //     .mul(new BN(SECOND_CLASS_FEE))
-                //     .div(new BN(PRECISION.toString()));
-
-  
             await expect(setup.seed.connect(buyer1).buy(smallBuyAmount))
                 .to.emit(setup.seed, "SeedsPurchased")
                 .withArgs(buyer1.address, seedAmount);
@@ -3283,12 +3265,7 @@ describe("Contract: Seed", async () => {
                 Math.floor((buySmallSeedAmount * price) / PRECISION * 2).toString() // * 2 because we already buyed from buyer3
             );
         });
-        it("cannot buy more than class 2 allows personal funding", async () => { //test for different prices/results (delete this comment later)
-            // smallBuyAmount = getFundingAmounts("9").toString();
-            // const CLASS_21_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("210000000000000001").toString(); // = 2 * smallBuyAmount
-
-            // await setup.seed.connect(buyer1).buy(smallBuyAmount);
-            // console.log("CLASS_2_PERSONAL_FUNDING_LIMIT %s", CLASS_18_PERSONAL_FUNDING_LIMIT);
+        it("cannot buy more than class 2 allows personal funding", async () => {
             console.log('getClass(2))[1] %s', (await setup.seed.getClass(2))[1]);
             await expectRevert(
                 setup.seed.connect(buyer1).buy(elevenBuyAmount),
@@ -3298,14 +3275,8 @@ describe("Contract: Seed", async () => {
         });
         it("it cannot claim when vesting start time for this class is not started yet buyer3", async () => {
           await time.increase(time.duration.days(7));
-
-        //   console.log("current balance in 'it' %s", (await fundingToken.balanceOf(setup.seed.address)).toString());
-        //   console.log("buyer3 balance in 'it' %s", (await fundingToken.balanceOf(buyer3.address)).toString());
-        //   console.log(getFundingAmounts("9").toString());
           await expect(setup.seed.connect(buyer3).buy(getFundingAmounts("9"))); //was necessary to buy this somewhere
-
           await time.increase(time.duration.days(1));
-        //   await time.increase(time.duration.days(5));
 
           await expectRevert(
               setup.seed.
@@ -3315,12 +3286,6 @@ describe("Contract: Seed", async () => {
           );
         });
         it("it cannot claim when vesting start time for this class is not started yet buyer1", async () => {
-            // console.log("current balance in 'it' %s", (await fundingToken.balanceOf(setup.seed.address)).toString());
-            // console.log("buyer1 balance in 'it' %s", (await fundingToken.balanceOf(buyer1.address)).toString());
-          //   console.log(getFundingAmounts("9").toString());
-          //   await expect(setup.seed.connect(buyer1).buy(getFundingAmounts("17"))); //was necessary to buy this somewhere
-  
-            // await time.increase(time.duration.days(1));
             await expectRevert(
                 setup.seed.
                     connect(buyer1)
