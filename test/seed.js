@@ -898,7 +898,7 @@ describe("Contract: Seed", async () => {
           await expectRevert(
               setup.data.seed
                   .connect(buyer1)
-                  .claim(buyer1.address, ethers.BigNumber.from(softCap).mul(ethers.BigNumber.from(twoBN))),
+                  .claim(buyer1.address, ethers.BigNumber.from(softCap).mul(ethers.BigNumber.from("2"))),
               "Seed: vesting start time for this class is not started yet"
           );
         });
