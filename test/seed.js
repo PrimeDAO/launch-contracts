@@ -894,7 +894,6 @@ describe("Contract: Seed", async () => {
           await setup.data.seed 
               .connect(buyer1)
               .buy(new BN(buyAmount)).toString();
-=
 
           await expectRevert(
               setup.data.seed
