@@ -2821,6 +2821,9 @@ describe("Contract: Seed", async () => {
           await setup.seed
               .connect(admin)
               .whitelist(buyer3.address, 1); 
+          await setup.seed
+              .connect(admin)
+              .whitelist(buyer4.address, 1); 
   
           expect(
               (await setup.seed.funders(buyer1.address))[0].toString()
@@ -2828,6 +2831,32 @@ describe("Contract: Seed", async () => {
           expect(
               (await setup.seed.funders(buyer3.address))[0].toString()
           ).to.equal(ethers.BigNumber.from(1).toString());
+          expect(
+            (await setup.seed.funders(buyer4.address))[0].toString()
+          ).to.equal(ethers.BigNumber.from(1).toString());
+        });
+        it("it changes class", async () => {
+            await setup.seed
+                .connect(admin)
+                .setClass(buyer4.address, 2); 
+            expect(
+              (await setup.seed.funders(buyer4.address))[0].toString()
+            ).to.equal(ethers.BigNumber.from(2).toString());
+        });
+        context("» unwhitelist", () => {
+            it("removes a user from the whitelist", async () => {
+              expect(await setup.seed.whitelisted(buyer4.address)).to.equal(true);
+              await setup.seed.connect(admin).unwhitelist(buyer4.address);
+              expect(await setup.seed.whitelisted(buyer4.address)).to.equal(false);
+            });
+            it("reverts when unwhitelist account buys", async () => {
+              await setup.seed.connect(admin)
+                    .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
+              await expectRevert(
+                    setup.seed.connect(buyer4).buy(getFundingAmounts("1").toString()),
+                    "Seed: sender has no rights"
+              );
+            });
         });
         it("it buys tokens buyer3", async () => {
             await time.increase(time.duration.days(1));
@@ -2958,7 +2987,7 @@ describe("Contract: Seed", async () => {
                 .div(new BN(currentVestingDuration.toNumber()));
         
             expect(claim.toString()).to.equal(expectedClaim.toString());
-          });
+        });
         it("it returns amount of the fee buyer3", async () => {
           await time.increase(time.duration.days(3));    
           let feeSent = await setup.seed
@@ -2978,7 +3007,7 @@ describe("Contract: Seed", async () => {
                 .connect(buyer3)
                 .callStatic.claim(buyer3.address, currentClaimable.toString());
             expect(feeSent.toString()).to.equal(feeAmount.toString());
-          });
+        });
         it("claims all seeds after vesting duration buyer3", async () => {
           await time.increase(time.duration.days(4));
   
@@ -3127,7 +3156,7 @@ describe("Contract: Seed", async () => {
         CLASS_25_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("250000000000000000").toString(); 
 
     });
-    context("# few classes simultanuosly whitelisted version new context", () => {
+    context("# few classes simultanuosly non-whitelisted version new context", () => {
         it("initializes", async () => {
             // emulate creation & initialization via seedfactory & fund with seedTokens
             permissionedSeed = false;
@@ -3201,17 +3230,25 @@ describe("Contract: Seed", async () => {
         it("it sets class", async () => {
           await setup.seed
               .connect(admin)
-              .setClass(buyer1.address, 2);
+              .setClass(buyer1.address, 1);
           await setup.seed
               .connect(admin)
               .setClass(buyer3.address, 1); 
   
           expect(
               (await setup.seed.funders(buyer1.address))[0].toString()
-          ).to.equal(ethers.BigNumber.from(2).toString());
+          ).to.equal(ethers.BigNumber.from(1).toString());
           expect(
               (await setup.seed.funders(buyer3.address))[0].toString()
           ).to.equal(ethers.BigNumber.from(1).toString());
+        });
+        it("it changes class", async () => {
+            await setup.seed
+                .connect(admin)
+                .setClass(buyer1.address, 2); 
+            expect(
+              (await setup.seed.funders(buyer1.address))[0].toString()
+            ).to.equal(ethers.BigNumber.from(2).toString());
         });
         it("it buys tokens buyer3", async () => {
             await time.increase(time.duration.days(1));
@@ -3343,7 +3380,7 @@ describe("Contract: Seed", async () => {
                 .div(new BN(currentVestingDuration.toNumber()));
         
             expect(claim.toString()).to.equal(expectedClaim.toString());
-          });
+        });
         it("it returns amount of the fee buyer3", async () => {
           await time.increase(time.duration.days(3));
           let feeSent = await setup.seed
@@ -3363,7 +3400,7 @@ describe("Contract: Seed", async () => {
                 .connect(buyer3)
                 .callStatic.claim(buyer3.address, currentClaimable.toString());
             expect(feeSent.toString()).to.equal(feeAmount.toString());
-          });
+        });
         it("claims all seeds after vesting duration buyer3", async () => {
           await time.increase(time.duration.days(4));
   
