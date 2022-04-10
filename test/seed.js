@@ -80,7 +80,7 @@ describe("Contract: Seed", async () => {
   const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
   const CLASS_20_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("200000000000000000").toString(); 
   const CLASS_VESTING_DURATION =  10000000;
-  const CLASS_VESTING_START_TIME = 1700000000;
+  const CLASS_VESTING_START_TIME = 2000000000;
   const CLASS_FEE = parseEther("0.02").toString(); // 2%
   const SECOND_CLASS_FEE = parseEther("0.44").toString(); //44% 
   const e_twenty = 1e12;
@@ -2850,8 +2850,6 @@ describe("Contract: Seed", async () => {
               expect(await setup.seed.whitelisted(buyer4.address)).to.equal(false);
             });
             it("reverts when unwhitelist account buys", async () => {
-              await setup.seed.connect(admin)
-                    .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
               await expectRevert(
                     setup.seed.connect(buyer4).buy(getFundingAmounts("1").toString()),
                     "Seed: sender has no rights"
