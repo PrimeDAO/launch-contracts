@@ -796,7 +796,7 @@ describe("Contract: Seed", async () => {
           );
         });
         it("updates the amount of seed transfered as fee to beneficiary", async () => {
-          expect((await setup.seed.allFeeClaimed()).toString()).to.equal(
+          expect((await setup.seed.feeClaimed()).toString()).to.equal(
               feeAmount.toString()
           );
         });
@@ -926,7 +926,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.allFeeClaimed();
+          const feeClaimed = await setup.data.seed.feeClaimed();
           expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -1032,7 +1032,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.allFeeClaimed();
+          const feeClaimed = await setup.data.seed.feeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
