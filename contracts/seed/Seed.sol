@@ -428,7 +428,7 @@ contract Seed {
         }
 
         //functionality of addFunder
-        if (funders[msg.sender].fundingAmount == 0) {
+        if (funders[msg.sender].fundingAmount == 0 && _fundingAmount > 0) {
             totalFunderCount++;
         }
         funders[msg.sender].fundingAmount += _fundingAmount;
