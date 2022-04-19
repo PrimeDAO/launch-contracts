@@ -20,11 +20,14 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
+
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
  */
 contract Seed {
+    using SafeERC20 for IERC20;
     // Locked parameters
     address public beneficiary;
     address public admin;
@@ -647,7 +650,8 @@ contract Seed {
         );
         uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.transfer(msg.sender, pendingFundingBalance);
+        // fundingToken.transfer(msg.sender, pendingFundingBalance);
+        fundingToken.safeTransfer(msg.sender, pendingFundingBalance);         
     }
 
     /**
