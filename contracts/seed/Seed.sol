@@ -647,7 +647,7 @@ contract Seed {
         );
         uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.transfer(msg.sender, pendingFundingBalance);
+        fundingToken.transfer(msg.sender, pendingFundingBalance);         
     }
 
     /**
@@ -700,7 +700,7 @@ contract Seed {
     /**
      * @dev                     Amount of seed tokens claimed as fee
      */
-    function allFeeClaimed() public view returns (uint256) {
+    function allFeeClaimed() external view returns (uint256) {
         return feeClaimed;
     }
 
@@ -709,7 +709,7 @@ contract Seed {
      * @param _funder           address of funder to check fee claimed
      */
     function feeClaimedForFunder(address _funder)
-        public
+        external
         view
         returns (uint256)
     {
@@ -750,7 +750,7 @@ contract Seed {
      */
     function getClass(
         uint8 _id
-    ) public view returns(
+    ) external view returns(
         uint256 classCap,
         uint256 individualCap,
         uint256 price,
