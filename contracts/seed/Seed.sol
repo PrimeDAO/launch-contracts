@@ -390,8 +390,7 @@ contract Seed {
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
-                    //userClass.seedAmountRequired + userClass.feeAmountRequired,
-                    seedAmountRequired + feeAmountRequired,
+                    userClass.seedAmountRequired + userClass.feeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
@@ -426,7 +425,10 @@ contract Seed {
         }
         if (fundingCollected >= hardCap) {
             maximumReached = true;
-            classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
+            // classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
+            for(uint8 i = 0; i < _classCaps.length; i++){
+                classes[i].classVestingStartTime = block.timestamp;
+            }
         }
 
         //functionality of addFunder
