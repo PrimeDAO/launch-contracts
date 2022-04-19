@@ -1676,7 +1676,7 @@ describe("Contract: Seed", async () => {
                   .connect(admin)
                   .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
               expect(
-                  (await setup.seed.getClass(0))[0]
+                  (await setup.seed.classes(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
             });
             it("it reverts when fee >= 45% for Customer class", async () => {
@@ -1697,7 +1697,7 @@ describe("Contract: Seed", async () => {
                   .connect(admin)
                   .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
               expect(
-                  (await setup.seed.getClass(3))[1]
+                  (await setup.seed.classes(3))[1]
               ).to.equal((ethers.BigNumber.from(e_twenty)));
             });
             it("it reverts when fee >= 45% for Customer class", async () => {
@@ -1811,7 +1811,7 @@ describe("Contract: Seed", async () => {
                 .connect(admin)
                 .changeClass(0, e_twenty, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
             expect(
-                (await setup.data.seed.getClass(0))[0]
+                (await setup.data.seed.classes(0))[0]
             ).to.equal((ethers.BigNumber.from(e_twenty)));
           });
           it("it reverts when incorrect class choosen", async () => {
