@@ -390,11 +390,13 @@ contract Seed {
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >=
-                    userClass.seedAmountRequired + userClass.feeAmountRequired,
+                    //userClass.seedAmountRequired + userClass.feeAmountRequired,
+                    seedAmountRequired + feeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
         }
+
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
@@ -458,7 +460,7 @@ contract Seed {
         returns (uint256)
     {
         require(minimumReached, "Seed: minimum funding amount not met");
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
         require(
@@ -669,7 +671,7 @@ contract Seed {
      * @param _funder           Address of funder to find the maximum claim
      */
     function calculateClaim(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
@@ -713,7 +715,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
@@ -725,7 +727,7 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
