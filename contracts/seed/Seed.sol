@@ -389,6 +389,8 @@ contract Seed {
 
         if (!isFunded) {
             require(
+                // seedAmountRequired is an amount which is needed to be selled
+                // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
                 seedToken.balanceOf(address(this)) >=
                     userClass.seedAmountRequired + userClass.feeAmountRequired,
                 "Seed: sufficient seeds not provided"
