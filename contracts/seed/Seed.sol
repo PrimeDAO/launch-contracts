@@ -220,28 +220,13 @@ contract Seed {
         uint256 _classVestingStartTime,
         uint256 _classFee
     ) onlyAdmin public {
-        require(
-            endTime < _classVestingStartTime,
-            "Seed: vesting start time can't be less than endTime"
-        );
-        require(
-            _classFee < MAX_FEE,
-            "Seed: fee cannot be more than 45%"
-        );
-
-        // The maximum required amount of the seed tokens to satisfy
-        // the maximum possible classCap is calculated.
-        uint256 seedRequired = (_classCap * PRECISION) / _price;
-        classes.push( ContributorClass(
-                    _classCap,
-                    _individualCap,
-                    _price,
-                    _vestingDuration,
-                    _classVestingStartTime,
-                    _classFee,
-                    0,
-                    seedRequired,
-                    (seedRequired * _classFee) / PRECISION ));
+        checkAndPush(
+            _classCap,
+            _individualCap,
+            _price,
+            _vestingDuration,
+            _classVestingStartTime,
+            _classFee);
     }
 
     /**
@@ -334,30 +319,48 @@ contract Seed {
                 _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            require(
-                endTime < _classVestingStartTime[i],
-                "Seed: vesting start time can't be less than endTime"
-            );
-            require(
-                _classFee[i] < MAX_FEE,
-                "Seed: fee cannot be more than 45%"
-            );
-
-            // The maximum required amount of the seed tokens to satisfy
-            // the maximum possible classCap is calculated.
-            uint256 seedRequired = (_classCaps[i] * PRECISION) / _prices[i];
-            classes.push(ContributorClass(
+            checkAndPush(
                 _classCaps[i],
                 _individualCaps[i],
                 _prices[i],
                 _vestingDurations[i],
                 _classVestingStartTime[i],
-                _classFee[i],
-                0,
-                seedRequired,
-                (seedRequired * _classFee[i]) / PRECISION));
+                _classFee[i]);
         }
     }
+
+    function checkAndPush(
+        uint256 _classCap,
+        uint256 _individualCap,
+        uint256 _price,
+        uint256 _vestingDuration,
+        uint256 _classVestingStartTime,
+        uint256 _classFee
+    ) onlyAdmin internal {
+        require(
+            endTime < _classVestingStartTime,
+            "Seed: vesting start time can't be less than endTime"
+        );
+        require(
+            _classFee < MAX_FEE,
+            "Seed: fee cannot be more than 45%"
+        );
+
+        // The maximum required amount of the seed tokens to satisfy
+        // the maximum possible classCap is calculated.
+        uint256 seedRequired = (_classCap * PRECISION) / _price;
+        classes.push( ContributorClass(
+            _classCap,
+            _individualCap,
+            _price,
+            _vestingDuration,
+            _classVestingStartTime,
+            _classFee,
+            0,
+            seedRequired,
+            (seedRequired * _classFee) / PRECISION ));
+    }
+
 
     /**
      * @dev                     Buy seed tokens.
