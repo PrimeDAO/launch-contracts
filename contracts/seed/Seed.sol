@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -677,29 +676,24 @@ contract Seed {
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-console.log("log currentClassVestingStartTime %s",currentClassVestingStartTime);
-        
+  
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
-console.log("log elapsedSeconds  %s",elapsedSeconds);
         if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
         uint256 currentVestingDuration = classes[currentId].vestingDuration; 
-console.log("log currentVestingDuration  %s",currentVestingDuration);
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
-console.log("log amountVested  %s",amountVested);
-console.log("log return  %s",amountVested - tokenFunder.totalClaimed);
             return amountVested - tokenFunder.totalClaimed;
         }
     }
