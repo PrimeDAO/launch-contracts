@@ -692,13 +692,6 @@ contract Seed {
     }
 
     /**
-     * @dev                     Amount of seed tokens claimed as fee
-     */
-    function allFeeClaimed() public view returns (uint256) {
-        return feeClaimed;
-    }
-
-    /**
      * @dev                     get fee claimed for funder
      * @param _funder           address of funder to check fee claimed
      */
