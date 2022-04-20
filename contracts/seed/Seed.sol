@@ -401,12 +401,6 @@ contract Seed {
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
 
-        // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
-        require(
-            seedAmount >= vestingDuration,
-            "Seed: amountVestedPerSecond > 0"
-        );
-
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,
@@ -428,7 +422,7 @@ contract Seed {
         }
 
         //functionality of addFunder
-        if (funders[msg.sender].fundingAmount == 0) {
+        if (funders[msg.sender].fundingAmount == 0 && _fundingAmount > 0) {
             totalFunderCount++;
         }
         funders[msg.sender].fundingAmount += _fundingAmount;
