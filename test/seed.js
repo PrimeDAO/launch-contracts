@@ -999,11 +999,11 @@ describe("Contract: Seed", async () => {
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
         });
         it("claims all seeds after vesting duration", async () => {
-          setup.data.prevBalance = await seedToken.balanceOf(
-              beneficiary.address
-          );
           time.increase(await time.duration.days(7));
 
+          setup.data.prevBalance = await seedToken.balanceOf(
+              beneficiary.address
+          );          
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
@@ -1031,8 +1031,6 @@ describe("Contract: Seed", async () => {
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
           const dividedFee = fee / divisor;
-          const feeDifference = 204000; //259331662100456 - 259331661896456 = 204000
-          const expectedFee = dividedFee - feeDifference;
           const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
           );          
@@ -1043,8 +1041,6 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.allFeeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
-          const feeDifference = 204000;
-          const expectedFeeAmountRequired = dividedFeeAmountRequired - feeDifference;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -1054,8 +1050,6 @@ describe("Contract: Seed", async () => {
           const dividedFeeAmountRequired = ethers.BigNumber.from((fee/divisor).toString());
           const sdpb = ethers.BigNumber.from(setup.data.prevBalance);
           const sum = ethers.BigNumber.from(dividedFeeAmountRequired.add(sdpb));
-          const feeDifference = 204000; //259331662100456 - 259331661896456 = 204000
-          const expected = ethers.BigNumber.from(sum.sub(feeDifference));
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           ).to.equal((sum).toString());
