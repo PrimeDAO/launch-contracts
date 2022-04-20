@@ -707,6 +707,7 @@ describe("Contract: Seed", async () => {
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(timeDifference))
+              .add(new BN(1))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
           expect(claim.toString()).to.equal(expectedClaim.toString());
