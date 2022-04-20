@@ -66,7 +66,7 @@ contract Seed {
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
     uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
-    ContributorClass[] classes; // Array of contributor classes
+    ContributorClass[] public classes; // Array of contributor classes
 
     mapping(address => bool) public whitelisted; // funders that are whitelisted and allowed to contribute
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
@@ -401,12 +401,6 @@ contract Seed {
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
 
-        // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
-        require(
-            seedAmount >= vestingDuration,
-            "Seed: amountVestedPerSecond > 0"
-        );
-
         // total fundingAmount should not be greater than the hardCap
         require(
             fundingCollected + _fundingAmount <= hardCap,
@@ -430,7 +424,7 @@ contract Seed {
         }
 
         //functionality of addFunder
-        if (funders[msg.sender].fundingAmount == 0) {
+        if (funders[msg.sender].fundingAmount == 0 && _fundingAmount > 0) {
             totalFunderCount++;
         }
         funders[msg.sender].fundingAmount += _fundingAmount;
@@ -697,13 +691,6 @@ contract Seed {
     }
 
     /**
-     * @dev                     Amount of seed tokens claimed as fee
-     */
-    function allFeeClaimed() public view returns (uint256) {
-        return feeClaimed;
-    }
-
-    /**
      * @dev                     get fee claimed for funder
      * @param _funder           address of funder to check fee claimed
      */
@@ -741,33 +728,5 @@ contract Seed {
         returns (uint256)
     {
         return (funders[_funder].fundingAmount * PRECISION) / classes[funders[_funder].class].price;
-    }
-
-    /**
-     * @dev                      Get contributor class.
-     * @param _id                The total caps of the contributor class.
-     */
-    function getClass(
-        uint8 _id
-    ) public view returns(
-        uint256 classCap,
-        uint256 individualCap,
-        uint256 price,
-        uint256 vestingDuration,
-        uint256 classFundingCollected,
-        uint256 classVestingStartTime,
-        uint256 classFee,
-        uint256 seedAmountRequired,
-        uint256 feeAmountRequired)
-    {
-        classCap = classes[_id].classCap;
-        individualCap = classes[_id].individualCap;
-        price = classes[_id].price;
-        vestingDuration = classes[_id].vestingDuration;
-        classFundingCollected = classes[_id].classFundingCollected;
-        classVestingStartTime = classes[_id].classVestingStartTime;
-        classFee = classes[_id].classFee;
-        seedAmountRequired = classes[_id].seedAmountRequired;
-        feeAmountRequired = classes[_id].feeAmountRequired;
     }
 }
