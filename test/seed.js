@@ -709,21 +709,21 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime(); //1650474496
-          // const newVestingStartTime = (await time.latest()).add(vestingStartTime).sub(endTime);
-          const timeDifference = 597132;//597546; // vestingStartTime - currentClassVestingStartTime;
+          // const currentClassVestingStartTime = ethers.BigNumber.from(1650474821);//(await time.latest()).add(vestingStartTime).sub(endTime);
+          const timeDifference = 597546;//597132;//597546; // vestingStartTime - currentClassVestingStartTime;
 
-          console.log(vestingStartTime.toString());
-          // console.log(newVestingStartTime.toString());
-          // console.log(vestingDuration.toString());
+          console.log("js vestingStartTime %s",vestingStartTime.toString());
+          console.log("js vestingDuration %s",vestingDuration.toString());
 
-          const expectedClaim = (await time.latest()) //NEED TO ADD SOME VALUE
+          const expectedClaim = (await time.latest()) //NEED TO ADD SOME VALUE  // elapsedSeconds = block.timestamp - currentClassVestingStartTime;
               .sub(new BN(vestingStartTime.toNumber())) // = 1651071628 1650474496
-              .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
+              // .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor // 10200000000000000 / 31536000= 323439878.2343988
               .add(new BN(timeDifference))
+              // amountVested = (elapsedSeconds * seedAmountForFunder(_funder)) / currentVestingDuration;
               .mul(new BN(buySeedAmount).mul(new BN(twoBN))) // = 10200000000000000
               .div(new BN(vestingDuration.toNumber())); // = 31536000
 
-          console.log(claim.toString());
+          console.log("claim %s", claim.toString());
           console.log(expectedClaim.toString());   
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
