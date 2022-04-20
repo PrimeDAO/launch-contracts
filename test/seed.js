@@ -713,8 +713,8 @@ describe("Contract: Seed", async () => {
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(timeDifference))
-              .mul(new BN(buySeedAmount).mul(new BN(twoBN))) // = 10200000000000000
-              .div(new BN(vestingDuration.toNumber())); // = 31536000
+              .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
+              .div(new BN(vestingDuration.toNumber()));
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
