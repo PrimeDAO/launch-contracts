@@ -395,7 +395,6 @@ contract Seed {
             );
             isFunded = true;
         }
-
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
@@ -425,7 +424,6 @@ contract Seed {
         }
         if (fundingCollected >= hardCap) {
             maximumReached = true;
-            // classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
             for(uint8 i = 0; i < classes.length; i++){
                 classes[i].classVestingStartTime = block.timestamp + (classes[i].classVestingStartTime - endTime);
             }
