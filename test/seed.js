@@ -305,12 +305,6 @@ describe("Contract: Seed", async () => {
           );
           await setup.seed.connect(admin).unpause();
         });
-        it("it cannot buy 0 seeds", async () => {
-          await expectRevert(
-              setup.seed.connect(buyer1).buy(zero.toString()),
-              "Seed: amountVestedPerSecond > 0"
-          );
-        });
         it("it buys tokens ", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
           seedAmount = new BN(buyAmount)
@@ -552,7 +546,7 @@ describe("Contract: Seed", async () => {
         });
         it("vestingStartTime == current timestamp", async () => {
           const timeDifference = 597546; //1649332997 - 1648735451 = 597546
-          const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
+          const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(2));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
           );
@@ -712,7 +706,7 @@ describe("Contract: Seed", async () => {
           const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
-              .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
+              .add(new BN(2)) //vestingStartTime = endTime + 1; in constructor
               .add(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
