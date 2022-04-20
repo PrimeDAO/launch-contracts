@@ -650,7 +650,6 @@ contract Seed {
         );
         uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        // fundingToken.transfer(msg.sender, pendingFundingBalance);
         fundingToken.safeTransfer(msg.sender, pendingFundingBalance);         
     }
 
