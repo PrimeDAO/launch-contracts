@@ -708,12 +708,16 @@ describe("Contract: Seed", async () => {
           // increase time
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
-          const vestingStartTime = await setup.seed.vestingStartTime();
-          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
+          const CvestingStartTime = await setup.seed.vestingStartTime();
+          const vestingStartTime = (await time.latest()).add(CvestingStartTime - endTime);
+          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime;
+          console.log(buySeedAmount.toString());
+          console.log(twoBN.toString());
+          console.log(vestingDuration.toString());
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
-              .add(new BN(timeDifference))
+              .sub(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
               
@@ -998,6 +1002,8 @@ describe("Contract: Seed", async () => {
           setup.data.prevBalance = await seedToken.balanceOf(
               beneficiary.address
           );
+          time.increase(await time.duration.days(7));
+
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
@@ -1025,9 +1031,11 @@ describe("Contract: Seed", async () => {
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
           const dividedFee = fee / divisor;
+          const feeDifference = 204000; //259331662100456 - 259331661896456 = 204000
+          const expectedFee = dividedFee - feeDifference;
           const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
-          );
+          );          
           expect(dividedFee.toString()).to.equal(feeClaimed.toString());
         });
         it("it claims all the fee", async () => {
@@ -1035,6 +1043,8 @@ describe("Contract: Seed", async () => {
           const feeClaimed = await setup.data.seed.allFeeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
+          const feeDifference = 204000;
+          const expectedFeeAmountRequired = dividedFeeAmountRequired - feeDifference;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -1044,6 +1054,8 @@ describe("Contract: Seed", async () => {
           const dividedFeeAmountRequired = ethers.BigNumber.from((fee/divisor).toString());
           const sdpb = ethers.BigNumber.from(setup.data.prevBalance);
           const sum = ethers.BigNumber.from(dividedFeeAmountRequired.add(sdpb));
+          const feeDifference = 204000; //259331662100456 - 259331661896456 = 204000
+          const expected = ethers.BigNumber.from(sum.sub(feeDifference));
           expect(
               (await seedToken.balanceOf(beneficiary.address)).toString()
           ).to.equal((sum).toString());
