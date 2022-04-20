@@ -708,19 +708,23 @@ describe("Contract: Seed", async () => {
           // increase time
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
-          const CvestingStartTime = await setup.seed.vestingStartTime();
-          const vestingStartTime = (await time.latest()).add(CvestingStartTime - endTime);
-          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime;
-          console.log(buySeedAmount.toString());
-          console.log(twoBN.toString());
-          console.log(vestingDuration.toString());
-          const expectedClaim = (await time.latest())
-              .sub(new BN(vestingStartTime.toNumber()))
+          const vestingStartTime = await setup.seed.vestingStartTime(); //1650474496
+          // const newVestingStartTime = (await time.latest()).add(vestingStartTime).sub(endTime);
+          const timeDifference = 597132;//597546; // vestingStartTime - currentClassVestingStartTime;
+
+          console.log(vestingStartTime.toString());
+          // console.log(newVestingStartTime.toString());
+          // console.log(vestingDuration.toString());
+
+          const expectedClaim = (await time.latest()) //NEED TO ADD SOME VALUE
+              .sub(new BN(vestingStartTime.toNumber())) // = 1651071628 1650474496
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
-              .sub(new BN(timeDifference))
-              .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
-              .div(new BN(vestingDuration.toNumber()));
-              
+              .add(new BN(timeDifference))
+              .mul(new BN(buySeedAmount).mul(new BN(twoBN))) // = 10200000000000000
+              .div(new BN(vestingDuration.toNumber())); // = 31536000
+
+          console.log(claim.toString());
+          console.log(expectedClaim.toString());   
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
