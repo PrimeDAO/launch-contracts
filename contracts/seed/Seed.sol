@@ -20,7 +20,6 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -646,13 +645,8 @@ contract Seed {
             maximumReached || (minimumReached && block.timestamp >= endTime),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
-        uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
-        fundingWithdrawn = fundingCollected;
-
-console.log(pendingFundingBalance);
         uint256 toWithdraw = fundingToken.balanceOf(address(this));
-console.log(toWithdraw);
-        fundingToken.transfer(msg.sender, toWithdraw);//pendingFundingBalance);
+        fundingToken.transfer(msg.sender, toWithdraw);
     }
 
     /**
