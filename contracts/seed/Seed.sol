@@ -256,8 +256,6 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-        console.log(block.timestamp);
-        console.log(startTime);
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -378,10 +376,6 @@ contract Seed {
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
 
-        console.log("userClass %s",funders[msg.sender].class);
-        console.log("userClass.classCap %s",userClass.classCap);
-        console.log("userClass.classFundingCollected + _fundingAmount %s",userClass.classFundingCollected + _fundingAmount);
-
         // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
@@ -404,25 +398,15 @@ contract Seed {
         }
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
-        console.log("seedAmount %s",seedAmount);
-        console.log("PRECISION %s",PRECISION);
-        console.log("userClass.price %s", userClass.price);
 
         // feeAmount is an amount of fee we are going to get in seedTokens
         uint256 feeAmount = (seedAmount * classes[funders[msg.sender].class].classFee) / PRECISION;
-        console.log("feeAmount %s",feeAmount);
-        console.log("classes[funders[msg.sender].class].classFee %s",classes[funders[msg.sender].class].classFee);
-        console.log("PRECISION %s",PRECISION);
-
 
         // seed amount vested per second > zero, i.e. amountVestedPerSecond = seedAmount/vestingDuration
         require(
             seedAmount >= vestingDuration,
             "Seed: amountVestedPerSecond > 0"
         );
-        // console.log("_fundingAmount %s",_fundingAmount);
-        // console.log("fundingCollected + _fundingAmount %s",fundingCollected+ _fundingAmount);
-        // console.log("hardCap %s",hardCap);
 
         // total fundingAmount should not be greater than the hardCap
         require(
@@ -434,22 +418,7 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-
-        console.log("\nfeeRemainder %s",feeRemainder);
-        console.log("feeAmount %s",feeAmount);
-        if (feeRemainder == 0){
-            console.log("ONE");
-            feeAmount = 0;
-        }else if (feeRemainder < feeAmount){
-            console.log("TWO");
-            feeRemainder -= feeRemainder;
-            feeAmount = 0;
-        }else{
-            feeRemainder -= feeAmount;
-        }
-
-        console.log(feeRemainder);
-        console.log(feeAmount);
+        feeRemainder -= feeAmount;
 
         if (fundingCollected >= softCap) {
             minimumReached = true;
@@ -679,7 +648,11 @@ contract Seed {
         );
         uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.transfer(msg.sender, pendingFundingBalance);
+
+console.log(pendingFundingBalance);
+        uint256 toWithdraw = fundingToken.balanceOf(address(this));
+console.log(toWithdraw);
+        fundingToken.transfer(msg.sender, toWithdraw);//pendingFundingBalance);
     }
 
     /**
