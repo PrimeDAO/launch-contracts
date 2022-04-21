@@ -128,7 +128,6 @@ describe("Contract: Seed", async () => {
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
-
       metadata = `0x`;
 
       buySeedFee = new BN(buySeedAmount)
@@ -177,8 +176,7 @@ describe("Contract: Seed", async () => {
 
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens         
-          let startTime = (await time.latest()).add(await time.duration.minutes(1));
-
+          
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -224,17 +222,6 @@ describe("Contract: Seed", async () => {
               seedForFee.toString()
           );
           expect((await setup.seed.isFunded()).toString()).to.equal("false");
-        });
-
-        it("sets", async() => {
-        const SECOND_CLASS_FEE = parseEther("0.44").toString(); // 44%
-
-        await setup.seed
-            .connect(admin)
-            .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, SECOND_CLASS_FEE);
-
-        await setup.seed.connect(admin).setClass(buyer4.address, 1);
-        time.increase(await time.duration.minutes(1));
         });
         it("it reverts on double initialization", async () => {
           await expectRevert(
@@ -283,12 +270,6 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer3)
               .approve(setup.seed.address, getFundingAmounts("102"));
-          await fundingToken
-              .connect(root)
-              .transfer(buyer4.address, getFundingAmounts("102"));
-          await fundingToken
-              .connect(buyer4)
-              .approve(setup.seed.address, getFundingAmounts("102"));
 
           claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
               new BN(buySeedAmount)
@@ -299,7 +280,6 @@ describe("Contract: Seed", async () => {
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
         });
-
         it("it cannot buy if not funded", async () => {
           await setup.seed
               .connect(admin)
@@ -447,45 +427,6 @@ describe("Contract: Seed", async () => {
               buyAmount.toString()
           );
         });
-        it("it returns amount of the fee when feeAmount > feeRemainder", async () => {           
-            let { ["1"]: feeAmount } = await setup.seed
-                .connect(buyer4)
-                .callStatic.buy(buyAmount);
-            expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
-        });
-        it("it returns amount of the fee when feeRemainder = 0", async () => {
-            // expectedFeeAmount expected == feeRemainder = 102000000000000
-            //23181818181818180 * 44 / 100 / 100 = 102000000000000.0
-            //231818181818181 * 0.44 = 101999999999999.64 --> that's why
-            //231818181818182 * 0.44 = 1020000000000.0009 --> need to add 100 or 20 (but both leads to "Seed: maximum class funding reached")
-            let expectedFeeAmount = ethers.BigNumber.from("102000000000000");
-            let classPrice = price; 
-            let classFee = parseEther("0.44").toString(); //SECOND_CLASS_FEE
-            let currentBuyAmount = expectedFeeAmount * classPrice / classFee + ethers.BigNumber.from("1");
-            console.log("JS currentBuyAmount %s \n", currentBuyAmount);
-
-            let { ["1"]: feeAmount } = await setup.seed
-                .connect(buyer4)
-                .callStatic.buy(currentBuyAmount.toString());
-            expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
-
-            /*-------- correct version with corret result. but it breaks other tests below. 
-            so need to move into the tests for 16 branch. so just commented for now*/ 
-            // await setup.seed
-            //     .connect(buyer4)
-            //     .buy(currentBuyAmount.toString());
-
-            // await setup.seed
-            //     .connect(buyer1)
-            //     .buy(smallBuyAmount.toString());
-
-            // let { ["1"]: feeAmount } = await setup.seed
-            //     .connect(buyer1)
-            //     .callStatic.buy(smallBuyAmount.toString());
-            // expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
-             /*-------- correct version with corret result. but it breaks other tests below. 
-            so need to move into the tests for 16 branch.*/
-        });
         it("it fails on claiming seed tokens if the distribution has not yet finished", async () => {
           await expectRevert(
               setup.seed
@@ -610,7 +551,7 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 597482; //1649498095 - 1650095577 = 597482
+          const timeDifference = 597546; //1649332997 - 1648735451 = 597546
           const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
           expect((await setup.seed.vestingStartTime()).toString()).to.equal(
               expectedClaim.toString()
@@ -768,7 +709,7 @@ describe("Contract: Seed", async () => {
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
           const vestingStartTime = await setup.seed.vestingStartTime();
-          const timeDifference = 597482; // vestingStartTime - currentClassVestingStartTime
+          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
@@ -1716,7 +1657,7 @@ describe("Contract: Seed", async () => {
       describe("» getStartTime", () => {
         it("returns correct startTime", async () => {
           expect((await setup.seed.startTime()).toString()).to.equal(
-              startTime.add(await time.duration.minutes(1)).toString()
+              startTime.toString()
           );
         });
       });
