@@ -201,13 +201,13 @@ describe("Contract: Seed", async () => {
           expect((await setup.seed.softCap()).toString()).to.equal(
               softCap.toString()
           );
-          expect((await setup.seed.price()).toString()).to.equal(
-              price.toString()
-          );
+          // expect((await setup.seed.price()).toString()).to.equal(
+          //     price.toString()
+          // );
           expect(await setup.seed.permissionedSeed()).to.equal(
               permissionedSeed
           );
-          expect((await setup.seed.fee()).toString()).to.equal(fee.toString());
+          // expect((await setup.seed.fee()).toString()).to.equal(fee.toString());
           expect(await setup.seed.closed()).to.equal(false);
           expect((await setup.seed.seedAmountRequired()).toString()).to.equal(
               seedForDistribution.toString()
@@ -551,9 +551,9 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.maximumReached()).to.equal(true);
         });
         it("vestingStartTime == current timestamp", async () => {
-          const timeDifference = 597546; //1649332997 - 1648735451 = 597546
-          const expectedClaim = (await time.latest()).add(new BN(timeDifference)).add(new BN(1));
-          expect((await setup.seed.vestingStartTime()).toString()).to.equal(
+          const timeDifference = 1;
+          const expectedClaim = (await time.latest()).sub(new BN(timeDifference)).add(new BN(1));
+          expect(((await setup.seed.getClass(0))[5]).toString()).to.equal(
               expectedClaim.toString()
           );
         });
@@ -708,12 +708,12 @@ describe("Contract: Seed", async () => {
           // increase time
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
-          const vestingStartTime = await setup.seed.vestingStartTime();
-          const timeDifference = 597546; // vestingStartTime - currentClassVestingStartTime
+          const vestingStartTime = (await setup.seed.getClass(0))[5];//vestingStartTime();
+          const timeDifference = 1; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
               .add(new BN(1)) //vestingStartTime = endTime + 1; in constructor
-              .add(new BN(timeDifference))
+              .sub(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
               
@@ -2275,9 +2275,9 @@ describe("Contract: Seed", async () => {
           expect(await seed.seedToken()).to.equal(seedToken.address);
           expect(await seed.fundingToken()).to.equal(fundingToken.address);
           expect((await seed.softCap()).toString()).to.equal(softCap);
-          expect((await seed.price()).toString()).to.equal(price);
+          // expect(((await setup.seed.getClass(0))[3]).toString()).to.equal(price);
           expect(await seed.permissionedSeed()).to.equal(permissionedSeed);
-          expect((await seed.fee()).toString()).to.equal(fee.toString());
+          // expect(((await setup.seed.getClass(0))[5]).toString()).to.equal(fee.toString());
           expect(await seed.closed()).to.equal(false);
           expect((await seed.seedAmountRequired()).toString()).to.equal(
               seedForDistribution.toString()

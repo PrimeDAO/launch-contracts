@@ -32,7 +32,7 @@ contract Seed {
     uint256 public hardCap;
     uint256 public seedAmountRequired; // Amount of seed required for distribution
     uint256 public feeAmountRequired; // Amount of seed required for fee
-    uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
+    // uint256 public price; // price of a SeedToken, expressed in fundingTokens, with precision of 10**18
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -41,7 +41,7 @@ contract Seed {
     uint32 public vestingCliff;
     IERC20 public seedToken;
     IERC20 public fundingToken;
-    uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
+    // uint256 public fee; // Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
 
     bytes public metadata; // IPFS Hash
 
@@ -55,8 +55,8 @@ contract Seed {
     bool public initialized; // is this contract initialized [not necessary that it is funded]
     bool public minimumReached; // if the softCap[minimum limit of funding token] is reached
     bool public maximumReached; // if the hardCap[maximum limit of funding token] is reached
-    bool public isWhitelistBatchInvoked; // if the whitelistBatch method have been invoked
-    uint256 public vestingStartTime; // timestamp for when vesting starts, by default == endTime,
+    // bool public isWhitelistBatchInvoked; // if the whitelistBatch method have been invoked
+    // uint256 public vestingStartTime; // timestamp for when vesting starts, by default == endTime,
     //     otherwise when maximumReached is reached
     uint256 public totalFunderCount; // Total funders that have contributed.
     uint256 public seedRemainder; // Amount of seed tokens remaining to be distributed
@@ -171,16 +171,16 @@ contract Seed {
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
-        price = _price;
+        uint256 price = _price;
         startTime = _startTime;
         endTime = _endTime;
-        vestingStartTime = endTime + 1;
+        uint256 vestingStartTime = endTime + 1;
         vestingDuration = _vestingDuration;
         vestingCliff = _vestingCliff;
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
-        fee = _fee;
+        uint256 fee = _fee;
         
         feeClaimed = 0;
 
