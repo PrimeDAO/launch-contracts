@@ -55,7 +55,7 @@ contract Seed {
     bool public initialized; // is this contract initialized [not necessary that it is funded]
     bool public minimumReached; // if the softCap[minimum limit of funding token] is reached
     bool public maximumReached; // if the hardCap[maximum limit of funding token] is reached
-    // bool public isWhitelistBatchInvoked; // if the whitelistBatch method have been invoked
+    bool public isWhitelistBatchInvoked; // if the whitelistBatch method have been invoked
     // uint256 public vestingStartTime; // timestamp for when vesting starts, by default == endTime,
     //     otherwise when maximumReached is reached
     uint256 public totalFunderCount; // Total funders that have contributed.
