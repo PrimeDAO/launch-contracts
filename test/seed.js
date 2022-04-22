@@ -453,39 +453,6 @@ describe("Contract: Seed", async () => {
                 .callStatic.buy(buyAmount);
             expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
         });
-        it("it returns amount of the fee when feeRemainder = 0", async () => {
-            // expectedFeeAmount expected == feeRemainder = 102000000000000
-            //23181818181818180 * 44 / 100 / 100 = 102000000000000.0
-            //231818181818181 * 0.44 = 101999999999999.64 --> that's why
-            //231818181818182 * 0.44 = 1020000000000.0009 --> need to add 100 or 20 (but both leads to "Seed: maximum class funding reached")
-            let expectedFeeAmount = ethers.BigNumber.from("102000000000000");
-            let classPrice = price; 
-            let classFee = parseEther("0.44").toString(); //SECOND_CLASS_FEE
-            let currentBuyAmount = expectedFeeAmount * classPrice / classFee + ethers.BigNumber.from("1");
-            console.log("JS currentBuyAmount %s \n", currentBuyAmount);
-
-            let { ["1"]: feeAmount } = await setup.seed
-                .connect(buyer4)
-                .callStatic.buy(currentBuyAmount.toString());
-            expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
-
-            /*-------- correct version with corret result. but it breaks other tests below. 
-            so need to move into the tests for 16 branch. so just commented for now*/ 
-            // await setup.seed
-            //     .connect(buyer4)
-            //     .buy(currentBuyAmount.toString());
-
-            // await setup.seed
-            //     .connect(buyer1)
-            //     .buy(smallBuyAmount.toString());
-
-            // let { ["1"]: feeAmount } = await setup.seed
-            //     .connect(buyer1)
-            //     .callStatic.buy(smallBuyAmount.toString());
-            // expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
-             /*-------- correct version with corret result. but it breaks other tests below. 
-            so need to move into the tests for 16 branch.*/
-        });
         it("it fails on claiming seed tokens if the distribution has not yet finished", async () => {
           await expectRevert(
               setup.seed
