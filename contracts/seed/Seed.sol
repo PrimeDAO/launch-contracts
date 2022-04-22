@@ -455,7 +455,7 @@ contract Seed {
         returns (uint256)
     {
         require(minimumReached, "Seed: minimum funding amount not met");
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
         require(
@@ -666,7 +666,7 @@ contract Seed {
      * @param _funder           Address of funder to find the maximum claim
      */
     function calculateClaim(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
@@ -703,7 +703,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
@@ -715,7 +715,7 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
