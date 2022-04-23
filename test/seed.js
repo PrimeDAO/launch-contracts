@@ -201,13 +201,9 @@ describe("Contract: Seed", async () => {
           expect((await setup.seed.softCap()).toString()).to.equal(
               softCap.toString()
           );
-          // expect((await setup.seed.price()).toString()).to.equal(
-          //     price.toString()
-          // );
           expect(await setup.seed.permissionedSeed()).to.equal(
               permissionedSeed
           );
-          // expect((await setup.seed.fee()).toString()).to.equal(fee.toString());
           expect(await setup.seed.closed()).to.equal(false);
           expect((await setup.seed.seedAmountRequired()).toString()).to.equal(
               seedForDistribution.toString()
@@ -2275,9 +2271,7 @@ describe("Contract: Seed", async () => {
           expect(await seed.seedToken()).to.equal(seedToken.address);
           expect(await seed.fundingToken()).to.equal(fundingToken.address);
           expect((await seed.softCap()).toString()).to.equal(softCap);
-          // expect(((await setup.seed.getClass(0))[3]).toString()).to.equal(price);
           expect(await seed.permissionedSeed()).to.equal(permissionedSeed);
-          // expect(((await setup.seed.getClass(0))[5]).toString()).to.equal(fee.toString());
           expect(await seed.closed()).to.equal(false);
           expect((await seed.seedAmountRequired()).toString()).to.equal(
               seedForDistribution.toString()
