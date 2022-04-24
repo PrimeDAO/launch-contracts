@@ -543,7 +543,7 @@ describe("Contract: Seed", async () => {
         it("vestingStartTime == current timestamp", async () => {
           const timeDifference = 1;
           const expectedClaim = (await time.latest()).sub(new BN(timeDifference)).add(new BN(1));
-          expect(((await setup.seed.getClass(0))[5]).toString()).to.equal(
+          expect((await setup.seed.classes(0))[4].toString()).to.equal(
               expectedClaim.toString()
           );
         });
@@ -698,7 +698,7 @@ describe("Contract: Seed", async () => {
           // increase time
           await time.increase(tenDaysInSeconds);
           const claim = await setup.seed.calculateClaim(buyer1.address);
-          const vestingStartTime = (await setup.seed.getClass(0))[5];//vestingStartTime();
+          const vestingStartTime = (await setup.seed.classes(0))[4];//vestingStartTime();
           const timeDifference = 1; // vestingStartTime - currentClassVestingStartTime
           const expectedClaim = (await time.latest())
               .sub(new BN(vestingStartTime.toNumber()))
