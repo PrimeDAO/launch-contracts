@@ -20,11 +20,14 @@
 pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
+
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
  */
 contract Seed {
+    using SafeERC20 for IERC20;
     // Locked parameters
     address public beneficiary;
     address public admin;
@@ -452,7 +455,7 @@ contract Seed {
         returns (uint256)
     {
         require(minimumReached, "Seed: minimum funding amount not met");
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
         require(
@@ -641,7 +644,7 @@ contract Seed {
         );
         uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.transfer(msg.sender, pendingFundingBalance);         
+        fundingToken.safeTransfer(msg.sender, pendingFundingBalance);         
     }
 
     /**
@@ -663,7 +666,7 @@ contract Seed {
      * @param _funder           Address of funder to find the maximum claim
      */
     function calculateClaim(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
 
@@ -700,7 +703,7 @@ contract Seed {
         view
         returns (uint256)
     {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
@@ -712,7 +715,7 @@ contract Seed {
      * @param _funder           address of funder to check fee
      */
     function feeForFunder(address _funder) public view returns (uint256) {
-        FunderPortfolio storage tokenFunder = funders[_funder];
+        FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentFee = classes[currentId].classFee; 
 
