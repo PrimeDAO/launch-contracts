@@ -301,12 +301,6 @@ describe("Contract: Seed", async () => {
           );
           await setup.seed.connect(admin).unpause();
         });
-        it("it cannot buy 0 seeds", async () => {
-          await expectRevert(
-              setup.seed.connect(buyer1).buy(zero.toString()),
-              "Seed: amountVestedPerSecond > 0"
-          );
-        });
         it("it buys tokens ", async () => {
           // seedAmount = (buyAmountt*PRECISION)/price;
           seedAmount = new BN(buyAmount)
@@ -792,7 +786,7 @@ describe("Contract: Seed", async () => {
           );
         });
         it("updates the amount of seed transfered as fee to beneficiary", async () => {
-          expect((await setup.seed.allFeeClaimed()).toString()).to.equal(
+          expect((await setup.seed.feeClaimed()).toString()).to.equal(
               feeAmount.toString()
           );
         });
@@ -922,7 +916,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.allFeeClaimed();
+          const feeClaimed = await setup.data.seed.feeClaimed();
           expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
         });
         it("funds DAO with all the fee", async () => {
@@ -1028,7 +1022,7 @@ describe("Contract: Seed", async () => {
         });
         it("it claims all the fee", async () => {
           const feeAmountRequired = await setup.data.seed.feeAmountRequired();
-          const feeClaimed = await setup.data.seed.allFeeClaimed();
+          const feeClaimed = await setup.data.seed.feeClaimed();
           const divisor = 1000000000;
           const dividedFeeAmountRequired = feeAmountRequired / divisor;
           expect(dividedFeeAmountRequired.toString()).to.equal(feeClaimed.toString());
@@ -1672,7 +1666,7 @@ describe("Contract: Seed", async () => {
                   .connect(admin)
                   .addClass(hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
               expect(
-                  (await setup.seed.getClass(0))[0]
+                  (await setup.seed.classes(0))[0]
               ).to.equal((ethers.BigNumber.from(hardCap)));
             });
             it("it reverts when fee >= 45% for Customer class", async () => {
@@ -1693,7 +1687,7 @@ describe("Contract: Seed", async () => {
                   .connect(admin)
                   .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
               expect(
-                  (await setup.seed.getClass(3))[1]
+                  (await setup.seed.classes(3))[1]
               ).to.equal((ethers.BigNumber.from(e_twenty)));
             });
             it("it reverts when fee >= 45% for Customer class", async () => {
@@ -1807,7 +1801,7 @@ describe("Contract: Seed", async () => {
                 .connect(admin)
                 .changeClass(0, e_twenty, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);   
             expect(
-                (await setup.data.seed.getClass(0))[0]
+                (await setup.data.seed.classes(0))[0]
             ).to.equal((ethers.BigNumber.from(e_twenty)));
           });
           it("it reverts when incorrect class choosen", async () => {
