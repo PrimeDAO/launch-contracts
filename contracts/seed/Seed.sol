@@ -627,7 +627,7 @@ contract Seed {
         );
         fundingWithdrawn = fundingCollected;
         // Send the entire seed contract balance of the funding token to the sale’s admin
-        fundingToken.transfer(msg.sender, fundingToken.balanceOf(address(this)));
+        fundingToken.safeTransfer(msg.sender, fundingToken.balanceOf(address(this)));
     }
 
     /**
