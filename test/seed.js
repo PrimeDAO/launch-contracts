@@ -619,7 +619,7 @@ describe("Contract: Seed", async () => {
                 .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
-                "Seed: funding token transferFrom failed"
+                "SafeERC20: ERC20 operation did not succeed"
             );
           });
         });
@@ -1097,7 +1097,7 @@ describe("Contract: Seed", async () => {
               alternativeSetup.seed
                   .connect(buyer1)
                   .claim(buyer1.address, correctClaimAmount.toString()),
-              "Seed: seed token transfer failed"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
       });
@@ -1296,7 +1296,7 @@ describe("Contract: Seed", async () => {
           await alternativeFundingToken.burn(buyer1.address);
           await expectRevert(
               alternativeSetup.seed.connect(buyer1).retrieveFundingTokens(),
-              "Seed: cannot return funding tokens to msg.sender"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
       });
@@ -1448,7 +1448,7 @@ describe("Contract: Seed", async () => {
           await fakeSeedToken.burn(alternativeSetup.seed.address);
           await expectRevert(
               alternativeSetup.seed.retrieveSeedTokens(root.address),
-              "Seed: should transfer seed tokens to refund receiver"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
 
@@ -1460,7 +1460,7 @@ describe("Contract: Seed", async () => {
               .close();
           await expectRevert(
               alternativeSetup.seed.retrieveSeedTokens(root.address),
-              "Seed: should transfer seed tokens to refund receiver"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
       });

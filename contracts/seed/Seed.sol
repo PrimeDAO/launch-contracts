@@ -413,13 +413,11 @@ contract Seed {
         funders[msg.sender].fundingAmount += _fundingAmount;
 
         // Here we are sending amount of tokens to pay for seed tokens to purchase
-        require(
-            fundingToken.transferFrom(
-                msg.sender,
-                address(this),
-                _fundingAmount
-            ),
-            "Seed: funding token transferFrom failed"
+
+        fundingToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _fundingAmount
         );
 
         emit SeedsPurchased(msg.sender, seedAmount);
@@ -463,11 +461,9 @@ contract Seed {
 
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
-        require(
-            seedToken.transfer(beneficiary, feeAmountOnClaim) &&
-                seedToken.transfer(_funder, _claimAmount),
-            "Seed: seed token transfer failed"
-        );
+
+        seedToken.safeTransfer(beneficiary, feeAmountOnClaim);
+        seedToken.safeTransfer(_funder, _claimAmount);
 
         emit TokensClaimed(
             _funder,
@@ -496,10 +492,9 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
-        require(
-            fundingToken.transfer(msg.sender, fundingAmount),
-            "Seed: cannot return funding tokens to msg.sender"
-        );
+
+        fundingToken.safeTransfer(msg.sender, fundingAmount);
+
         emit FundingReclaimed(msg.sender, fundingAmount);
 
         return fundingAmount;
@@ -551,13 +546,9 @@ contract Seed {
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
         if (!minimumReached) {
-            require(
-                seedToken.transfer(
-                    _refundReceiver,
-                    seedToken.balanceOf(address(this))
-                ),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+            seedToken.safeTransfer(
+                _refundReceiver,
+                seedToken.balanceOf(address(this)));
         } else {
             
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
@@ -565,10 +556,7 @@ contract Seed {
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-            require(
-                seedToken.transfer(_refundReceiver, amountToTransfer),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+                seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
 
