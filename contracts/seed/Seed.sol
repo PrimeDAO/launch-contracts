@@ -643,8 +643,8 @@ contract Seed {
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
         fundingWithdrawn = fundingCollected;
-        uint256 toWithdraw = fundingToken.balanceOf(address(this));
-        fundingToken.transfer(msg.sender, toWithdraw);
+        // Send the entire seed contract balance of the funding token instead of calculating the amount to be sent
+        fundingToken.transfer(msg.sender, fundingToken.balanceOf(address(this)));
     }
 
     /**
