@@ -2796,10 +2796,10 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .changeClass(1, CLASS_25_PERSONAL_FUNDING_LIMIT, CLASS_20_PERSONAL_FUNDING_LIMIT, price_class1, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
             expect(
-              (await setup.seed.getClass(1))[1]
+              (await setup.seed.classes(1))[1]
             ).to.equal((ethers.BigNumber.from(CLASS_20_PERSONAL_FUNDING_LIMIT)));
             expect(
-                (await setup.seed.getClass(1))[2]
+                (await setup.seed.classes(1))[2]
             ).to.equal((ethers.BigNumber.from(price_class1)));
         });
         it("it sets class", async () => {
@@ -2898,7 +2898,6 @@ describe("Contract: Seed", async () => {
             );
         });
         it("cannot buy more than class 2 allows personal funding", async () => {
-            console.log('getClass(2))[1] %s', (await setup.seed.getClass(2))[1]);
             await expectRevert(
                 setup.seed.connect(buyer1).buy(elevenBuyAmount),
                 "Seed: maximum personal funding reached"
@@ -2938,8 +2937,8 @@ describe("Contract: Seed", async () => {
           await time.increase(time.duration.days(5)); //passing Cliff
 
           const claim = await setup.seed.calculateClaim(buyer3.address);
-          const currentVestingStartTime = (await setup.seed.getClass(1))[5];
-          const currentVestingDuration = (await setup.seed.getClass(1))[3];
+          const currentVestingStartTime = (await setup.seed.classes(1))[4];
+          const currentVestingDuration = (await setup.seed.classes(1))[3];
      
           const expectedClaim = (await time.latest())
               .sub(new BN(currentVestingStartTime.toNumber()))
@@ -2957,8 +2956,8 @@ describe("Contract: Seed", async () => {
             // SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
 
             const claim = await setup.seed.calculateClaim(buyer1.address);
-            const currentVestingStartTime = (await setup.seed.getClass(2))[5];
-            const currentVestingDuration = (await setup.seed.getClass(2))[3];
+            const currentVestingStartTime = (await setup.seed.classes(2))[4];
+            const currentVestingDuration = (await setup.seed.classes(2))[3];
 
             // const divisor = 100; //expectedClaim without divisor / claim = 2332989000000000 / 23329890000000 = 100
             /* .div(new BN(divisor)) 
@@ -3207,10 +3206,10 @@ describe("Contract: Seed", async () => {
               .connect(admin)
               .changeClass(1, CLASS_25_PERSONAL_FUNDING_LIMIT, CLASS_20_PERSONAL_FUNDING_LIMIT, price_class1, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
             expect(
-              (await setup.seed.getClass(1))[1]
+              (await setup.seed.classes(1))[1]
             ).to.equal((ethers.BigNumber.from(CLASS_20_PERSONAL_FUNDING_LIMIT)));
             expect(
-                (await setup.seed.getClass(1))[2]
+                (await setup.seed.classes(1))[2]
             ).to.equal((ethers.BigNumber.from(price_class1)));
         });
         it("it sets class", async () => {
@@ -3331,8 +3330,8 @@ describe("Contract: Seed", async () => {
           await time.increase(time.duration.days(5)); //passing Cliff
 
           const claim = await setup.seed.calculateClaim(buyer3.address);
-          const currentVestingStartTime = (await setup.seed.getClass(1))[5];
-          const currentVestingDuration = (await setup.seed.getClass(1))[3];
+          const currentVestingStartTime = (await setup.seed.classes(1))[4];
+          const currentVestingDuration = (await setup.seed.classes(1))[3];
      
           const expectedClaim = (await time.latest())
               .sub(new BN(currentVestingStartTime.toNumber()))
@@ -3350,8 +3349,8 @@ describe("Contract: Seed", async () => {
             // SECOND_CLASS_VESTING_START_TIME = await newClassVestingStartTime.add(await time.duration.days(2));
 
             const claim = await setup.seed.calculateClaim(buyer1.address);
-            const currentVestingStartTime = (await setup.seed.getClass(2))[5];
-            const currentVestingDuration = (await setup.seed.getClass(2))[3];
+            const currentVestingStartTime = (await setup.seed.classes(2))[4];
+            const currentVestingDuration = (await setup.seed.classes(2))[3];
 
             // const divisor = 100; //expectedClaim without divisor / claim = 2332989000000000 / 23329890000000 = 100
             /* .div(new BN(divisor)) 
