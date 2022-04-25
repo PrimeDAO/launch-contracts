@@ -492,9 +492,10 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].classFundingCollected -= fundingAmount;
 
         fundingToken.safeTransfer(msg.sender, fundingAmount);
-
+        
         emit FundingReclaimed(msg.sender, fundingAmount);
 
         return fundingAmount;
