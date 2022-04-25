@@ -556,7 +556,7 @@ contract Seed {
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-                seedToken.safeTransfer(_refundReceiver, amountToTransfer);
+            seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
 
