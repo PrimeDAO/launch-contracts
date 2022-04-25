@@ -561,8 +561,8 @@ contract Seed {
                 "Seed: should transfer seed tokens to refund receiver"
             );
         } else {
-            uint256 seedAmountRequired = (hardCap * PRECISION) / classes[0].price;
-            uint256 feeAmountRequired = (seedAmountRequired * classes[0].classFee) / PRECISION;
+            // uint256 seedAmountRequired = (hardCap * PRECISION) / classes[0].price;
+            // uint256 feeAmountRequired = (seedAmountRequired * classes[0].classFee) / PRECISION;
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
