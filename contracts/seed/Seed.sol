@@ -277,6 +277,7 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
+        // The maximum required amount of the seed tokens to satisfy
         uint256 seedRequired = (_classCap * PRECISION) / _price;
 
         classes[_class].classCap = _classCap;
@@ -339,9 +340,7 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
-        // The maximum required amount of the seed tokens to satisfy
         // the maximum possible classCap is calculated.
-        uint256 seedRequired = (_classCap * PRECISION) / _price;
         classes.push( ContributorClass(
             _classCap,
             _individualCap,
@@ -349,9 +348,7 @@ contract Seed {
             _vestingDuration,
             _classVestingStartTime,
             _classFee,
-            0,
-            seedRequired,
-            (seedRequired * _classFee) / PRECISION ));
+            0));
     }
 
 
@@ -572,8 +569,8 @@ contract Seed {
                 "Seed: should transfer seed tokens to refund receiver"
             );
         } else {
-            uint256 seedAmountRequired = (hardCap * PRECISION) / price;
-            uint256 feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+            uint256 seedAmountRequired = (hardCap * PRECISION) / classes[0].price;
+            uint256 feeAmountRequired = (seedAmountRequired * classes[0].classFee) / PRECISION;
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
