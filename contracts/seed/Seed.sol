@@ -215,13 +215,24 @@ contract Seed {
         uint256 _classVestingStartTime,
         uint256 _classFee
     ) onlyAdmin public {
-        checkAndPush(
+        require(
+            endTime < _classVestingStartTime,
+            "Seed: vesting start time can't be less than endTime"
+        );
+        require(
+            _classFee < MAX_FEE,
+            "Seed: fee cannot be more than 45%"
+        );
+
+        // the maximum possible classCap is calculated.
+        classes.push( ContributorClass(
             _classCap,
             _individualCap,
             _price,
             _vestingDuration,
             _classVestingStartTime,
-            _classFee);
+            _classFee,
+            0));
     }
 
     /**
@@ -313,7 +324,7 @@ contract Seed {
                 _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            checkAndPush(
+            addClass(
                 _classCaps[i],
                 _individualCaps[i],
                 _prices[i],
@@ -322,35 +333,6 @@ contract Seed {
                 _classFee[i]);
         }
     }
-
-    function checkAndPush(
-        uint256 _classCap,
-        uint256 _individualCap,
-        uint256 _price,
-        uint256 _vestingDuration,
-        uint256 _classVestingStartTime,
-        uint256 _classFee
-    ) onlyAdmin internal {
-        require(
-            endTime < _classVestingStartTime,
-            "Seed: vesting start time can't be less than endTime"
-        );
-        require(
-            _classFee < MAX_FEE,
-            "Seed: fee cannot be more than 45%"
-        );
-
-        // the maximum possible classCap is calculated.
-        classes.push( ContributorClass(
-            _classCap,
-            _individualCap,
-            _price,
-            _vestingDuration,
-            _classVestingStartTime,
-            _classFee,
-            0));
-    }
-
 
     /**
      * @dev                     Buy seed tokens.
@@ -569,8 +551,7 @@ contract Seed {
                 "Seed: should transfer seed tokens to refund receiver"
             );
         } else {
-            uint256 seedAmountRequired = (hardCap * PRECISION) / classes[0].price;
-            uint256 feeAmountRequired = (seedAmountRequired * classes[0].classFee) / PRECISION;
+
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
