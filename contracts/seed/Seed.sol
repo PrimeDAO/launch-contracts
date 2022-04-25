@@ -687,7 +687,7 @@ contract Seed {
      * @param _funder           address of funder to check fee claimed
      */
     function feeClaimedForFunder(address _funder)
-        public
+        external
         view
         returns (uint256)
     {
