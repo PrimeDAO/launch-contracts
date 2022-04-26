@@ -380,6 +380,7 @@ contract Seed {
             );
             isFunded = true;
         }
+
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
@@ -551,7 +552,6 @@ contract Seed {
                 _refundReceiver,
                 seedToken.balanceOf(address(this)));
         } else {
-            
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
