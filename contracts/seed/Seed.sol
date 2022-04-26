@@ -224,14 +224,15 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
+        // the maximum possible classCap is calculated.
         classes.push( ContributorClass(
-                    _classCap,
-                    _individualCap,
-                    _price,
-                    _vestingDuration,
-                    _classVestingStartTime,
-                    _classFee,
-                    0));
+            _classCap,
+            _individualCap,
+            _price,
+            _vestingDuration,
+            _classVestingStartTime,
+            _classFee,
+            0));
     }
 
     /**
@@ -287,6 +288,7 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
+        // The maximum required amount of the seed tokens to satisfy
         uint256 seedRequired = (_classCap * PRECISION) / _price;
 
         classes[_class].classCap = _classCap;
@@ -322,23 +324,13 @@ contract Seed {
                 _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            require(
-                endTime < _classVestingStartTime[i],
-                "Seed: vesting start time can't be less than endTime"
-            );
-            require(
-                _classFee[i] < MAX_FEE,
-                "Seed: fee cannot be more than 45%"
-            );
-
-            classes.push(ContributorClass(
+            addClass(
                 _classCaps[i],
                 _individualCaps[i],
                 _prices[i],
                 _vestingDurations[i],
                 _classVestingStartTime[i],
-                _classFee[i],
-                0));
+                _classFee[i]);
         }
     }
 
