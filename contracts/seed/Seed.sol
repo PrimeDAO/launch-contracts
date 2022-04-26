@@ -380,6 +380,7 @@ contract Seed {
             );
             isFunded = true;
         }
+
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / userClass.price;
 
@@ -498,6 +499,7 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
+        classes[tokenFunder.class].classFundingCollected -= fundingAmount;
         require(
             fundingToken.transfer(msg.sender, fundingAmount),
             "Seed: cannot return funding tokens to msg.sender"
@@ -561,7 +563,6 @@ contract Seed {
                 "Seed: should transfer seed tokens to refund receiver"
             );
         } else {
-
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
