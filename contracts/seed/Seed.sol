@@ -406,13 +406,11 @@ contract Seed {
         funders[msg.sender].fundingAmount += _fundingAmount;
 
         // Here we are sending amount of tokens to pay for seed tokens to purchase
-        require(
-            fundingToken.transferFrom(
-                msg.sender,
-                address(this),
-                _fundingAmount
-            ),
-            "Seed: funding token transferFrom failed"
+
+        fundingToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _fundingAmount
         );
 
         emit SeedsPurchased(msg.sender, seedAmount);
@@ -456,11 +454,9 @@ contract Seed {
 
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
-        require(
-            seedToken.transfer(beneficiary, feeAmountOnClaim) &&
-                seedToken.transfer(_funder, _claimAmount),
-            "Seed: seed token transfer failed"
-        );
+
+        seedToken.safeTransfer(beneficiary, feeAmountOnClaim);
+        seedToken.safeTransfer(_funder, _claimAmount);
 
         emit TokensClaimed(
             _funder,
@@ -490,10 +486,9 @@ contract Seed {
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
         classes[tokenFunder.class].classFundingCollected -= fundingAmount;
-        require(
-            fundingToken.transfer(msg.sender, fundingAmount),
-            "Seed: cannot return funding tokens to msg.sender"
-        );
+
+        fundingToken.safeTransfer(msg.sender, fundingAmount);
+        
         emit FundingReclaimed(msg.sender, fundingAmount);
 
         return fundingAmount;
@@ -545,23 +540,16 @@ contract Seed {
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
         if (!minimumReached) {
-            require(
-                seedToken.transfer(
-                    _refundReceiver,
-                    seedToken.balanceOf(address(this))
-                ),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+            seedToken.safeTransfer(
+                _refundReceiver,
+                seedToken.balanceOf(address(this)));
         } else {
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-            require(
-                seedToken.transfer(_refundReceiver, amountToTransfer),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+            seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
 
@@ -618,9 +606,9 @@ contract Seed {
             maximumReached || (minimumReached && block.timestamp >= endTime),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
-        uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.safeTransfer(msg.sender, pendingFundingBalance);         
+        // Send the entire seed contract balance of the funding token to the sale’s admin
+        fundingToken.safeTransfer(msg.sender, fundingToken.balanceOf(address(this)));
     }
 
     /**
