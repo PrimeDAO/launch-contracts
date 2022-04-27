@@ -398,7 +398,9 @@ contract Seed {
         }
         if (fundingCollected >= hardCap) {
             maximumReached = true;
-            classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
+            for(uint8 i = 0; i < classes.length; i++){
+                classes[i].classVestingStartTime = block.timestamp + (classes[i].classVestingStartTime - endTime);
+            }
         }
 
         //functionality of addFunder
@@ -635,27 +637,24 @@ contract Seed {
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-
+  
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
-
         if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
         uint256 currentVestingDuration = classes[currentId].vestingDuration; 
-
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
-
             return amountVested - tokenFunder.totalClaimed;
         }
     }

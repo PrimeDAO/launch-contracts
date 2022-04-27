@@ -542,7 +542,7 @@ describe("Contract: Seed", async () => {
         });
         it("vestingStartTime == current timestamp", async () => {
           const timeDifference = 1;
-          const expectedClaim = (await time.latest()).sub(new BN(timeDifference)).add(new BN(1));
+          const expectedClaim = (await time.latest()).add(new BN(timeDifference));
           expect((await setup.seed.classes(0))[4].toString()).to.equal(
               expectedClaim.toString()
           );
@@ -706,7 +706,6 @@ describe("Contract: Seed", async () => {
               .sub(new BN(timeDifference))
               .mul(new BN(buySeedAmount).mul(new BN(twoBN)))
               .div(new BN(vestingDuration.toNumber()));
-              
           expect(claim.toString()).to.equal(expectedClaim.toString());
         });
         it("claim = 0 when not contributed", async () => {
@@ -985,9 +984,11 @@ describe("Contract: Seed", async () => {
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
         });
         it("claims all seeds after vesting duration", async () => {
+          time.increase(await time.duration.days(7));
+
           setup.data.prevBalance = await seedToken.balanceOf(
               beneficiary.address
-          );
+          );          
 
           // amountClaimable 1020000000 --> 10200000000000000/1020000000 = 1000000000
           const divisor = 1000000000;
@@ -1017,7 +1018,7 @@ describe("Contract: Seed", async () => {
           const dividedFee = fee / divisor;
           const feeClaimed = await setup.data.seed.feeClaimedForFunder(
               buyer2.address
-          );
+          );          
           expect(dividedFee.toString()).to.equal(feeClaimed.toString());
         });
         it("it claims all the fee", async () => {
