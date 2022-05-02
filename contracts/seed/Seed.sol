@@ -224,14 +224,15 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
+        // the maximum possible classCap is calculated.
         classes.push( ContributorClass(
-                    _classCap,
-                    _individualCap,
-                    _price,
-                    _vestingDuration,
-                    _classVestingStartTime,
-                    _classFee,
-                    0));
+            _classCap,
+            _individualCap,
+            _price,
+            _vestingDuration,
+            _classVestingStartTime,
+            _classFee,
+            0));
     }
 
     /**
@@ -286,6 +287,7 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
+        // The maximum required amount of the seed tokens to satisfy
         uint256 seedRequired = (_classCap * PRECISION) / _price;
 
         classes[_class].classCap = _classCap;
@@ -321,23 +323,13 @@ contract Seed {
                 _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
-            require(
-                endTime < _classVestingStartTime[i],
-                "Seed: vesting start time can't be less than endTime"
-            );
-            require(
-                _classFee[i] < MAX_FEE,
-                "Seed: fee cannot be more than 45%"
-            );
-
-            classes.push(ContributorClass(
+            addClass(
                 _classCaps[i],
                 _individualCaps[i],
                 _prices[i],
                 _vestingDurations[i],
                 _classVestingStartTime[i],
-                _classFee[i],
-                0));
+                _classFee[i]);
         }
     }
 
@@ -374,6 +366,8 @@ contract Seed {
         uint256 feeAmountRequired = (seedAmountRequired * userClass.classFee) / PRECISION;
         if (!isFunded) {
             require(
+                // seedAmountRequired is an amount which is needed to be sold
+                // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
                 seedToken.balanceOf(address(this)) >=
                     seedAmountRequired + feeAmountRequired,
                 "Seed: sufficient seeds not provided"
@@ -405,7 +399,9 @@ contract Seed {
 
         if (fundingCollected >= hardCap) {
             maximumReached = true;
-            classes[funders[msg.sender].class].classVestingStartTime = block.timestamp;
+            for(uint8 i = 0; i < classes.length; i++){
+                classes[i].classVestingStartTime = block.timestamp + (classes[i].classVestingStartTime - endTime);
+            }
         }
 
         //functionality of addFunder
@@ -415,13 +411,11 @@ contract Seed {
         funders[msg.sender].fundingAmount += _fundingAmount;
 
         // Here we are sending amount of tokens to pay for seed tokens to purchase
-        require(
-            fundingToken.transferFrom(
-                msg.sender,
-                address(this),
-                _fundingAmount
-            ),
-            "Seed: funding token transferFrom failed"
+
+        fundingToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _fundingAmount
         );
 
         emit SeedsPurchased(msg.sender, seedAmount);
@@ -465,11 +459,9 @@ contract Seed {
 
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
-        require(
-            seedToken.transfer(beneficiary, feeAmountOnClaim) &&
-                seedToken.transfer(_funder, _claimAmount),
-            "Seed: seed token transfer failed"
-        );
+
+        seedToken.safeTransfer(beneficiary, feeAmountOnClaim);
+        seedToken.safeTransfer(_funder, _claimAmount);
 
         emit TokensClaimed(
             _funder,
@@ -498,10 +490,10 @@ contract Seed {
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
-        require(
-            fundingToken.transfer(msg.sender, fundingAmount),
-            "Seed: cannot return funding tokens to msg.sender"
-        );
+        classes[tokenFunder.class].classFundingCollected -= fundingAmount;
+
+        fundingToken.safeTransfer(msg.sender, fundingAmount);
+        
         emit FundingReclaimed(msg.sender, fundingAmount);
 
         return fundingAmount;
@@ -553,23 +545,16 @@ contract Seed {
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
         if (!minimumReached) {
-            require(
-                seedToken.transfer(
-                    _refundReceiver,
-                    seedToken.balanceOf(address(this))
-                ),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+            seedToken.safeTransfer(
+                _refundReceiver,
+                seedToken.balanceOf(address(this)));
         } else {
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-            require(
-                seedToken.transfer(_refundReceiver, amountToTransfer),
-                "Seed: should transfer seed tokens to refund receiver"
-            );
+            seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
 
@@ -626,9 +611,9 @@ contract Seed {
             maximumReached || (minimumReached && block.timestamp >= endTime),
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
-        uint256 pendingFundingBalance = fundingCollected - fundingWithdrawn;
         fundingWithdrawn = fundingCollected;
-        fundingToken.safeTransfer(msg.sender, pendingFundingBalance);         
+        // Send the entire seed contract balance of the funding token to the sale’s admin
+        fundingToken.safeTransfer(msg.sender, fundingToken.balanceOf(address(this)));
     }
 
     /**
@@ -653,27 +638,24 @@ contract Seed {
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
-
+  
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - currentClassVestingStartTime;
-
         if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
         uint256 currentVestingDuration = classes[currentId].vestingDuration; 
-
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
         } else {
             uint256 amountVested = (elapsedSeconds *
                 seedAmountForFunder(_funder)) / currentVestingDuration;
-
             return amountVested - tokenFunder.totalClaimed;
         }
     }
