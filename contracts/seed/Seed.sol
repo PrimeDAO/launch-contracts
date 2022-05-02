@@ -21,7 +21,7 @@ pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
-
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -390,7 +390,6 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-        feeRemainder -= feeAmount; //here it craches for some conditions (about fee). added in specific issue and branch
 
         if (feeRemainder == 0){
             feeAmount = 0;
