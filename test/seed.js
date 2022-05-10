@@ -2699,7 +2699,6 @@ describe("Contract: Seed", async () => {
         );
   
         // Tokens used
-        // fundingToken = setup.token.fundingToken;
         fundingToken = await CustomDecimalERC20Mock.deploy("USDC", "USDC", 16);
         fundingTokenDecimal = (await getDecimals(fundingToken)).toString();
         getFundingAmounts = getTokenAmount(fundingTokenDecimal);
@@ -2760,7 +2759,7 @@ describe("Contract: Seed", async () => {
         CLASS_TWO_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("18000000000000000000").toString();
         CLASS_25_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("250000000000000000").toString(); 
     });
-    context("# few classes simultanuosly whitelisted version new context", () => {
+    context("# few classes simultanuosly; contract whitelisted version", () => {
         it("initializes", async () => {
             // emulate creation & initialization via seedfactory & fund with seedTokens
             permissionedSeed = true;
@@ -2812,13 +2811,14 @@ describe("Contract: Seed", async () => {
                 .div(new BN(PRECISION.toString()));
         });
         it("adds new classes", async () => {
-            await setup.seed //class 1
+            await setup.seed //class 1 and 2
               .connect(admin)
-              .addClass(CLASS_SMALL_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), newClassVestingStartTime.toNumber(), CLASS_FEE);
-
-            await setup.seed //class 2
-              .connect(admin)
-              .addClass(CLASS_20_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT, price, localVestingDuration.toNumber(), SECOND_CLASS_VESTING_START_TIME.toNumber(), SECOND_CLASS_FEE);
+              .addClassBatch ([CLASS_SMALL_PERSONAL_FUNDING_LIMIT, CLASS_20_PERSONAL_FUNDING_LIMIT],
+                            [CLASS_18_PERSONAL_FUNDING_LIMIT, CLASS_18_PERSONAL_FUNDING_LIMIT],
+                            [price, price],
+                            [localVestingDuration.toNumber(), localVestingDuration.toNumber()],
+                            [newClassVestingStartTime.toNumber(), SECOND_CLASS_VESTING_START_TIME.toNumber()],
+                            [CLASS_FEE, SECOND_CLASS_FEE]);
         });
         it("it changes Customer class 1", async () => {
             await setup.seed
