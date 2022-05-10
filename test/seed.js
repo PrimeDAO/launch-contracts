@@ -2831,7 +2831,7 @@ describe("Contract: Seed", async () => {
                 (await setup.seed.classes(1))[2]
             ).to.equal((ethers.BigNumber.from(price_class1)));
         });
-        it("it sets class", async () => {
+        it("it whitelists users", async () => {
           await setup.seed
               .connect(admin)
               .whitelist(buyer1.address, 2);
