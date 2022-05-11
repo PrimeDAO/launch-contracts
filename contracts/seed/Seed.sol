@@ -349,6 +349,7 @@ contract Seed {
         );
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
+
         // Checks if contributor has exceeded his personal or class cap.
         require((userClass.classFundingCollected + _fundingAmount) <= userClass.classCap,
             "Seed: maximum class funding reached");
@@ -390,15 +391,8 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
+        feeRemainder -= feeAmount;
 
-        if (feeRemainder == 0){
-            feeAmount = 0;
-        }else if (feeRemainder < feeAmount){
-            feeRemainder -= feeRemainder;
-            feeAmount = 0;
-        }else{
-            feeRemainder -= feeAmount;
-        }
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
