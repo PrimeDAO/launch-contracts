@@ -128,6 +128,7 @@ describe("Contract: Seed", async () => {
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
+
       metadata = `0x`;
 
       buySeedFee = new BN(buySeedAmount)
@@ -176,7 +177,8 @@ describe("Contract: Seed", async () => {
 
         it("it initializes seed", async () => {
           // emulate creation & initialization via seedfactory & fund with seedTokens         
-          
+          let startTime = (await time.latest()).add(await time.duration.minutes(1));
+
           await setup.seed.initialize(
               beneficiary.address,
               admin.address,
@@ -218,6 +220,17 @@ describe("Contract: Seed", async () => {
               seedForFee.toString()
           );
           expect((await setup.seed.isFunded()).toString()).to.equal("false");
+        });
+
+        it("sets", async() => {
+        const SECOND_CLASS_FEE = parseEther("0.44").toString(); // 44%
+
+        await setup.seed
+            .connect(admin)
+            .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, SECOND_CLASS_FEE);
+
+        await setup.seed.connect(admin).setClass(buyer4.address, 1);
+        time.increase(await time.duration.minutes(1));
         });
         it("it reverts on double initialization", async () => {
           await expectRevert(
@@ -266,6 +279,12 @@ describe("Contract: Seed", async () => {
           await fundingToken
               .connect(buyer3)
               .approve(setup.seed.address, getFundingAmounts("102"));
+          await fundingToken
+              .connect(root)
+              .transfer(buyer4.address, getFundingAmounts("102"));
+          await fundingToken
+              .connect(buyer4)
+              .approve(setup.seed.address, getFundingAmounts("102"));
 
           claimAmount = new BN(ninetyTwoDaysInSeconds).mul(
               new BN(buySeedAmount)
@@ -276,6 +295,7 @@ describe("Contract: Seed", async () => {
               .mul(new BN(fee))
               .div(new BN(PRECISION.toString()));
         });
+
         it("it cannot buy if not funded", async () => {
           await setup.seed
               .connect(admin)
@@ -416,6 +436,12 @@ describe("Contract: Seed", async () => {
           expect((await setup.seed.fundingCollected()).toString()).to.equal(
               buyAmount.toString()
           );
+        });
+        it("it returns amount of the fee when feeAmount > feeRemainder", async () => {           
+            let { ["1"]: feeAmount } = await setup.seed
+                .connect(buyer4)
+                .callStatic.buy(buyAmount);
+            expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
         });
         it("it fails on claiming seed tokens if the distribution has not yet finished", async () => {
           await expectRevert(
@@ -1648,7 +1674,7 @@ describe("Contract: Seed", async () => {
       describe("» getStartTime", () => {
         it("returns correct startTime", async () => {
           expect((await setup.seed.startTime()).toString()).to.equal(
-              startTime.toString()
+              startTime.add(await time.duration.minutes(1)).toString()
           );
         });
       });
