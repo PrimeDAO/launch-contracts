@@ -62,6 +62,8 @@ describe("Contract: Seed", async () => {
   let totalClaimedByBuyer1;
   let seedAmount;
   let feeAmountOnClaim;
+  let CLASS_VESTING_START_TIME;
+
 
   // constants
   const zero = 0;
@@ -80,7 +82,6 @@ describe("Contract: Seed", async () => {
   const CLASS_18_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("180000000000000000").toString(); // = 2 * smallBuyAmount
   const CLASS_20_PERSONAL_FUNDING_LIMIT = ethers.BigNumber.from("200000000000000000").toString(); 
   const CLASS_VESTING_DURATION =  10000000;
-  const CLASS_VESTING_START_TIME = 2000000000;
   const CLASS_FEE = parseEther("0.02").toString(); // 2%
   const SECOND_CLASS_FEE = parseEther("0.44").toString(); //44% 
   const e_twenty = 1e12;
@@ -133,6 +134,7 @@ describe("Contract: Seed", async () => {
       vestingCliff = time.duration.days(90); // 3 months
       permissionedSeed = false;
       fee = parseEther("0.02").toString(); // 2%
+      CLASS_VESTING_START_TIME = (await startTime.add(await time.duration.years(10))).toNumber();
 
       metadata = `0x`;
 
