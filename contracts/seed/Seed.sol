@@ -21,7 +21,6 @@ pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
-
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -272,7 +271,6 @@ contract Seed {
     ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
-
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
@@ -343,6 +341,7 @@ contract Seed {
             !permissionedSeed || whitelisted[msg.sender],
             "Seed: sender has no rights"
         );
+
         ContributorClass memory userClass = classes[funders[msg.sender].class];
         require(!maximumReached, "Seed: maximum funding reached");
         // Checks if contributor has exceeded his personal or class cap.
@@ -398,6 +397,7 @@ contract Seed {
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
+
         if (fundingCollected >= hardCap) {
             maximumReached = true;
             for(uint8 i = 0; i < classes.length; i++){
