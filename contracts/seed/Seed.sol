@@ -241,7 +241,7 @@ contract Seed {
     function setClass(
         address _address,
         uint8 _class
-    ) onlyAdmin public {
+    ) onlyAdmin external {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(block.timestamp < startTime,
@@ -268,7 +268,7 @@ contract Seed {
         uint256 _vestingDuration,
         uint256 _classVestingStartTime,
         uint256 _classFee
-    ) onlyAdmin public {
+    ) onlyAdmin external {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(block.timestamp < startTime,
@@ -309,7 +309,7 @@ contract Seed {
         uint256[] memory _vestingDurations,
         uint256[] memory _classVestingStartTime,
         uint256[] memory _classFee
-    ) onlyAdmin public {
+    ) onlyAdmin external {
         require(_classCaps.length <= 100, "Seed: Can't add batch with more then 100 classes");
         require(_classCaps.length == _individualCaps.length &&
                 _classCaps.length == _prices.length &&
