@@ -168,7 +168,6 @@ contract Seed {
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
-        uint256 price = _price;
         startTime = _startTime;
         endTime = _endTime;
         uint256 vestingStartTime = endTime + 1;
@@ -288,9 +287,6 @@ contract Seed {
             "Seed: fee cannot be more than 45%"
         );
 
-        // The maximum required amount of the seed tokens to satisfy
-        uint256 seedRequired = (_classCap * PRECISION) / _price;
-
         classes[_class].classCap = _classCap;
         classes[_class].individualCap = _individualCap;
         classes[_class].price = _price;
@@ -361,14 +357,14 @@ contract Seed {
             "Seed: only allowed during distribution period"
         );
 
-        uint256 seedAmountRequired = (userClass.classCap * PRECISION) / userClass.price;
-        uint256 feeAmountRequired = (seedAmountRequired * userClass.classFee) / PRECISION;
+        uint256 classSeedAmountRequired = (userClass.classCap * PRECISION) / userClass.price;
+        uint256 classfeeAmountRequired = (classSeedAmountRequired * userClass.classFee) / PRECISION;
         if (!isFunded) {
             require(
-                // seedAmountRequired is an amount which is needed to be sold
+                // classSeedAmountRequired is an amount which is needed to be sold
                 // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
                 seedToken.balanceOf(address(this)) >=
-                    seedAmountRequired + feeAmountRequired,
+                    classSeedAmountRequired + classfeeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;

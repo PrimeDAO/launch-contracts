@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // solium-disable linebreak-style
 pragma solidity 0.8.9;
 

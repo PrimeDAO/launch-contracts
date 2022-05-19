@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // solium-disable linebreak-style
 pragma solidity 0.8.9;
 
@@ -88,6 +89,7 @@ contract CustomERC20Mock is ERC20 {
         }
         _balances[recipient] += amount;
         emit Transfer(sender, recipient, amount);
+        return true;
     }
 
     function _approve(
