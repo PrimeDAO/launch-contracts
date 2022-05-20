@@ -89,7 +89,7 @@ contract CustomERC20Mock is ERC20 {
         }
         _balances[recipient] += amount;
         emit Transfer(sender, recipient, amount);
-        return true;
+//        return true;
     }
 
     function _approve(

@@ -21,6 +21,7 @@ pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
+import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -63,6 +64,9 @@ contract Seed {
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
     uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
+
+    uint256 private minimalPrice;
+    uint256 private fee;
 
     ContributorClass[] public classes; // Array of contributor classes
 
@@ -175,7 +179,8 @@ contract Seed {
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
-        uint256 fee = _fee;
+        fee = _fee;
+        minimalPrice = _price;
         
         feeClaimed = 0;
 
@@ -194,6 +199,18 @@ contract Seed {
                 0));
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
+    }
+
+    function calculateSeedAndFee(uint256 _price, uint256 _classFee, uint256 _classCap) internal{
+        if(_classFee > fee){
+            fee = _classFee;
+        }
+        if(_price < minimalPrice){
+            seedAmountRequired = (seedAmountRequired * (hardCap - _classCap) / hardCap)
+                + (_classCap * PRECISION) / _price;
+            minimalPrice = _price;
+        }
+        feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
     }
 
     /**
@@ -221,6 +238,12 @@ contract Seed {
             _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
         );
+        require(_classCap > 0,
+            "Seed: class Cap should be bigger then 0"
+        );
+
+
+        calculateSeedAndFee(_price, _classFee, _classCap);
 
         // the maximum possible classCap is calculated.
         classes.push( ContributorClass(
@@ -241,13 +264,28 @@ contract Seed {
     function setClass(
         address _address,
         uint8 _class
-    ) onlyAdmin external {
+    ) onlyAdmin public {
         require(_class < classes.length, "Seed: incorrect class chosen");
         require(!closed, "Seed: should not be closed");
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
         funders[_address].class = _class;
+    }
+
+    /**
+     * @dev                       Set contributor classes.
+     * @param _addresses          Addresses of the contributors.
+     * @param _classes            Classes of the contributor.
+     */
+    function setClassBatch(
+        address[] memory _addresses,
+        uint8[] memory _classes
+    ) onlyAdmin external {
+        require(_classes.length == _addresses.length, "Seed: incorrect data passed");
+        for(uint256 i = 0; i < _addresses.length; i++){
+            setClass(_addresses[i],_classes[i] );
+        }
     }
 
     /**
@@ -274,6 +312,9 @@ contract Seed {
         require(block.timestamp < startTime,
             "Seed: vesting is already started"
         );
+        require(_classCap > 0,
+            "Seed: class Cap should be bigger then 0"
+        );
 
         // parameter check
         require(
@@ -284,6 +325,8 @@ contract Seed {
             _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
         );
+
+        calculateSeedAndFee(_price, _classFee, _classCap);
 
         classes[_class].classCap = _classCap;
         classes[_class].individualCap = _individualCap;
@@ -318,6 +361,7 @@ contract Seed {
                 _classCaps.length == _classFee.length,
             "Seed: All provided arrays should be same size");
         for(uint8 i = 0; i < _classCaps.length; i++){
+            calculateSeedAndFee(_prices[i], _classFee[i], _classCaps[i]);
             addClass(
                 _classCaps[i],
                 _individualCaps[i],
@@ -356,14 +400,16 @@ contract Seed {
             "Seed: only allowed during distribution period"
         );
 
-        uint256 classSeedAmountRequired = (userClass.classCap * PRECISION) / userClass.price;
-        uint256 classfeeAmountRequired = (classSeedAmountRequired * userClass.classFee) / PRECISION;
+
+        console.log(seedAmountRequired);
+        console.log(feeAmountRequired);
+
         if (!isFunded) {
             require(
                 // classSeedAmountRequired is an amount which is needed to be sold
                 // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
                 seedToken.balanceOf(address(this)) >=
-                    classSeedAmountRequired + classfeeAmountRequired,
+                    seedAmountRequired + feeAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
@@ -413,11 +459,11 @@ contract Seed {
 
         // Here we are sending amount of tokens to pay for seed tokens to purchase
 
-        fundingToken.safeTransferFrom(
+        require(fundingToken.transferFrom(
             msg.sender,
             address(this),
             _fundingAmount
-        );
+        ),"Seed: Failed to transfer funding token");
 
         emit SeedsPurchased(msg.sender, seedAmount);
 
@@ -461,8 +507,8 @@ contract Seed {
         seedClaimed += _claimAmount;    
         feeClaimed += feeAmountOnClaim; 
 
-        seedToken.safeTransfer(beneficiary, feeAmountOnClaim);
-        seedToken.safeTransfer(_funder, _claimAmount);
+        require(seedToken.transfer(beneficiary, feeAmountOnClaim),"Seed: Failed to transfer seed token");
+        require(seedToken.transfer(_funder, _claimAmount),"Seed: Failed to transfer seed token");
 
         emit TokensClaimed(
             _funder,
@@ -493,7 +539,7 @@ contract Seed {
         fundingCollected -= fundingAmount;
         classes[tokenFunder.class].classFundingCollected -= fundingAmount;
 
-        fundingToken.safeTransfer(msg.sender, fundingAmount);
+        require(fundingToken.transfer(msg.sender, fundingAmount), "Seed: Failed to transfer funding token");
         
         emit FundingReclaimed(msg.sender, fundingAmount);
 
@@ -546,16 +592,16 @@ contract Seed {
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
         if (!minimumReached) {
-            seedToken.safeTransfer(
+            require( seedToken.transfer(
                 _refundReceiver,
-                seedToken.balanceOf(address(this)));
+                seedToken.balanceOf(address(this))),"Seed: Failed to transfer Seed Token");
         } else {
             // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = (seedAmountRequired +
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-            seedToken.safeTransfer(_refundReceiver, amountToTransfer);
+            require(seedToken.transfer(_refundReceiver, amountToTransfer), "Seed: Failed to transfer Seed Token");
         }
     }
 
@@ -614,7 +660,8 @@ contract Seed {
         );
         fundingWithdrawn = fundingCollected;
         // Send the entire seed contract balance of the funding token to the sale’s admin
-        fundingToken.safeTransfer(msg.sender, fundingToken.balanceOf(address(this)));
+        require(fundingToken.transfer(msg.sender, fundingToken.balanceOf(address(this))),
+            "Seed: Failed to transfer Seed Token");
     }
 
     /**
