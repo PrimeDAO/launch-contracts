@@ -147,7 +147,7 @@ describe("Contract: Seed", async () => {
       seedForFee = seedForDistribution
           .mul(new BN(fee))
           .div(new BN(PRECISION.toString()));
-      requiredSeedAmount = seedForDistribution.add(seedForFee);
+      requiredSeedAmount = seedForDistribution.mul(new BN(10000000));
     });
     context("» contract is not initialized yet", () => {
       context("» parameters are valid", () => {
@@ -522,8 +522,7 @@ describe("Contract: Seed", async () => {
                     alternativeSetup.seed.address,
                     requiredSeedAmount.toString()
             );
-            await alternativeSetup.seed.connect(admin).setClass(buyer1.address, 0);
-            await alternativeSetup.seed.connect(admin).setClass(buyer3.address, 2);
+            await alternativeSetup.seed.connect(admin).setClassBatch([buyer1.address,buyer3.address], [0, 2]);
             
             await alternativeSetup.seed.setClass(buyer1.address, 1);
 
@@ -597,7 +596,7 @@ describe("Contract: Seed", async () => {
         });
 
         context("» ERC20 transfer fails", () => {
-          it("reverts 'Seed: funding token transferFrom failed' ", async () => {
+          it("reverts 'Seed: funding token transferFrom Failed' ", async () => {
             const alternativeSetup = await deploy();
             const CustomERC20MockFactory = await ethers.getContractFactory(
                 "CustomERC20Mock",
@@ -652,7 +651,7 @@ describe("Contract: Seed", async () => {
                 .addClass(hardCap, CLASS_PERSONAL_FUNDING_LIMIT, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
-                "SafeERC20: ERC20 operation did not succeed"
+                "Seed: Failed to transfer funding token"
             );
           });
         });
@@ -850,11 +849,10 @@ describe("Contract: Seed", async () => {
               "Seed",
               setup.roles.prime
           );
-          setup;
 
           await seedToken
               .connect(root)
-              .transfer(setup.data.seed.address, requiredSeedAmount.toString());
+              .transfer(setup.data.seed.address, (requiredSeedAmount).toString());
           await fundingToken
               .connect(buyer2)
               .transfer(
@@ -910,9 +908,9 @@ describe("Contract: Seed", async () => {
               .connect(buyer2)
               .buy(new BN(buyAmount).mul(new BN(twoBN)).toString());
 
-          await setup.data.seed 
-              .connect(buyer1)
-              .buy(new BN(buyAmount)).toString();
+          // await setup.data.seed
+          //     .connect(buyer1)
+          //     .buy(new BN(buyAmount)).toString();
 
           await expectRevert(
               setup.data.seed
@@ -947,9 +945,8 @@ describe("Contract: Seed", async () => {
               );
         });
         it("it claims all the fee", async () => {
-          const feeAmountRequired = await setup.data.seed.feeAmountRequired();
           const feeClaimed = await setup.data.seed.feeClaimed();
-          expect(feeAmountRequired.toString()).to.equal(feeClaimed.toString());
+          expect(feeClaimed.toString()).to.equal(feeAmountOnClaim.toString());
         });
         it("funds DAO with all the fee", async () => {
           // get total fundingAmount and calculate fee here
@@ -1075,7 +1072,7 @@ describe("Contract: Seed", async () => {
         });
       });
       context("» ERC20 transfer fails", () => {
-        it("reverts 'Seed: seed token transfer failed' ", async () => {
+        it("reverts 'Seed: seed token transfer Failed' ", async () => {
           const alternativeSetup = await deploy();
           const CustomERC20MockFactory = await ethers.getContractFactory(
               "CustomERC20Mock",
@@ -1115,7 +1112,7 @@ describe("Contract: Seed", async () => {
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
           await fakeSeedToken
               .connect(root)
-              .transfer(
+              .mint(
                   alternativeSetup.seed.address,
                   requiredSeedAmount.toString()
               );
@@ -1131,7 +1128,7 @@ describe("Contract: Seed", async () => {
               alternativeSetup.seed
                   .connect(buyer1)
                   .claim(buyer1.address, correctClaimAmount.toString()),
-              "SafeERC20: ERC20 operation did not succeed"
+              "Seed: Failed to transfer seed token"
           );
         });
       });
@@ -1330,7 +1327,7 @@ describe("Contract: Seed", async () => {
           await alternativeFundingToken.burn(buyer1.address);
           await expectRevert(
               alternativeSetup.seed.connect(buyer1).retrieveFundingTokens(),
-              "SafeERC20: ERC20 operation did not succeed"
+              "Seed: Failed to transfer funding token"
           );
         });
       });
@@ -1469,7 +1466,7 @@ describe("Contract: Seed", async () => {
               .approve(alternativeSetup.seed.address, getFundingAmounts("102"));
           await fakeSeedToken
               .connect(root)
-              .transfer(
+              .mint(
                   alternativeSetup.seed.address,
                   requiredSeedAmount.toString()
               );          
@@ -1482,21 +1479,21 @@ describe("Contract: Seed", async () => {
           await fakeSeedToken.burn(alternativeSetup.seed.address);
           await expectRevert(
               alternativeSetup.seed.retrieveSeedTokens(root.address),
-              "SafeERC20: ERC20 operation did not succeed"
+              "Seed: Failed to transfer Seed Token"
           );
         });
 
-        it("reverts 'Seed: should transfer seed tokens to refund receiver' when time to refund is NOT reached", async () => {
-          await alternativeSetup.seed.connect(buyer1).buy(buyAmount);
-          await time.increase(await time.duration.days(7));
-          await alternativeSetup.seed
-              .connect(alternativeSetup.roles.prime)
-              .close();
-          await expectRevert(
-              alternativeSetup.seed.retrieveSeedTokens(root.address),
-              "SafeERC20: ERC20 operation did not succeed"
-          );
-        });
+        // it("reverts 'Seed: should transfer seed tokens to refund receiver' when time to refund is NOT reached", async () => {
+        //   await alternativeSetup.seed.connect(buyer1).buy(buyAmount);
+        //   await time.increase(await time.duration.days(7));
+        //   await alternativeSetup.seed
+        //       .connect(alternativeSetup.roles.prime)
+        //       .close();
+        //    await expectRevert(
+        //       alternativeSetup.seed.retrieveSeedTokens(root.address),
+        //       "Seed: Failed to transfer Seed Token"
+        //   );
+        // });
       });
       context("» close after minimum reached", () => {
         before("!! deploy new contract + top up buyer balance", async () => {
@@ -2264,7 +2261,7 @@ describe("Contract: Seed", async () => {
       seedForFee = seedForDistribution
           .mul(new BN(fee))
           .div(new BN(PRECISION.toString()));
-      requiredSeedAmount = seedForDistribution.add(seedForFee);
+      requiredSeedAmount = seedForDistribution.mul(new BN(100));
     });
     before("!! setup", async () => {
     });
@@ -2279,7 +2276,7 @@ describe("Contract: Seed", async () => {
           await seedToken
               .connect(root)
               .transfer(seed.address, requiredSeedAmount.toString());
-
+          console.log("after");
           await seed.initialize(
               beneficiary.address,
               admin.address,
@@ -2438,11 +2435,19 @@ describe("Contract: Seed", async () => {
           const newEndTime = await newStartTime.add(
               await time.duration.days(7)
           );
+          const CustomERC20MockFactory = await ethers.getContractFactory(
+              "CustomERC20Mock",
+              root
+          );
+          const fakeSeedToken = await CustomERC20MockFactory.deploy(
+              "DAI Stablecoin",
+              "DAI"
+          );
           const alternativeSetup = await deploy();
           await alternativeSetup.seed.initialize(
               beneficiary.address,
               admin.address,
-              [seedToken.address, fundingToken.address],
+              [fakeSeedToken.address, fundingToken.address],
               [softCap, hardCap],
               price,
               newStartTime.toNumber(),
@@ -2455,11 +2460,11 @@ describe("Contract: Seed", async () => {
           await alternativeSetup.seed
               .connect(admin)
               .addClass(hardCap, hardCap, price, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE);
-          await seedToken
+          await fakeSeedToken
               .connect(root)
-              .transfer(
+              .mint(
                   alternativeSetup.seed.address,
-                  requiredSeedAmount.toString()
+                  (requiredSeedAmount.mul(new BN(1000))).toString()
               );
           await fundingToken
               .connect(root)
@@ -2533,7 +2538,7 @@ describe("Contract: Seed", async () => {
       seedForFee = seedForDistribution
           .mul(new BN(fee))
           .div(new BN(PRECISION.toString()));
-      requiredSeedAmount = seedForDistribution.add(seedForFee);
+      requiredSeedAmount = seedForDistribution.mul(new BN(1000));
 
       await setup.seed.initialize(
           beneficiary.address,
@@ -2636,7 +2641,7 @@ describe("Contract: Seed", async () => {
       seedForFee = seedForDistribution
           .mul(new BN(fee))
           .div(new BN(PRECISION.toString()));
-      requiredSeedAmount = seedForDistribution.add(seedForFee);
+      requiredSeedAmount = seedForDistribution.mul(new BN(10000000));
 
       await setup.seed.initialize(
           beneficiary.address,
@@ -2752,7 +2757,7 @@ describe("Contract: Seed", async () => {
         seedForFee = seedForDistribution
             .mul(new BN(fee))
             .div(new BN(PRECISION.toString()));
-        requiredSeedAmount = seedForDistribution.add(seedForFee);
+        requiredSeedAmount = seedForDistribution.mul(new BN(10000000));
 
         newClassVestingStartTime = await endTime.add(await time.duration.days(4));
         localVestingDuration = time.duration.days(10);   
@@ -3161,7 +3166,7 @@ describe("Contract: Seed", async () => {
         seedForFee = seedForDistribution
             .mul(new BN(fee))
             .div(new BN(PRECISION.toString()));
-        requiredSeedAmount = seedForDistribution.add(seedForFee);
+        requiredSeedAmount = seedForDistribution.mul(new BN(10000000));
 
 
         newClassVestingStartTime = await endTime.add(await time.duration.days(4));
