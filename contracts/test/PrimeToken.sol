@@ -20,7 +20,7 @@ contract PrimeToken is ERC20Capped {
         uint256 initialSupply,
         uint256 cap,
         address genesisMultisig
-    ) public ERC20("PrimeDAO Token", "PRIME") ERC20Capped(cap) {
+    ) ERC20("PrimeDAO Token", "PRIME") ERC20Capped(cap) {
         require(initialSupply <= cap); // _mint from ERC20 is not protected
         ERC20._mint(genesisMultisig, initialSupply);
     }
