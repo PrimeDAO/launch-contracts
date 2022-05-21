@@ -21,7 +21,6 @@ pragma solidity 0.8.9;
 
 import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts-sol8/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 /**
  * @title PrimeDAO Seed contract
  * @dev   Smart contract for seed phases of liquid launch.
@@ -400,10 +399,6 @@ contract Seed {
             "Seed: only allowed during distribution period"
         );
 
-
-        console.log(seedAmountRequired);
-        console.log(feeAmountRequired);
-
         if (!isFunded) {
             require(
                 // classSeedAmountRequired is an amount which is needed to be sold
@@ -592,7 +587,7 @@ contract Seed {
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
         if (!minimumReached) {
-            require( seedToken.transfer(
+            require( seedToken.balanceOf(address(this)) > 0 && seedToken.transfer(
                 _refundReceiver,
                 seedToken.balanceOf(address(this))),"Seed: Failed to transfer Seed Token");
         } else {
@@ -601,7 +596,8 @@ contract Seed {
                 feeAmountRequired) - (seedRemainder + feeRemainder);
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
-            require(seedToken.transfer(_refundReceiver, amountToTransfer), "Seed: Failed to transfer Seed Token");
+            require( seedToken.balanceOf(address(this)) > 0 && seedToken.transfer(_refundReceiver, amountToTransfer),
+                "Seed: Failed to transfer Seed Token");
         }
     }
 
