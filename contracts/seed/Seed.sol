@@ -205,8 +205,8 @@ contract Seed {
             fee = _classFee;
         }
         if(_price < minimalPrice){
-            seedAmountRequired = (seedAmountRequired * (hardCap - _classCap) / hardCap)
-                + (_classCap * PRECISION) / _price;
+            seedAmountRequired = (((hardCap - _classCap) * PRECISION) / minimalPrice)
+            + (_classCap * PRECISION) / _price;
             minimalPrice = _price;
         }
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
@@ -229,6 +229,10 @@ contract Seed {
         uint256 _classVestingStartTime,
         uint256 _classFee
     ) onlyAdmin public {
+        require(
+            classes.length < 256,
+            "Seed: can't add more then 256 classes"
+        );
         require(
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
@@ -426,15 +430,6 @@ contract Seed {
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder -= seedAmount;
-
-        if (feeRemainder == 0){
-            feeAmount = 0;
-        }else if (feeRemainder < feeAmount){
-            feeRemainder -= feeRemainder;
-            feeAmount = 0;
-        }else{
-            feeRemainder -= feeAmount;
-        }
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
