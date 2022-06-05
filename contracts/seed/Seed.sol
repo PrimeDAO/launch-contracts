@@ -38,7 +38,6 @@ contract Seed {
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
     bool public permissionedSeed;
-    uint32 public vestingDuration;
     uint32 public vestingCliff;
     IERC20 public seedToken;
     IERC20 public fundingToken;
@@ -54,7 +53,6 @@ contract Seed {
     bool public initialized; // is this contract initialized [not necessary that it is funded]
     bool public minimumReached; // if the softCap[minimum limit of funding token] is reached
     bool public maximumReached; // if the hardCap[maximum limit of funding token] is reached
-    bool public isWhitelistBatchInvoked; // if the whitelistBatch method have been invoked
 
     uint256 public totalFunderCount; // Total funders that have contributed.
     uint256 public seedRemainder; // Amount of seed tokens remaining to be distributed
@@ -173,7 +171,6 @@ contract Seed {
         startTime = _startTime;
         endTime = _endTime;
         uint256 vestingStartTime = endTime + 1;
-        vestingDuration = _vestingDuration;
         vestingCliff = _vestingCliff;
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
@@ -210,6 +207,8 @@ contract Seed {
             minimalPrice = _price;
         }
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
+        seedRemainder = seedAmountRequired;
+        feeRemainder = feeAmountRequired;
     }
 
     /**
@@ -429,7 +428,8 @@ contract Seed {
         fundingCollected += _fundingAmount;
         classes[funders[msg.sender].class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
-        seedRemainder -= seedAmount;
+        seedRemainder = seedRemainder - seedAmount;
+        feeRemainder = feeRemainder - feeAmount;
         if (fundingCollected >= softCap) {
             minimumReached = true;
         }
@@ -618,7 +618,6 @@ contract Seed {
     function whitelistBatch(address[] memory _buyers, uint8[] memory _classes) external onlyAdmin {
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
-        isWhitelistBatchInvoked = true;
         for (uint256 i = 0; i < _buyers.length; i++) {
             require(_classes[i] < classes.length, "Seed: incorrect class chosen");
             whitelisted[_buyers[i]] = true;

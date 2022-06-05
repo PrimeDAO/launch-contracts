@@ -139,7 +139,7 @@ describe("Contract: Seed", async () => {
       metadata = `0x`;
 
       buySeedFee = new BN(buySeedAmount)
-          .mul(new BN(fee))
+          .mul(new BN(CLASS_FEE))
           .div(new BN(PRECISION.toString()));
       seedForDistribution = new BN(hardCap)
           .mul(new BN(PRECISION.toString()))
@@ -417,6 +417,8 @@ describe("Contract: Seed", async () => {
           expect(await setup.seed.minimumReached()).to.equal(true);
         });
         it("it returns amount of seed token bought and the fee", async () => {
+
+          seedForFee = new BN((await setup.seed.feeRemainder()).toString());
           let { ["0"]: seedAmount, ["1"]: feeAmount } = await setup.seed
               .connect(buyer1)
               .callStatic.buy(buyAmount);
@@ -434,21 +436,10 @@ describe("Contract: Seed", async () => {
               seedForDistribution.sub(new BN(buySeedAmount)).toString()
           );
         });
-        it("updates the remaining seeds for fee", async () => {
-          expect((await setup.seed.feeRemainder()).toString()).to.equal(
-              seedForFee.sub(new BN(buySeedFee)).toString()
-          );
-        });
         it("updates the amount of funding token collected", async () => {
           expect((await setup.seed.fundingCollected()).toString()).to.equal(
               buyAmount.toString()
           );
-        });
-        it("it returns amount of the fee when feeAmount > feeRemainder", async () => {           
-            let { ["1"]: feeAmount } = await setup.seed
-                .connect(buyer4)
-                .callStatic.buy(buyAmount);
-            expect((await feeAmount).toString()).to.equal(getSeedAmounts("0"));
         });
         it("it fails on claiming seed tokens if the distribution has not yet finished", async () => {
           await expectRevert(
@@ -582,11 +573,6 @@ describe("Contract: Seed", async () => {
         it("updates the remaining seeds to distribution after another buy", async () => {
           expect((await setup.seed.seedRemainder()).toString()).to.equal(
               seedForDistribution.sub(new BN(buySeedAmount).mul(twoBN)).toString()
-          );
-        });
-        it("updates the remaining seeds for fee after another buy", async () => {
-          expect((await setup.seed.feeRemainder()).toString()).to.equal(
-              seedForFee.sub(new BN(buySeedFee).mul(twoBN)).toString()
           );
         });
         it("return totalClaimed == 0", async () => {
@@ -1246,11 +1232,6 @@ describe("Contract: Seed", async () => {
                   await setup.data.seed.seedAmountForFunder(buyer2.address)
               ).toString()
           ).to.equal(zero.toString());
-        });
-        it("updates `feeRemainder` ", async () => {
-          expect((await setup.data.seed.feeRemainder()).toString()).to.equal(
-              seedForFee.toString()
-          );
         });
         it("updates remaining seeds", async () => {
           expect((await setup.data.seed.seedRemainder()).toString()).to.equal(
@@ -2416,7 +2397,6 @@ describe("Contract: Seed", async () => {
 
           expect(await seed.whitelisted(buyer3.address)).to.equal(true);
           expect(await seed.whitelisted(buyer4.address)).to.equal(true);
-          expect(await seed.isWhitelistBatchInvoked()).to.equal(true);
         });
         it("reverts: can't set non existent class", async () => {
           await expectRevert(
