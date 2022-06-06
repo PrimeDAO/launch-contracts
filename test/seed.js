@@ -640,7 +640,7 @@ describe("Contract: Seed", async () => {
             await time.increase(await time.duration.minutes(1));
             await expectRevert(
                 alternativeSetup.seed.connect(buyer1).buy(getFundingAmounts("5")),
-                "Seed: Failed to transfer funding token"
+                "SafeERC20: ERC20 operation did not succeed"
             );
           });
         });
@@ -1123,7 +1123,7 @@ describe("Contract: Seed", async () => {
               alternativeSetup.seed
                   .connect(buyer1)
                   .claim(buyer1.address, correctClaimAmount.toString()),
-              "Seed: Failed to transfer seed token"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
       });
@@ -1320,7 +1320,7 @@ describe("Contract: Seed", async () => {
           await alternativeFundingToken.burn(buyer1.address);
           await expectRevert(
               alternativeSetup.seed.connect(buyer1).retrieveFundingTokens(),
-              "Seed: Failed to transfer funding token"
+              "SafeERC20: ERC20 operation did not succeed"
           );
         });
       });
