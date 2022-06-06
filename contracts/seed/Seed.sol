@@ -236,6 +236,10 @@ contract Seed {
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
         );
+        require(block.timestamp < startTime,
+            "Seed: vesting is already started"
+        );
+        require(!closed, "Seed: should not be closed");
         require(
             _classFee < MAX_FEE,
             "Seed: fee cannot be more than 45%"
