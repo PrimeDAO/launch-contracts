@@ -66,9 +66,7 @@ describe("SeedFactory", () => {
       hardCap = parseEther("100").toString();
       price = parseEther("0.01").toString();
       softCap = parseEther("100").toString();
-      console.log("Before SeedFactory");
-      startTime = await time.latest();
-      console.log("After SeedFactory");
+      startTime = (await time.latest()).add(await time.duration.days(1));
       endTime = await startTime.add(await time.duration.days(7));
       vestingDuration = await time.duration.days(365); // 1 year
       vestingCliff = await time.duration.days(90); // 3 months

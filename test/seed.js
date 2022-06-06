@@ -1957,27 +1957,27 @@ describe("Contract: Seed", async () => {
                   .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, feeTooBig),
                 "Seed: fee cannot be more than 45%"
             );
-          });  
-          it("it reverts when vesting is already started", async () => {
-            await time.increase(time.duration.days(2));
-            await expectRevert( 
-              setup.data.seed
-                  .connect(admin)
-                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
-                "Seed: vesting is already started"
-            );
-          }); 
+          });
           it("it reverts when Seed is closed", async () => {
             await setup.data.seed
                 .connect(admin)
                 .close();
-            await expectRevert( 
-              setup.data.seed
-                  .connect(admin)
-                  .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
+            await expectRevert(
+                setup.data.seed
+                    .connect(admin)
+                    .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
                 "Seed: should not be closed"
             );
-          });   
+          });
+          it("it reverts when vesting is already started", async () => {
+              await time.increase(time.duration.days(2));
+              await expectRevert(
+                setup.data.seed
+                    .connect(admin)
+                    .changeClass(0, hardCap, e_twenty, e_twenty, CLASS_VESTING_DURATION, CLASS_VESTING_START_TIME, CLASS_FEE),
+                  "Seed: vesting is already started"
+              );
+          });
       });
       context("» update metadata", () => {
         it("can only be called by admin", async () => {
@@ -2014,8 +2014,10 @@ describe("Contract: Seed", async () => {
         context("seed is paused/closed", async () => {
           let alternativeSeed;
 
-          beforeEach(async () => {
-            let newStartTime = await time.latest();
+          before(async () => {
+            let newStartTime = (await time.latest()).add(
+                await time.duration.days(1)
+            );;
             let newEndTime = await newStartTime.add(
                 await time.duration.days(7)
             );
@@ -2027,7 +2029,6 @@ describe("Contract: Seed", async () => {
             await seedToken
                 .connect(root)
                 .transfer(alternativeSeed.address, requiredSeedAmount.toString());
-
             alternativeSeed.initialize(
                 beneficiary.address,
                 admin.address,
@@ -2043,6 +2044,13 @@ describe("Contract: Seed", async () => {
             );
           });
 
+          it("reverts: 'Seed: should be paused'", async () => {
+            await expectRevert(
+                alternativeSeed.connect(admin).unpause(),
+                "Seed: should be paused"
+            );
+          });
+
           it("reverts: 'Seed: should not be closed'", async () => {
             await time.increase(tenDaysInSeconds);
             await alternativeSeed.connect(admin).close();
@@ -2053,19 +2061,12 @@ describe("Contract: Seed", async () => {
           });
 
           it("trying to close again", async () => {
-            await alternativeSeed.connect(admin).close();
             await expectRevert(
                 alternativeSeed.connect(admin).close(),
                 "Seed: should not be closed"
             );
           });
 
-          it("reverts: 'Seed: should be paused'", async () => {
-            await expectRevert(
-                alternativeSeed.connect(admin).unpause(),
-                "Seed: should be paused"
-            );
-          });
         });
 
         it("can only be called by admin", async () => {
@@ -2374,6 +2375,9 @@ describe("Contract: Seed", async () => {
           setup;
         });
         it("initializes", async () => {
+
+          startTime = (await time.latest()).add(await time.duration.days(1));
+          endTime = await startTime.add(await time.duration.days(7));
           // emulate creation & initialization via seedfactory & fund with seedTokens
           await seedToken
               .connect(root)
@@ -2460,7 +2464,9 @@ describe("Contract: Seed", async () => {
       context("» whitelistBatch", () => {
         context("seed is closed", async () => {
           it("reverts: 'Seed: should not be closed'", async () => {
-            const newStartTime = await time.latest();
+            const newStartTime = (await time.latest()).add(
+                await time.duration.days(1)
+            );
             const newEndTime = await newStartTime.add(
                 await time.duration.days(7)
             );
@@ -2474,7 +2480,7 @@ describe("Contract: Seed", async () => {
                 .connect(root)
                 .transfer(alternativeSeed.address, requiredSeedAmount.toString());
 
-            alternativeSeed.initialize(
+            await alternativeSeed.initialize(
                 beneficiary.address,
                 admin.address,
                 [seedToken.address, fundingToken.address],
@@ -2488,7 +2494,7 @@ describe("Contract: Seed", async () => {
                 fee
             );
             await time.increase(tenDaysInSeconds);
-            await alternativeSeed.close();
+            await alternativeSeed.connect(admin).close();
             await expectRevert(
                 alternativeSeed
                     .connect(admin)
