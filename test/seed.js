@@ -44,7 +44,7 @@ describe("Contract: Seed", async () => {
   let price;
   let buyAmount;
   let smallBuyAmount;
-  let buySeedFee;
+  let buySeedAmount;
   let startTime;
   let endTime;
   let vestingDuration;
