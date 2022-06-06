@@ -132,7 +132,7 @@ contract Seed {
         }
         if(_price < minimalPrice){
             seedAmountRequired = (((hardCap - _classCap) * PRECISION) / minimalPrice)
-            + (_classCap * PRECISION) / _price;
+                + (_classCap * PRECISION) / _price;
             minimalPrice = _price;
         }
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;

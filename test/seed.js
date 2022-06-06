@@ -2017,7 +2017,7 @@ describe("Contract: Seed", async () => {
           before(async () => {
             let newStartTime = (await time.latest()).add(
                 await time.duration.days(1)
-            );;
+            );
             let newEndTime = await newStartTime.add(
                 await time.duration.days(7)
             );
