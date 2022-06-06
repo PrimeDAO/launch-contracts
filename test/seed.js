@@ -1271,7 +1271,7 @@ describe("Contract: Seed", async () => {
         it("reverts 'Seed: cannot return funding tokens to msg.sender' ", async () => {
           const altStartTime = (await time.latest()).add(
               await time.duration.days(1)
-          );;
+          );
           const altEndTime = await altStartTime.add(
               await time.duration.days(7)
           );
@@ -2084,7 +2084,7 @@ describe("Contract: Seed", async () => {
           it("reverts: 'Seed: should not be closed'", async () => {
             const newStartTime = (await time.latest()).add(
                 await time.duration.days(1)
-            );;
+            );
             const newEndTime = await newStartTime.add(
                 await time.duration.days(7)
             );
@@ -2532,7 +2532,7 @@ describe("Contract: Seed", async () => {
         it("cannot buy more than hardCap", async () => {
           const newStartTime = (await time.latest()).add(
               await time.duration.days(1)
-          );;
+          );
           const newEndTime = await newStartTime.add(
               await time.duration.days(7)
           );
