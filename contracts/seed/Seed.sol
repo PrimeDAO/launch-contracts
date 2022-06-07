@@ -477,7 +477,8 @@ contract Seed {
         require(minimumReached, "Seed: minimum funding amount not met");
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
-        uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
+        ContributorClass memory claimed = classes[currentId];
+        uint256 currentClassVestingStartTime = claimed.classVestingStartTime;
         require(
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
@@ -494,7 +495,7 @@ contract Seed {
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
         );
-        uint256 currentClassFee = classes[currentId].classFee;
+        uint256 currentClassFee = claimed.classFee;
         uint256 feeAmountOnClaim = (_claimAmount * currentClassFee) / PRECISION;        
 
         funders[_funder].totalClaimed += _claimAmount;
@@ -679,7 +680,8 @@ contract Seed {
     function calculateClaim(address _funder) public view returns (uint256) {
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
-        uint256 currentClassVestingStartTime = classes[currentId].classVestingStartTime; 
+        ContributorClass memory claimed = classes[currentId];
+        uint256 currentClassVestingStartTime = claimed.classVestingStartTime;
   
         if (block.timestamp < currentClassVestingStartTime) {
             return 0;
@@ -691,7 +693,7 @@ contract Seed {
             return 0;
         }
 
-        uint256 currentVestingDuration = classes[currentId].vestingDuration; 
+        uint256 currentVestingDuration = claimed.vestingDuration;
         // If over vesting duration, all tokens vested
         if (elapsedSeconds >= currentVestingDuration) {
             return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
