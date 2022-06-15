@@ -1813,7 +1813,7 @@ describe("Contract: Seed", async () => {
             it("it adds Customer class", async () => {
               await setup.seed
                   .connect(admin)
-                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
+                  .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [CLASS_FEE, CLASS_FEE]);
               expect(
                   (await setup.seed.classes(2))[1]
               ).to.equal((ethers.BigNumber.from(e_twenty)));
@@ -1823,7 +1823,7 @@ describe("Contract: Seed", async () => {
               await expectRevert(
                   setup.seed
                       .connect(admin)
-                      .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [feeTooBig, feeTooBig]),
+                      .addClassBatch([e_fourteen,e_twenty], [e_twenty,1e6], [e_twenty,1e6], [10000000,10000000], [CLASS_VESTING_START_TIME, CLASS_VESTING_START_TIME], [feeTooBig, feeTooBig]),
                   "Seed: fee cannot be more than 45%"
               );
             });

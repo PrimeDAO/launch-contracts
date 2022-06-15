@@ -107,7 +107,7 @@ contract Seed {
         _;
     }
 
-    modifier classRestriction(uint256 _classVestingStartTime, uint256 _classFee, uint256 _classCap) {
+    modifier classRestriction(uint256 _classVestingStartTime, uint256 _classFee, uint256 _vestingDuration, uint256 _classCap) {
         require(
             endTime < _classVestingStartTime,
             "Seed: vesting start time can't be less than endTime"
@@ -122,6 +122,10 @@ contract Seed {
         );
         require(_classCap > 0,
             "Seed: class Cap should be bigger then 0"
+        );
+        require(
+            _vestingDuration >= vestingCliff,
+            "SeedFactory: vestingDuration cannot be less than vestingCliff"
         );
         _;
     }
@@ -147,7 +151,7 @@ contract Seed {
         uint256 _vestingDuration,
         uint256 _classVestingStartTime,
         uint256 _classFee
-    ) internal classRestriction(_classVestingStartTime, _classFee, _classCap){
+    ) internal classRestriction(_classVestingStartTime, _classFee, _vestingDuration, _classCap){
         calculateSeedAndFee(_price, _classFee, _classCap);
 
         // the maximum possible classCap is calculated.
@@ -204,10 +208,6 @@ contract Seed {
         require(
             _softHardThresholds[1] >= _softHardThresholds[0],
             "SeedFactory: hardCap cannot be less than softCap"
-        );
-        require(
-            _vestingDuration >= _vestingCliff,
-            "SeedFactory: vestingDuration cannot be less than vestingCliff"
         );
         require(
             _endTime > _startTime,
@@ -325,7 +325,7 @@ contract Seed {
         uint256 _vestingDuration,
         uint256 _classVestingStartTime,
         uint256 _classFee
-    ) onlyAdmin external classRestriction(_classVestingStartTime, _classFee, _classCap){
+    ) onlyAdmin external classRestriction(_classVestingStartTime, _classFee, _vestingDuration, _classCap){
         require(_class < classes.length, "Seed: incorrect class chosen");
 
         calculateSeedAndFee(_price, _classFee, _classCap);
