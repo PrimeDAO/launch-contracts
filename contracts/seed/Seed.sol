@@ -9,7 +9,7 @@
 
 */
 
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0
 // PrimeDAO Seed contract. Smart contract for seed phases of liquid launch.
 // Copyright (C) 2021 PrimeDao
 
