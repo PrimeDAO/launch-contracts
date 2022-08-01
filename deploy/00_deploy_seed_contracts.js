@@ -1,4 +1,4 @@
-const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
+const deployFunction = async ({ getNamedAccounts, deployments }) => {
     const { deploy, execute } = deployments;
     const { root } = await getNamedAccounts();
     // const safeInstance =
