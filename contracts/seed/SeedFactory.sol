@@ -9,7 +9,7 @@
 
 */
 
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0
 // PrimeDAO Seed Factory contract. Enable PrimeDAO governance to create new Seed contracts.
 // Copyright (C) 2021 PrimeDao
 
