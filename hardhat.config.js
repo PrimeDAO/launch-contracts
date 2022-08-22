@@ -7,7 +7,7 @@ require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, PK } =
-    process.env;
+  process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
 
 const sharedNetworkConfig = {};
@@ -75,6 +75,16 @@ module.exports = {
     arbitrum: {
       ...sharedNetworkConfig,
       url: "https://arb1.arbitrum.io/rpc",
+      saveDeployments: true,
+    },
+    alfajores: {
+      ...sharedNetworkConfig,
+      url: "https://alfajores-forno.celo-testnet.org",
+      saveDeployments: true,
+    },
+    celo: {
+      ...sharedNetworkConfig,
+      url: "https://forno.celo.org",
       saveDeployments: true,
     },
   },
