@@ -43,6 +43,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/contracts": "^4.5.0",
+    "axios": "^0.27.2",
     "dotenv": "^16.0.0",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "openzeppelin-solidity": "^4.5.0",
