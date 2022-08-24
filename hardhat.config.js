@@ -19,6 +19,8 @@ if (PK) {
   };
 }
 
+require("./tasks/seedManagement");
+
 module.exports = {
   paths: {
     artifacts: "build/artifacts",
