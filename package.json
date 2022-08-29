@@ -9,6 +9,8 @@
     "format": "npx prettier --write \"**/*.js\" \"**/*.sol\"",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
     "coverage": "hardhat coverage",
+    "deploy:contracts:local": "npx hardhat run deploy/00_deploy_seed_contracts.js --network localhost",
+    "deploy:contracts:localhost": "npx hardhat deploy --network localhost --tags $npm_config_tags",
     "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags",
