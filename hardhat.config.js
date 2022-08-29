@@ -16,7 +16,8 @@ if (PK) {
   sharedNetworkConfig.accounts = [PK];
 } else {
   sharedNetworkConfig.accounts = {
-    mnemonic: MNEMONIC || DEFAULT_MNEMONIC,
+    // mnemonic: DEFAULT_MNEMONIC,
+    mnemonic: "test test test test test test test test test test test junk",
   };
 }
 
@@ -35,6 +36,7 @@ module.exports = {
   networks: {
     localhost: {
       ...sharedNetworkConfig,
+      url: "http://127.0.0.1:8545/",
       blockGasLimit: 100000000,
       gas: 2000000,
       saveDeployments: false,
