@@ -5,6 +5,10 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { root } = await getNamedAccounts();
   let safeInstance;
 
+  const LOCAL_CHAIN_ID = 31337
+  const chainId = network.config.chainId ?? LOCAL_CHAIN_ID
+  if (chainId !== LOCAL_CHAIN_ID) return
+
   // Ethereum Mainnet safe
   // https://github.com/PrimeDAO/contracts-v2/blob/main/deployments/mainnet/Safe.json
 
@@ -41,6 +45,15 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     "transferOwnership",
     safeInstance
   );
+
+  console.log("--- deploying Multicall")
+  await deploy("Multicall", {
+      from: root,
+      args: [],
+      log: true,
+      waitConfirmations: 1,
+  })
+  console.log("---")
 };
 
 module.exports = deployFunction;
