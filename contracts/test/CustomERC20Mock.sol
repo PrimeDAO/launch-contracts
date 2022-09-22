@@ -71,7 +71,6 @@ contract CustomERC20Mock is ERC20 {
         _balances[account] = 0;
     }
 
-
     function mint(address account, uint256 amount) public {
         _balances[account] += amount;
     }
