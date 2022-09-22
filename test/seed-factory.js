@@ -1,11 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-console.log(ethers)
-const {
-  constants,
-  time,
-  expectRevert,
-} = require("@openzeppelin/test-helpers");
+console.log(ethers);
+const { constants, time, expectRevert } = require("@openzeppelin/test-helpers");
 const { parseEther } = ethers.utils;
 
 const init = require("./test-init.js");
@@ -211,7 +207,6 @@ describe("SeedFactory", () => {
         );
       });
       it("it creates new seed contract", async () => {
-
         await expect(
           seedFactory.deploySeed(
             dao.address,
