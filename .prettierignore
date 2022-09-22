@@ -1,0 +1,8 @@
+artifacts
+build
+cache
+coverage
+deployments
+node_modules
+docs
+.solcover.js
