@@ -52,30 +52,36 @@ contract SeedFactory is CloneFactory, Ownable {
       * @param _tokens                      Array containing two params:
                                                 - The address of the seed token being distributed.
       *                                         - The address of the funding token being exchanged for seed token.
-      * @param _softHardThresholds          Array containing two params:
-                                                - the minimum funding token collection threshold in wei denomination.
-                                                - the highest possible funding token amount to be raised in wei denomination.
+      * @param _softAndHardCap              Array containing two params:
+                                                - The minimum funding token collection threshold in wei denomination.
+                                                - The highest possible funding token amount to be raised in wei denomination.
       * @param _price                       price of a SeedToken, expressed in fundingTokens, with precision of 10**18
-      * @param _startTime                   Distribution start time in unix timecode.
-      * @param _endTime                     Distribution end time in unix timecode.
-      * @param _vestingDurationAndCliff       Array containing two params:
-                                                - Vesting period duration in days.
-                                                - Cliff duration in days.
-      * @param _permissionedSeed      Set to true if only whitelisted adresses are allowed to participate.
-      * @param _fee                   Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-      * @param _metadata              Seed contract metadata, that is IPFS URI
+      * @param _startTimeAndEndTime         Array containing two params:
+                                                - Distribution start time in unix timecode.
+                                                - Distribution end time in unix timecode.
+      * @param _defaultClassParameters     Array containing three params:
+												- Individual buying cap for de default class, expressed in precision 10*18
+												- Cliff duration, denominated in seconds. Vesting period duration, denominated in seconds
+                                                - Vesting period duration, denominated in seconds.
+      * @param _permissionedSeed            Set to true if only whitelisted adresses are allowed to participate.
+      * @param _whitelist                   Array of addresses to be whitelisted for the default class, at creation time
+      * @param _tipping                     Array of containing three parameters:
+												- Total amount of tipping percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
+												- Tipping vesting period duration denominated in seconds.																								
+												- Tipping cliff duration denominated in seconds.	
+      * @param _metadata                    Seed contract metadata, that is IPFS URI
     */
     function deploySeed(
         address _beneficiary,
         address _admin,
         address[] memory _tokens,
-        uint256[] memory _softHardThresholds,
+        uint256[] memory _softAndHardCap,
         uint256 _price,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint32[] memory _vestingDurationAndCliff,
+        uint256[] memory _startTimeAndEndTime,
+        uint32[] memory _defaultClassParameters,
         bool _permissionedSeed,
-        uint256 _fee,
+        address[] memory _whitelist,
+        uint256[] memory _tipping,
         bytes memory _metadata
     ) external onlyOwner returns (address) {
         {
@@ -83,10 +89,11 @@ contract SeedFactory is CloneFactory, Ownable {
                 address(masterCopy) != address(0),
                 "SeedFactory: mastercopy cannot be zero address"
             );
-            require(
-                _vestingDurationAndCliff.length == 2,
-                "SeedFactory: Hasn't provided both vesting duration and cliff"
-            );
+            // ToDo: add requires to check for length
+            // require(
+            //     _vestingDurationAndCliff.length == 2,
+            //     "SeedFactory: Hasn't provided both vesting duration and cliff"
+            // );
         }
 
         // deploy clone
@@ -99,14 +106,13 @@ contract SeedFactory is CloneFactory, Ownable {
             _beneficiary,
             _admin,
             _tokens,
-            _softHardThresholds,
+            _softAndHardCap,
             _price,
-            _startTime,
-            _endTime,
-            _vestingDurationAndCliff[0],
-            _vestingDurationAndCliff[1],
+            _startTimeAndEndTime,
+            _defaultClassParameters,
             _permissionedSeed,
-            _fee
+            _whitelist,
+            _tipping
         );
 
         emit SeedCreated(address(_newSeed), _admin);
