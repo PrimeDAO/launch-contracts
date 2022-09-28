@@ -3,7 +3,7 @@
   "chainId": "4",
   "contracts": {
     "Seed": {
-      "address": "0x9154C43AD7B1065b726fc8E3ec5352a3a149b751",
+      "address": "0xa343b116B7a71522A12aA8768e6c5Ba8621F2124",
       "abi": [
         {
           "anonymous": false,
@@ -485,9 +485,9 @@
               "type": "uint256[]"
             },
             {
-              "internalType": "uint32[]",
+              "internalType": "uint256[]",
               "name": "_defaultClassParameters",
-              "type": "uint32[]"
+              "type": "uint256[]"
             },
             {
               "internalType": "bool",
@@ -904,7 +904,7 @@
       ]
     },
     "SeedFactory": {
-      "address": "0xAc10C49fE6B5b46D51BE4e9755B7eCd863201CEa",
+      "address": "0x847cEBE2555eCB6CE84217e6Eb6c40473ba118e4",
       "abi": [
         {
           "anonymous": false,
@@ -977,9 +977,9 @@
               "type": "uint256[]"
             },
             {
-              "internalType": "uint32[]",
+              "internalType": "uint256[]",
               "name": "_defaultClassParameters",
-              "type": "uint32[]"
+              "type": "uint256[]"
             },
             {
               "internalType": "bool",
@@ -1075,7 +1075,7 @@
       ]
     },
     "SignerV2": {
-      "address": "0xee2E5e30881623D00aa3f556800887f3Af8dE6d8",
+      "address": "0x10178a16b22D5AF725A58a898E1E7687Ff298078",
       "abi": [
         {
           "inputs": [
