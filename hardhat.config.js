@@ -21,6 +21,7 @@ if (PK) {
 }
 
 require("./tasks/seedManagement");
+require("./tasks/gnosisManagement");
 
 module.exports = {
   paths: {

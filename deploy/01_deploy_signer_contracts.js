@@ -28,12 +28,13 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const deploySeedFunctionSignature =
     await seedFactoryInstance.interface.getSighash("deploySeed");
 
+  console.log(deploySeedFunctionSignature);
   await deploy("SignerV2", {
     from: root,
     args: [
       safeAddress,
-      [seedFactoryInstance.address],
-      [deploySeedFunctionSignature],
+      [seedFactoryInstance.address, lbpManagerFactoryInstance.address],
+      [deploySeedFunctionSignature, deployLBPManagerFunctionSignature],
     ],
     log: true,
   });
