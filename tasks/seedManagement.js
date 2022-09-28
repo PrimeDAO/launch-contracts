@@ -55,7 +55,7 @@ task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(
       /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 55 ~ seedFactoryInstance.address', seedFactoryInstance.address)
       console.log('------------------------------------------------------------------------------------------')
       console.log('------------------------------------------------------------------------------------------')
-      console.log('------------------------------------------------------------------------------------------')
+      /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 60 ~ SeedArguments.BENEFICIARY', SeedArguments.BENEFICIARY)
       var tx = await seedFactoryInstance.deploySeed(
         SeedArguments.BENEFICIARY,
         SeedArguments.ADMIN,
