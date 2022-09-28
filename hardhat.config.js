@@ -5,6 +5,7 @@ require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
+require("@nomiclabs/hardhat-etherscan");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, PK } =
   process.env;
@@ -127,6 +128,7 @@ module.exports = {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
       arbitrumOne: ARBISCAN_API_KEY,
+      rinkeby: ETHERSCAN_API_KEY,
     },
   },
   namedAccounts: {
