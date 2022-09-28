@@ -174,7 +174,7 @@ contract Seed {
         uint256[] memory _softHardThresholds,
         uint256 _price,
         uint256[] memory _startTimeAndEndTime, // 0 = startTime; 1 = endTime
-        uint32[] memory _defaultClassParameters, //
+        uint256[] memory _defaultClassParameters, //
         bool _permissionedSeed,
         address[] memory _whitelistAddresses,
         uint256[] memory _tipping

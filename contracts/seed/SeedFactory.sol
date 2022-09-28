@@ -78,7 +78,7 @@ contract SeedFactory is CloneFactory, Ownable {
         uint256[] memory _softAndHardCap,
         uint256 _price,
         uint256[] memory _startTimeAndEndTime,
-        uint32[] memory _defaultClassParameters,
+        uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
         address[] memory _whitelist,
         uint256[] memory _tipping,
