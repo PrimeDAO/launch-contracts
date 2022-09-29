@@ -3,7 +3,7 @@
   "chainId": "4",
   "contracts": {
     "Seed": {
-      "address": "0xa343b116B7a71522A12aA8768e6c5Ba8621F2124",
+      "address": "0x058DA0fA62A28a7eBA23010dBF74c23f5AC245C7",
       "abi": [
         {
           "anonymous": false,
@@ -610,6 +610,19 @@
         },
         {
           "inputs": [],
+          "name": "price",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
           "name": "retrieveFundingTokens",
           "outputs": [
             {
@@ -904,7 +917,7 @@
       ]
     },
     "SeedFactory": {
-      "address": "0x847cEBE2555eCB6CE84217e6Eb6c40473ba118e4",
+      "address": "0x34d0704680A028E70CA42d593a388086918620e0",
       "abi": [
         {
           "anonymous": false,
@@ -1075,7 +1088,7 @@
       ]
     },
     "SignerV2": {
-      "address": "0x10178a16b22D5AF725A58a898E1E7687Ff298078",
+      "address": "0x40D09a87ECbfAa176b3fAf17cb7751857bDB6E80",
       "abi": [
         {
           "inputs": [
