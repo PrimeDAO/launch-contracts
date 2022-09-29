@@ -65,7 +65,7 @@ contract Seed {
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
     uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
-    uint256 private price;
+    uint256 public price;
     uint256 private fee;
 
     ContributorClass[] public classes; // Array of contributor classes
