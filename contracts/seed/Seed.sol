@@ -38,13 +38,15 @@ contract Seed {
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
+    uint256 public vestingStartTime; // timestamp for when vesting starts, by default == endTime,
+    //     otherwise when maximumReached is reached
     bool public permissionedSeed;
     uint32 public vestingCliff;
     IERC20 public seedToken;
     IERC20 public fundingToken;
     bytes public metadata; // IPFS Hash
 
-    uint256 internal constant MAX_FEE = (45 / 100) * 10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee)
+    uint256 internal constant MAX_FEE = (45 / 100) * 10**18; // ToDo: remove max fee, has been moved to SeedFactory
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -172,71 +174,58 @@ contract Seed {
     }
 
     /**
-      * @dev                          Initialize Seed.
-      * @param _beneficiary           The address that recieves fees.
-      * @param _admin                 The address of the admin of this contract. Funds contract
-                                      and has permissions to whitelist users, pause and close contract.
-      * @param _tokens                Array containing two params:
-                                        - The address of the seed token being distributed.
-      *                                 - The address of the funding token being exchanged for seed token.
-      * @param _softHardThresholds    Array containing two params:
-                                        - the minimum funding token collection threshold in wei denomination.
-                                        - the highest possible funding token amount to be raised in wei denomination.
-      * @param _price                 price of a SeedToken, expressed in fundingTokens, with precision of 10**18
-      * @param _startTime             Distribution start time in unix timecode.
-      * @param _endTime               Distribution end time in unix timecode.
-      * @param _vestingDuration       Vesting period duration in seconds.
-      * @param _vestingCliff          Cliff duration in seconds.
-      * @param _permissionedSeed      Set to true if only whitelisted adresses are allowed to participate.
-      * @param _fee                   Success fee expressed as a % (e.g. 10**18 = 100% fee, toWei('1') = 100%)
+      * @dev                            Initialize Seed.
+      * @param _beneficiary             The address that recieves fees.
+      * @param _admin                   The address of the admin of this contract. Funds contract
+                                            and has permissions to whitelist users, pause and close contract.
+      * @param _tokens                  Array containing two params:
+                                            - The address of the seed token being distributed.
+      *                                     - The address of the funding token being exchanged for seed token.
+      * @param _softAndHardCap          Array containing two params:
+                                            - the minimum funding token collection threshold in wei denomination.
+                                            - the highest possible funding token amount to be raised in wei denomination.
+      * @param _price                   Price of a SeedToken, expressed in fundingTokens, with precision of 10**18
+      * @param _startTimeAndEndTime     Array containing two params:
+                                            - Distribution start time in unix timecode.
+                                            - Distribution end time in unix timecode.
+      * @param _defaultClassParameters  Array containing three params:
+											- Individual buying cap for de default class, expressed in precision 10*18
+											- Cliff duration, denominated in seconds.
+                                            - Vesting period duration, denominated in seconds.
+      * @param _permissionedSeed        Set to true if only whitelisted adresses are allowed to participate.
+      * @param _whitelistAddresses      Array of addresses to be whitelisted for the default class, at creation time
+      * @param _tipping                 Array of containing three parameters:
+											- Total amount of tipping percentage expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee, 10**16 = 1%)
+											- Tipping vesting period duration denominated in seconds.																								
+											- Tipping cliff duration denominated in seconds.	
     */
     function initialize(
         address _beneficiary,
         address _admin,
         address[] memory _tokens,
-        uint256[] memory _softHardThresholds,
+        uint256[] memory _softAndHardCap,
         uint256 _price,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint32 _vestingDuration,
-        uint32 _vestingCliff,
+        uint256[] memory _startTimeAndEndTime,
+        uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
-        uint256 _fee
+        address[] memory _whitelistAddresses, // Note: the addresses will be added to the default class in the next PR
+        uint256[] memory _tipping
     ) external {
         require(!initialized, "Seed: contract already initialized");
         initialized = true;
 
-        // parameter check
-        require(
-            _tokens[0] != _tokens[1],
-            "SeedFactory: seedToken cannot be fundingToken"
-        );
-        require(
-            _softHardThresholds[1] >= _softHardThresholds[0],
-            "SeedFactory: hardCap cannot be less than softCap"
-        );
-        require(
-            _vestingDuration >= _vestingCliff,
-            "SeedFactory: vestingDuration cannot be less than vestingCliff"
-        );
-        require(
-            _endTime > _startTime,
-            "SeedFactory: endTime cannot be less than equal to startTime"
-        );
-        require(_fee < MAX_FEE, "SeedFactory: fee cannot be more than 45%");
-
         beneficiary = _beneficiary;
         admin = _admin;
-        softCap = _softHardThresholds[0];
-        hardCap = _softHardThresholds[1];
-        startTime = _startTime;
-        endTime = _endTime;
-        uint256 vestingStartTime = endTime + 1;
-        vestingCliff = _vestingCliff;
+        softCap = _softAndHardCap[0];
+        hardCap = _softAndHardCap[1];
+        startTime = _startTimeAndEndTime[0];
+        endTime = _startTimeAndEndTime[1];
+        vestingStartTime = endTime + 1;
+        vestingCliff = uint32(_defaultClassParameters[2]); // Note: Next PR, vesting cliff will be added to the classes. The global cliff will be removed
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
-        fee = _fee;
+        fee = _tipping[0];
         minimalPrice = _price;
 
         feeClaimed = 0;
@@ -250,9 +239,9 @@ contract Seed {
             hardCap,
             hardCap,
             _price,
-            _vestingDuration,
+            _defaultClassParameters[1],
             vestingStartTime,
-            _fee
+            _tipping[0]
         );
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired;
