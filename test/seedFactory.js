@@ -1,130 +1,127 @@
 const { expect } = require("chai");
-const { ethers, waffle } = require("hardhat");
+const { ethers } = require("hardhat");
 const { time } = require("@openzeppelin/test-helpers");
 const {
   utils: { parseEther },
   constants: { AddressZero },
 } = ethers;
 
-const { loadFixture } = waffle;
-const { launchFixture } = require("./fixtures.js");
+const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
+const {
+  SeedFactoryBuilder,
+} = require("./helpers/contracts/seed/builders/SeedFactoryBuilder.js");
+const {
+  SeedBuilder,
+} = require("./helpers/contracts/seed/builders/SeedBuilder.js");
+const {
+  seedFactoryDeploySeedParams,
+  tokenParams,
+} = require("./helpers/params/constructParams.js");
+const {
+  getERC20TokenInstances,
+} = require("./helpers/contracts/tokens/tokens.js");
+const {
+  getDecimals,
+  getTokenAmount,
+} = require("./helpers/types/typesConverter");
+const { SEVEN_DAYS } = require("./helpers/types/time.js");
 
-describe("> Contract: SeedFactory", () => {
-  let uninitializedSeedFactoryInstance,
-    initializedSeedFactoryInstance,
-    uninitializedSeedInstance,
-    SeedFactory,
-    seedFactoryArgs,
+describe.only("> Contract: SeedFactory", () => {
+  let SeedFactoryInstance,
     root,
     beneficiary,
-    admin,
-    seedTokenInstance,
-    fundingTokenInstance,
-    softCap,
-    hardCap,
-    price,
-    startTime,
-    endTime,
-    defaultClassParameters,
-    permissioned,
-    whitelistAddresses,
-    tipping,
-    metadata,
-    getFundingAmounts;
-  beforeEach(async () => {
-    ({
-      uninitializedSeedFactoryInstance,
-      initializedSeedFactoryInstance,
-      uninitializedSeedInstance,
-      SeedFactory,
-      seedFactoryArgs,
-      root,
-      beneficiary,
-      admin,
-      seedTokenInstance,
-      fundingTokenInstance,
-      softCap,
-      hardCap,
-      price,
-      startTime,
-      endTime,
-      defaultClassParameters,
-      permissioned,
-      whitelistAddresses,
-      tipping,
-      metadata,
-      getFundingAmounts,
-    } = await loadFixture(launchFixture));
+    SeedInstance,
+    defaultSeedParameters,
+    tokenInstances;
+
+  before(async () => {
+    ({ root, admin, beneficiary } = await getNamedTestSigners());
+    SeedInstance = await SeedBuilder.create();
+    tokenInstances = await getERC20TokenInstances(tokenParams());
+    const params = { tokenInstances: tokenInstances };
+    defaultSeedParameters = await seedFactoryDeploySeedParams(params);
   });
   describe("$ Function: transferOwnership()", () => {
     describe("# given the SeedFactory has been deployed", () => {
+      before(async () => {
+        SeedFactoryInstance = await SeedFactoryBuilder.create();
+      });
       describe("» when calling function transferOwnership()", () => {
         it("should revert if caller is not the owner", async () => {
+          const params = {
+            from: beneficiary,
+            newOwner: root.address,
+          };
           await expect(
-            initializedSeedFactoryInstance
-              .connect(beneficiary)
-              .transferOwnership(root.address)
+            SeedFactoryInstance.transferOwnership(params)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
         it("should revert if address is equal to zero", async () => {
+          const params = {
+            newOwner: AddressZero,
+          };
           await expect(
-            initializedSeedFactoryInstance.transferOwnership(AddressZero)
+            SeedFactoryInstance.transferOwnership(params)
           ).to.be.revertedWith("Ownable: new owner is the zero address");
         });
-        it("should succees if caller is the owner", async () => {
-          expect(await initializedSeedFactoryInstance.owner()).to.equal(
-            root.address
-          );
-          await initializedSeedFactoryInstance.transferOwnership(
-            beneficiary.address
-          );
-          expect(await initializedSeedFactoryInstance.owner()).to.equal(
-            beneficiary.address
-          );
+        it("should succeed if caller is the owner", async () => {
+          const params = { newOwner: beneficiary.address };
+
+          expect(await SeedFactoryInstance.owner).to.equal(root.address);
+          await SeedFactoryInstance.transferOwnership(params);
+          expect(await SeedFactoryInstance.owner).to.equal(beneficiary.address);
         });
       });
     });
   });
   describe("$ Function: setMasterCopy()", () => {
     describe("# given Seed master copy is not yet set", () => {
+      before(async () => {
+        SeedFactoryInstance = await SeedFactoryBuilder.create();
+      });
       describe("» when calling function setMasterCopy()", () => {
         it("should fail if Seed address is equal to SeedFactory address", async () => {
+          const params = { seedAddress: SeedFactoryInstance.instance.address };
+
           await expect(
-            uninitializedSeedFactoryInstance
-              .connect(root)
-              .setMasterCopy(uninitializedSeedFactoryInstance.address)
+            SeedFactoryInstance.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
         });
         it("should fail if Seed address is equal zero", async () => {
+          const params = { seedAddress: AddressZero };
+
           await expect(
-            uninitializedSeedFactoryInstance
-              .connect(root)
-              .setMasterCopy(AddressZero)
+            SeedFactoryInstance.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
         });
         it("should succeed in setting master copy", async () => {
-          expect(await uninitializedSeedFactoryInstance.masterCopy()).to.equal(
+          const params = { seedAddress: SeedInstance.instance.address };
+
+          expect(await SeedFactoryInstance.instance.masterCopy()).to.equal(
             AddressZero
           );
 
-          await expect(
-            uninitializedSeedFactoryInstance
-              .connect(root)
-              .setMasterCopy(uninitializedSeedInstance.address)
-          ).to.not.be.reverted;
-          expect(await uninitializedSeedFactoryInstance.masterCopy()).to.equal(
-            uninitializedSeedInstance.address
+          await expect(SeedFactoryInstance.setMasterCopy(params)).to.not.be
+            .reverted;
+          expect(await SeedFactoryInstance.instance.masterCopy()).to.equal(
+            SeedInstance.instance.address
           );
         });
       });
     });
   });
   describe("$ Function: deploySeed()", () => {
+    before(async () => {
+      const params = { seedAddress: SeedInstance.instance.address };
+
+      SeedFactoryInstance = await SeedFactoryBuilder.createInit(params);
+    });
     describe("# given Seed Mastecopy is not set", () => {
       describe("» when calling function deploySeed()", () => {
         it("should revert", async () => {
+          const SeedFactoryUnInitialized = await SeedFactoryBuilder.create();
           await expect(
-            uninitializedSeedFactoryInstance.deploySeed(...seedFactoryArgs)
+            SeedFactoryUnInitialized.deploySeed()
           ).to.be.revertedWith("SeedFactory: mastercopy has not been set");
         });
       });
@@ -132,308 +129,150 @@ describe("> Contract: SeedFactory", () => {
     describe("# given invalid deployment parameters", () => {
       describe("» when calling function deploySeed()", () => {
         it("should fail on invalid tipping array length", async () => {
-          const invalidArgument = [tipping[0], tipping[1]];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            invalidArgument,
-            metadata,
-          ];
+          const tipPercentage = defaultSeedParameters[9][0];
+          const tipVestingCliff = defaultSeedParameters[9][1];
+          const params = { tipping: [tipPercentage, tipVestingCliff] };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail on invalid tokens array length", async () => {
-          const invalidArgument = [
-            seedTokenInstance.address,
-            fundingTokenInstance.address,
-            initializedSeedFactoryInstance.address,
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            invalidArgument,
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+        it("should fail on invalid tokenAddresses array length", async () => {
+          const seedTokenAddress = defaultSeedParameters[2][0];
+          const fundingTokenAddress = defaultSeedParameters[2][1];
+          const thirdAddress = SeedInstance.instance.address;
+          const params = {
+            tokenAddresses: [
+              seedTokenAddress,
+              fundingTokenAddress,
+              thirdAddress,
+            ],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
         it("should fail on invalid startTimeAndEndTime array length", async () => {
-          const invalidArgument = [
-            startTime.toNumber(),
-            endTime.toNumber(),
-            startTime.toNumber(),
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            invalidArgument,
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const startTime = defaultSeedParameters[5][0];
+          const endTime = defaultSeedParameters[5][1];
+          const params = { startAndEndTime: [startTime, endTime, startTime] };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
         it("should fail on invalid defaultClassParameters array length", async () => {
-          const invalidArgument = [
-            defaultClassParameters[0],
-            defaultClassParameters[1],
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            invalidArgument,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const params = {
+            defaultClassParameters: [
+              defaultSeedParameters[6][0],
+              defaultSeedParameters[6][1],
+            ],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail if tokens having identical addresses", async () => {
-          const invalidArgument = [
-            seedTokenInstance.address,
-            seedTokenInstance.address,
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            invalidArgument,
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+        it("should fail if tokenAddresses having identical addresses", async () => {
+          const seedTokenAddress = defaultSeedParameters[2][0];
+          const params = {
+            tokenAddresses: [seedTokenAddress, seedTokenAddress],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
         });
         it("should fail if admin and beneficiary having identical addresses", async () => {
-          const invalidArgument = beneficiary.address;
-          const invalidSeedArgs = [
-            beneficiary.address,
-            invalidArgument,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const beneficiaryAddress = defaultSeedParameters[0];
+          const params = {
+            beneficiary: beneficiaryAddress,
+            admin: beneficiaryAddress,
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
         });
         it("should fail if beneficiary is equal zero", async () => {
-          const invalidArgument = AddressZero;
-          const invalidSeedArgs = [
-            invalidArgument,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const params = { beneficiary: AddressZero };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
         it("should fail if admin is equal zero", async () => {
-          const invalidArgument = AddressZero;
-          const invalidSeedArgs = [
-            beneficiary.address,
-            invalidArgument,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const params = { admin: AddressZero };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
         it("should fail if SeedToken is equal zero", async () => {
-          const invalidArgument = AddressZero;
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [invalidArgument, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const fundingTokenAddress = defaultSeedParameters[2][1];
+          const params = { tokenAddresses: [AddressZero, fundingTokenAddress] };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
         it("should fail is FundingToken is equal zero", async () => {
-          const invalidArgument = AddressZero;
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, invalidArgument],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const seedTokenAddress = defaultSeedParameters[2][0];
+          const params = { tokenAddresses: [seedTokenAddress, AddressZero] };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
         it("should fail if softcap bigger than hardcap", async () => {
-          const invalidArgument = [
-            getFundingAmounts("110").toString(),
-            hardCap,
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            invalidArgument,
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const fundingTokenDecimal = (
+            await getDecimals(tokenInstances[1])
+          ).toString();
+          const getFundingAmounts = getTokenAmount(fundingTokenDecimal);
+          const toLargeSoftCap = getFundingAmounts("110").toString();
+          const params = {
+            softAndHardCaps: [toLargeSoftCap, defaultSeedParameters[3][1]],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith(
             "SeedFactory: hardCap cannot be less than softCap"
           );
         });
         it("should fail if startTime > endTime", async () => {
-          const invalidArgument = [
-            (await endTime.add(await time.duration.days(7))).toNumber(),
-            endTime.toNumber(),
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            invalidArgument,
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const startTime = defaultSeedParameters[5][0] + SEVEN_DAYS;
+          const endTime = defaultSeedParameters[5][1];
+          const params = {
+            startAndEndTime: [startTime, endTime],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: invalid time");
         });
         it("should fail on startTime < current time", async () => {
-          const invalidArgument = [
-            (await time.latest()).toNumber(),
-            endTime.toNumber(),
-          ];
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            invalidArgument,
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            tipping,
-            metadata,
-          ];
+          const startTime = (await time.latest()).toNumber();
+          const endTime = defaultSeedParameters[5][1];
+          const params = {
+            startAndEndTime: [startTime, endTime],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: invalid time");
         });
         it("should fail on tipping > max tipping", async () => {
-          const invalidArgument = parseEther("0.50").toString();
-          const invalidSeedArgs = [
-            beneficiary.address,
-            admin.address,
-            [seedTokenInstance.address, fundingTokenInstance.address],
-            [softCap, hardCap],
-            price,
-            [startTime.toNumber(), endTime.toNumber()],
-            defaultClassParameters,
-            permissioned,
-            whitelistAddresses,
-            [invalidArgument, tipping[1], tipping[2]],
-            metadata,
-          ];
+          const invalidTipPercentage = parseEther("0.50").toString();
+          const tipVestingClif = defaultSeedParameters[9][1];
+          const tipVestingDuration = defaultSeedParameters[9][2];
+          const params = {
+            tipping: [invalidTipPercentage, tipVestingClif, tipVestingDuration],
+          };
 
           await expect(
-            initializedSeedFactoryInstance.deploySeed(...invalidSeedArgs)
+            SeedFactoryInstance.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: tip cannot be more than 45%");
         });
       });
@@ -441,28 +280,33 @@ describe("> Contract: SeedFactory", () => {
     describe("# given valid deployment parameters", () => {
       describe("» when calling function deploySeed()", () => {
         it("should deploy a new Seed succesfully", async () => {
-          const tx = await initializedSeedFactoryInstance.deploySeed(
-            ...seedFactoryArgs
-          );
+          const params = { tokenInstances: tokenInstances };
+          const tx = await SeedFactoryInstance.deploySeed(params);
           const receipt = await tx.wait();
           const event = receipt.events.filter((x) => {
             return x.event == "SeedCreated";
           });
           const newSeedAddress = event[0].args[0];
 
+          const SeedFactory = await ethers.getContractFactory("Seed", root);
           const seedInstance = await SeedFactory.attach(newSeedAddress);
 
-          expect(await seedInstance.beneficiary()).to.equal(seedFactoryArgs[0]);
-          expect(await seedInstance.admin()).to.equal(seedFactoryArgs[1]);
+          expect(await seedInstance.beneficiary()).to.equal(
+            defaultSeedParameters[0]
+          );
+          expect(await seedInstance.admin()).to.equal(defaultSeedParameters[1]);
           expect(await seedInstance.seedToken()).to.equal(
-            seedFactoryArgs[2][0]
+            defaultSeedParameters[2][0]
           );
           expect(await seedInstance.fundingToken()).to.equal(
-            seedFactoryArgs[2][1]
+            defaultSeedParameters[2][1]
           );
-          expect(await seedInstance.softCap()).to.equal(seedFactoryArgs[3][0]);
-          expect(await seedInstance.hardCap()).to.equal(seedFactoryArgs[3][1]);
-          expect(await seedInstance.metadata()).to.equal(seedFactoryArgs[10]);
+          expect(await seedInstance.softCap()).to.equal(
+            defaultSeedParameters[3][0]
+          );
+          expect(await seedInstance.hardCap()).to.equal(
+            defaultSeedParameters[3][1]
+          );
         });
       });
     });

@@ -89,7 +89,7 @@ async function launchFixture() {
     parseInt(fundingTokenDecimal) - parseInt(seedTokenDecimal) + 18
   ).toString();
   const defaultClassParameters = [
-    parseUnits("10"),
+    getFundingAmounts("10").toString(),
     tenDaysInSeconds.toNumber(),
     hundredDaysInSeconds.toNumber(),
   ];
