@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers, waffle } = require("hardhat");
+const { ethers } = require("hardhat");
 const { time } = require("@openzeppelin/test-helpers");
 const { loadFixture } = waffle;
 
@@ -35,6 +35,9 @@ describe("> Contract: SeedFactory", () => {
       ({ SeedFactory_deployed } = await loadFixture(launchFixture));
     });
     describe("# given the SeedFactory has been deployed", () => {
+      before(async () => {
+        SeedFactoryInstance = await SeedFactoryBuilder.create();
+      });
       describe("» when calling function transferOwnership()", () => {
         it("should revert if caller is not the owner", async () => {
           const params = {
@@ -76,6 +79,9 @@ describe("> Contract: SeedFactory", () => {
       ));
     });
     describe("# given Seed master copy is not yet set", () => {
+      before(async () => {
+        SeedFactoryInstance = await SeedFactoryBuilder.create();
+      });
       describe("» when calling function setMasterCopy()", () => {
         it("should fail if Seed address is equal to SeedFactory address", async () => {
           const params = {
