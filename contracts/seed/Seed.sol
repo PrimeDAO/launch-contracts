@@ -88,6 +88,7 @@ contract Seed {
         uint8 class; // Contibutor class id
         uint256 totalClaimed; // Total amount of seed tokens claimed
         uint256 fundingAmount; // Total amount of funding tokens contributed
+        bool allowlist; // If permissioned Seed, funder needs to be allowlisted
     }
     // ToDo: add comments
     struct ContributorClass {
@@ -252,9 +253,11 @@ contract Seed {
 
         // Add whitelist to the default class
         if (permissionedSeed == true && _whitelistAddresses.length > 0) {
-            for (uint256 i; i < _whitelistAddresses.length; i++) {
-                _whitelist(_whitelistAddresses[i], 0); // Value 0 for the default class
+            uint256 arrayLength = _whitelistAddresses.length;
+            for (uint256 i; i < arrayLength; ++i) {
+                _addToClass(_whitelistAddresses[i], 0); // Value 0 for the default class
             }
+            _addToAllowlist(_whitelistAddresses);
         }
 
         // ToDo: update this section with answer from biz dev about the tipping (either subtracted or added to Seed amount)
@@ -285,39 +288,6 @@ contract Seed {
             _vestingCliff,
             _vestingDuration
         );
-    }
-
-    /**
-     * @dev                       Set contributor class.
-     * @param _address            Address of the contributor.
-     * @param _class              Class of the contributor.
-     */
-    function setClass(address _address, uint8 _class) public onlyAdmin {
-        require(_class < classes.length, "Seed: incorrect class chosen");
-        require(!closed, "Seed: should not be closed");
-        require(
-            block.timestamp < startTime,
-            "Seed: vesting is already started"
-        );
-        funders[_address].class = _class;
-    }
-
-    /**
-     * @dev                       Set contributor classes.
-     * @param _addresses          Addresses of the contributors.
-     * @param _classes            Classes of the contributor.
-     */
-    function setClassBatch(address[] memory _addresses, uint8[] memory _classes)
-        external
-        onlyAdmin
-    {
-        require(
-            _classes.length == _addresses.length,
-            "Seed: incorrect data passed"
-        );
-        for (uint256 i = 0; i < _addresses.length; i++) {
-            setClass(_addresses[i], _classes[i]);
-        }
     }
 
     /**
@@ -621,32 +591,14 @@ contract Seed {
         }
     }
 
-    //ToDo: add header
-    function _whitelist(address _buyer, uint8 _class) internal {
-        whitelisted[_buyer] = true;
-        funders[_buyer].class = _class;
-    }
-
-    /**
-     * @dev                     Add address to whitelist.
-     * @param _buyer            Address which needs to be whitelisted
-     * @param _class            Class to which buyer will be assigned
-     */
-    function whitelist(address _buyer, uint8 _class) external onlyAdmin {
-        require(_class < classes.length, "Seed: incorrect class chosen");
-        require(!closed, "Seed: should not be closed");
-        require(permissionedSeed == true, "Seed: seed is not whitelisted");
-
-        _whitelist(_buyer, _class);
-    }
-
-    function addClassAndWhitelistBatch(
+    //ToDo: add comment
+    function addClassAndWhitelist(
         bytes32[] memory _classNames,
         uint256[] memory _classCaps,
         uint256[] memory _individualCaps,
         uint256[] memory _vestingCliffs,
         uint256[] memory _vestingDurations,
-        address[][] memory _whitelistAddresses
+        address[][] memory _allowlist
     )
         external
         onlyAdmin
@@ -669,9 +621,18 @@ contract Seed {
                 _vestingCliffs[i],
                 _vestingDurations[i]
             );
-            uint256 whitelistArrayLength = _whitelistAddresses[i].length;
-            for (uint256 j; j < whitelistArrayLength; ++j) {
-                _whitelist(_whitelistAddresses[i][j], currentClassId);
+        }
+
+        uint256 ArrayLength = _allowlist.length;
+        if (permissionedSeed) {
+            for (uint256 i; i < ArrayLength; ++i) {
+                _addToAllowlist(_allowlist[i]);
+            }
+        }
+        for (uint256 i; i < ArrayLength; ++i) {
+            uint256 numberOfAddresses = _allowlist[i].length;
+            for (uint256 j; j < numberOfAddresses; ++j) {
+                _addToClass(_allowlist[i][j], currentClassId);
             }
             ++currentClassId;
         }
@@ -679,33 +640,77 @@ contract Seed {
 
     /**
      * @dev                     Add multiple addresses to whitelist.
-     * @param _buyers           Array of addresses to whitelist addresses in batch
+     * @param _buyers        Array of addresses to whitelist addresses in batch
      * @param _classes          Array of classes assigned in batch
      */
-    function whitelistBatch(address[] memory _buyers, uint8[] memory _classes)
+    function whitelist(address[] memory _buyers, uint8[] memory _classes)
         external
         onlyAdmin
     {
+        uint256 buyersArrayLength = _buyers.length;
         require(!closed, "Seed: should not be closed");
-        require(permissionedSeed == true, "Seed: seed is not whitelisted");
-        for (uint256 i = 0; i < _buyers.length; i++) {
-            require(
-                _classes[i] < classes.length,
-                "Seed: incorrect class chosen"
-            );
-            _whitelist(_buyers[i], _classes[i]);
+
+        //ToDo: Check require below after bizdev decision
+        // require(
+        //     block.timestamp < startTime,
+        //     "Seed: vesting is already started"
+        // );
+        if (permissionedSeed) {
+            _addToAllowlist(_buyers);
+        }
+
+        _addMultipleAdressesToClass(_buyers, _classes);
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _buyer            Address of the contributor.
+     * @param _class              Class of the contributor.
+     */
+    function _addToClass(address _buyer, uint8 _class) internal {
+        require(_class < classes.length, "Seed: incorrect class chosen");
+        funders[_buyer].class = _class;
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _buyers          Address of the contributor.
+     * @param _classes            Class of the contributor.
+     */
+    function _addMultipleAdressesToClass(
+        address[] memory _buyers,
+        uint8[] memory _classes
+    ) internal {
+        uint256 arrayLength = _buyers.length;
+        require(
+            _classes.length == arrayLength,
+            "Seed: mismatch in array length"
+        );
+        for (uint256 i; i < arrayLength; ++i) {
+            _addToClass(_buyers[i], _classes[i]);
         }
     }
 
     /**
-     * @dev                     Remove address from whitelist.
-     * @param buyer             Address which needs to be unwhitelisted
+     * @dev                     Add address to allowlist.
+     * @param _buyers        Address which needs to be whitelisted
      */
-    function unwhitelist(address buyer) external onlyAdmin {
+    function _addToAllowlist(address[] memory _buyers) internal {
+        uint256 arrayLength = _buyers.length;
+        for (uint256 i; i < arrayLength; ++i) {
+            funders[_buyers[i]].allowlist = true;
+        }
+    }
+
+    /**
+     * @dev                     Remove address from allowlist.
+     * @param _buyer             Address which needs to be unwhitelisted
+     */
+    function unallowlist(address _buyer) external onlyAdmin {
         require(!closed, "Seed: should not be closed");
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
 
-        whitelisted[buyer] = false;
+        funders[_buyer].allowlist = true;
     }
 
     /**
