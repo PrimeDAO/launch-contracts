@@ -33,8 +33,9 @@ contract Seed {
     address public admin;
     uint256 public softCap;
     uint256 public hardCap;
-    uint256 public seedAmountRequired; // Amount of seed required for distribution
-    uint256 public tippingAmount; // Amount of seed tokens tipped to the beneficiary
+    uint256 public seedAmountRequired; // Amount of seed required for distribution (buyable + tipping)
+    uint256 public totalBuyableSeed; // Amount of buyable seed tokens
+    uint256 public tippingAmount; // Amount of seed tokens reserved for tipping
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -46,7 +47,6 @@ contract Seed {
     IERC20 public fundingToken;
     bytes public metadata; // IPFS Hash
 
-    uint256 internal constant MAX_FEE = (45 / 100) * 10**18; // Max fee expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee)
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -60,23 +60,29 @@ contract Seed {
     uint256 public totalFunderCount; // Total funders that have contributed.
     uint256 public seedRemainder; // Amount of seed tokens remaining to be distributed
     uint256 public seedClaimed; // Amount of seed token claimed by the user.
-    uint256 public feeRemainder; // Amount of seed tokens remaining for the fee
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
-    uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
     uint256 public price;
-    uint256 private fee;
+    Tip public tipping;
 
     ContributorClass[] public classes; // Array of contributor classes
 
     mapping(address => bool) public whitelisted; // funders that are whitelisted and allowed to contribute
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
 
-    event SeedsPurchased(address indexed recipient, uint256 amountPurchased);
-    event TokensClaimed(address indexed recipient, uint256 amount);
-    event FundingReclaimed(address indexed recipient, uint256 amountReclaimed);
+    event SeedsPurchased(
+        address indexed recipient,
+        uint256 indexed amountPurchased,
+        uint256 indexed seedRemainder
+    );
+    event TokensClaimed(address indexed recipient, uint256 indexed amount);
+    event FundingReclaimed(
+        address indexed recipient,
+        uint256 indexed amountReclaimed
+    );
     event MetadataUpdated(bytes indexed metadata);
+    event TippingClaimed(uint256 indexed amountClaimed);
 
     struct FunderPortfolio {
         uint8 class; // Contibutor class id
@@ -91,6 +97,14 @@ contract Seed {
         uint256 vestingCliff;
         uint256 vestingDuration; // Vesting duration for class
         uint256 classFundingCollected; // Total amount of staked tokens
+    }
+
+    // ToDo: add comment
+    struct Tip {
+        uint256 tippingAmount;
+        uint256 vestingCliff;
+        uint256 vestingDuration;
+        uint256 totalClaimed;
     }
 
     modifier onlyAdmin() {
@@ -119,6 +133,32 @@ contract Seed {
         );
         require(!closed, "Seed: should not be closed");
         require(_classCap > 0, "Seed: class Cap should be bigger then 0");
+        _;
+    }
+
+    modifier classBatchRestrictions(
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations
+    ) {
+        uint256 arrayLength = _classNames.length;
+        require(
+            arrayLength <= 100,
+            "Seed: Can't add batch with more then 100 classes"
+        );
+        require(
+            classes.length + arrayLength < 256,
+            "Seed: can't add more then 256 classes"
+        );
+        require(
+            arrayLength == _classCaps.length &&
+                arrayLength == _individualCaps.length &&
+                arrayLength == _vestingCliffs.length &&
+                arrayLength == _vestingDurations.length,
+            "Seed: All provided arrays should be same size"
+        );
         _;
     }
 
@@ -182,44 +222,24 @@ contract Seed {
         require(!initialized, "Seed: contract already initialized");
         initialized = true;
 
-        // parameter check
-        require(
-            _tokens[0] != _tokens[1],
-            "SeedFactory: seedToken cannot be fundingToken"
-        );
-        require(
-            _softHardThresholds[1] >= _softHardThresholds[0],
-            "SeedFactory: hardCap cannot be less than softCap"
-        );
-        require(
-            _startTimeAndEndTime[1] > _startTimeAndEndTime[0],
-            "SeedFactory: endTime cannot be less than equal to startTime"
-        );
-        require(
-            _tipping[0] <= MAX_FEE,
-            "SeedFactory: fee cannot be more than 45%"
-        );
-
         beneficiary = _beneficiary;
         admin = _admin;
         softCap = _softHardThresholds[0];
         hardCap = _softHardThresholds[1];
         startTime = _startTimeAndEndTime[0];
         endTime = _startTimeAndEndTime[1];
-        vestingStartTime = endTime;
-        // vestingCliff = _vestingCliff;
+        vestingStartTime = endTime + 1;
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
-        // fee = _fee; // ToDo: Store tipping values
-        price = _price;
+        tipping = Tip(_tipping[0], _tipping[1], _tipping[2], 0); // test if this is possible like this
 
-        feeClaimed = 0; // ToDo: Rename to tipping and use to track how much tipping has been claimed
+        price = _price;
 
         seedAmountRequired = (hardCap * PRECISION) / _price;
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
-        tippingAmount = (seedAmountRequired * _tipping[0]) / PRECISION; //ToDo: rename to tippingAmountRequired. Check why calculation is done this way, and not like 2 lines above
+        tippingAmount = (seedAmountRequired * _tipping[0]) / PRECISION; //ToDo: Check why calculation is done this way, and not like 2 lines above
 
         // Adding default from init parameters
         _addClass(
@@ -237,10 +257,10 @@ contract Seed {
             }
         }
 
-        // ToDo: update the SeedAmountRequired with the subtracted tipping amount
+        // ToDo: update this section with answer from biz dev about the tipping (either subtracted or added to Seed amount)
         seedRemainder = seedAmountRequired;
+        totalBuyableSeed = seedRemainder;
         seedAmountRequired += tippingAmount;
-        // feeRemainder = feeAmountRequired; //ToDo: check how this value fits with the
     }
 
     /**
@@ -327,10 +347,10 @@ contract Seed {
     }
 
     /**
-     * @dev                           Add contributor class batch.
-     * @param _classNames                  Array of the names of the classes
-     * @param _classCaps              The total caps of the contributor class, denominated in Wei
-     * @param _individualCaps         The personal caps of each contributor in this class, denominated in Wei.
+     * @dev                      Add contributor class batch.
+     * @param _classNames        Array of the names of the classes
+     * @param _classCaps         The total caps of the contributor class, denominated in Wei
+     * @param _individualCaps    The personal caps of each contributor in this class, denominated in Wei.
      * @param _vestingCliffs     The cliff duration, denominated in seconds.
      * @param _vestingDurations  The vesting durations for this contributors class.
      */
@@ -340,25 +360,19 @@ contract Seed {
         uint256[] memory _individualCaps,
         uint256[] memory _vestingCliffs,
         uint256[] memory _vestingDurations
-    ) external onlyAdmin {
+    )
+        external
+        onlyAdmin
+        classBatchRestrictions(
+            _classNames,
+            _classCaps,
+            _individualCaps,
+            _vestingCliffs,
+            _vestingDurations
+        )
+    {
         uint256 arrayLength = _classNames.length;
-        require(
-            arrayLength <= 100,
-            "Seed: Can't add batch with more then 100 classes"
-        );
-        require(
-            classes.length + arrayLength < 256,
-            "Seed: can't add more then 256 classes"
-        );
-        require(
-            arrayLength == _classCaps.length &&
-                arrayLength == _individualCaps.length &&
-                arrayLength == _vestingCliffs.length &&
-                arrayLength == _vestingDurations.length,
-            "Seed: All provided arrays should be same size"
-        );
         for (uint8 i = 0; i < arrayLength; i++) {
-            // calculateSeedAndFee(_prices[i], _classFee[i], _classCaps[i]);
             _addClass(
                 _classNames[i],
                 _classCaps[i],
@@ -404,7 +418,7 @@ contract Seed {
             require(
                 // classSeedAmountRequired is an amount which is needed to be sold
                 // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
-                seedToken.balanceOf(address(this)) >= seedAmountRequired, // ToDo: had (seedAmountRequired + feeAmountRequired here)
+                seedToken.balanceOf(address(this)) >= seedAmountRequired, // ToDo: update this value if tipping gets subtracted from SeedAmount
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
@@ -412,11 +426,6 @@ contract Seed {
 
         // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
-
-        //ToDo: edit fee amount
-        // feeAmount is an amount of fee we are going to get in seedTokens
-        // uint256 feeAmount = (seedAmount *
-        //     classes[funders[msg.sender].class].classFee) / PRECISION;
 
         // total fundingAmount should not be greater than the hardCap
         require(
@@ -437,11 +446,6 @@ contract Seed {
         if (fundingCollected >= hardCap) {
             maximumReached = true;
             vestingStartTime = block.timestamp;
-            // for (uint8 i = 0; i < classes.length; i++) {
-            //     classes[i].classVestingStartTime =
-            //         block.timestamp +
-            //         (classes[i].classVestingStartTime - endTime);
-            // }
         }
 
         //functionality of addFunder
@@ -458,7 +462,7 @@ contract Seed {
             _fundingAmount
         );
 
-        emit SeedsPurchased(msg.sender, seedAmount);
+        emit SeedsPurchased(msg.sender, seedAmount, seedRemainder);
 
         return (seedAmount);
     }
@@ -470,17 +474,10 @@ contract Seed {
      */
     function claim(address _funder, uint256 _claimAmount) external {
         require(minimumReached, "Seed: minimum funding amount not met");
-        // FunderPortfolio memory tokenFunder = funders[_funder];
-        // uint8 currentId = tokenFunder.class;
-        // ContributorClass memory claimed = classes[currentId];
-        // uint256 currentClassVestingStartTime = claimed.classVestingStartTime;
+
         require(
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
-        );
-        require(
-            vestingStartTime < block.timestamp,
-            "Seed: vesting start time for this class is not started yet"
         );
         uint256 amountClaimable;
 
@@ -490,20 +487,50 @@ contract Seed {
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
         );
-        // uint256 currentClassFee = claimed.classFee;
-        // uint256 feeAmountOnClaim = (_claimAmount * currentClassFee) / PRECISION;
 
         funders[_funder].totalClaimed += _claimAmount;
 
         seedClaimed += _claimAmount;
-        // feeClaimed += feeAmountOnClaim;
 
-        // seedToken.safeTransfer(beneficiary, feeAmountOnClaim);
         seedToken.safeTransfer(_funder, _claimAmount);
 
         emit TokensClaimed(_funder, _claimAmount);
+    }
 
-        // return feeAmountOnClaim; ToDo: Do we want to keep a return value?
+    function claimTipping() external returns (uint256) {
+        if (block.timestamp < vestingStartTime) {
+            return 0;
+        }
+        require(
+            endTime < block.timestamp || maximumReached,
+            "Seed: the distribution has not yet finished"
+        );
+
+        // Check cliff was reached
+        uint256 elapsedSeconds = block.timestamp - vestingStartTime;
+        if (elapsedSeconds < tipping.vestingCliff) {
+            return 0;
+        }
+
+        uint256 amountClaimable;
+        // If over vesting duration, all tokens vested
+        if (elapsedSeconds >= tipping.vestingDuration) {
+            amountClaimable = tipping.tippingAmount - tipping.totalClaimed;
+        } else {
+            // calculate claimable amount
+            uint256 amountVested = (elapsedSeconds * tipping.tippingAmount) /
+                tipping.vestingDuration;
+            amountClaimable = amountVested - tipping.totalClaimed;
+        }
+        require(amountClaimable > 0, "Seed: amount claimable is 0");
+
+        tipping.totalClaimed += amountClaimable;
+
+        seedToken.safeTransfer(beneficiary, amountClaimable);
+
+        emit TippingClaimed(amountClaimable);
+
+        return amountClaimable;
     }
 
     /**
@@ -519,7 +546,6 @@ contract Seed {
         uint256 fundingAmount = tokenFunder.fundingAmount;
         require(fundingAmount > 0, "Seed: zero funding amount");
         seedRemainder += seedAmountForFunder(msg.sender);
-        // feeRemainder += feeForFunder(msg.sender);
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
         fundingCollected -= fundingAmount;
@@ -582,13 +608,13 @@ contract Seed {
                 seedToken.balanceOf(address(this)) > 0,
                 "Seed: Failed to transfer Seed Token" // ToDo: better error message
             );
-            seedToken.safeTransfer(
-                _refundReceiver,
-                seedToken.balanceOf(address(this))
-            );
+            // subtract tipping from Seed tokens
+            uint256 retrievableSeedAmount = seedToken.balanceOf(address(this)) -
+                tipping.tippingAmount;
+            seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
-            // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
-            uint256 totalSeedDistributed = seedAmountRequired - seedRemainder;
+            // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
+            uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
@@ -614,6 +640,43 @@ contract Seed {
         _whitelist(_buyer, _class);
     }
 
+    function addClassAndWhitelistBatch(
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations,
+        address[][] memory _whitelistAddresses
+    )
+        external
+        onlyAdmin
+        classBatchRestrictions(
+            _classNames,
+            _classCaps,
+            _individualCaps,
+            _vestingCliffs,
+            _vestingDurations
+        )
+    {
+        //ToDo: check if we need require for permission
+        uint256 classArrayLength = _classNames.length;
+        uint8 currentClassId = uint8(classes.length);
+        for (uint8 i; i < classArrayLength; ++i) {
+            _addClass(
+                _classNames[i],
+                _classCaps[i],
+                _individualCaps[i],
+                _vestingCliffs[i],
+                _vestingDurations[i]
+            );
+            uint256 whitelistArrayLength = _whitelistAddresses[i].length;
+            for (uint256 j; j < whitelistArrayLength; ++j) {
+                _whitelist(_whitelistAddresses[i][j], currentClassId);
+            }
+            ++currentClassId;
+        }
+    }
+
     /**
      * @dev                     Add multiple addresses to whitelist.
      * @param _buyers           Array of addresses to whitelist addresses in batch
@@ -631,8 +694,6 @@ contract Seed {
                 "Seed: incorrect class chosen"
             );
             _whitelist(_buyers[i], _classes[i]);
-            // whitelisted[_buyers[i]] = true;
-            // funders[_buyers[i]].class = _classes[i];
         }
     }
 
@@ -712,35 +773,35 @@ contract Seed {
         }
     }
 
-    function getAllClasses() external {}
-
-    // /**
-    //  * @dev                     get fee claimed for funder
-    //  * @param _funder           address of funder to check fee claimed
-    //  */
-    // function feeClaimedForFunder(address _funder)
-    //     external
-    //     view
-    //     returns (uint256)
-    // {
-    //     FunderPortfolio memory tokenFunder = funders[_funder];
-    //     uint8 currentId = tokenFunder.class;
-    //     uint256 currentFee = classes[currentId].classFee;
-
-    //     return (funders[_funder].totalClaimed * currentFee) / PRECISION;
-    // }
-
-    // /**
-    //  * @dev                     get fee for funder
-    //  * @param _funder           address of funder to check fee
-    //  */
-    // function feeForFunder(address _funder) public view returns (uint256) {
-    //     FunderPortfolio memory tokenFunder = funders[_funder];
-    //     uint8 currentId = tokenFunder.class;
-    //     uint256 currentFee = classes[currentId].classFee;
-
-    //     return (seedAmountForFunder(_funder) * currentFee) / PRECISION;
-    // }
+    function getAllClasses()
+        external
+        view
+        returns (
+            bytes32[] memory classNames,
+            uint256[] memory classCaps,
+            uint256[] memory individualCaps,
+            uint256[] memory vestingCliffs,
+            uint256[] memory vestingDurations,
+            uint256[] memory classFundingsCollected
+        )
+    {
+        uint256 numberOfClasses = classes.length;
+        classNames = new bytes32[](numberOfClasses);
+        classCaps = new uint256[](numberOfClasses);
+        individualCaps = new uint256[](numberOfClasses);
+        vestingCliffs = new uint256[](numberOfClasses);
+        vestingDurations = new uint256[](numberOfClasses);
+        classFundingsCollected = new uint256[](numberOfClasses);
+        for (uint256 i; i < numberOfClasses; ++i) {
+            ContributorClass storage class = classes[i];
+            classNames[i] = class.className;
+            classCaps[i] = class.classCap;
+            individualCaps[i] = class.individualCap;
+            vestingCliffs[i] = class.vestingCliff;
+            vestingDurations[i] = class.vestingDuration;
+            classFundingsCollected[i] = class.classFundingCollected;
+        }
+    }
 
     /**
      * @dev                     get seed amount for funder
