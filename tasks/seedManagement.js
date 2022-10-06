@@ -1,5 +1,5 @@
 const { task } = require("hardhat/config");
-const { SeedArguments } = require("../test/args/seed-test-args.json");
+const { SeedArguments } = require("../lib/params/seed-test-args.json");
 
 // Arguments for creating a Seed are taken from "../test/args/seed-test-args.json"
 task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(

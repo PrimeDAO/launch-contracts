@@ -1,11 +1,11 @@
-const contractDeployer = require("../ContractDeployer");
-const { convertSeedParams } = require("../../params/constructParams");
+const { convertParams } = require("../../params/constructParams");
+const { paramTypes } = require("../../types/types");
 
-class SeedBuilder {
+class Seed {
   instance;
   beneficiary;
   admin;
-  tokens;
+  tokenAddresses;
   softAndHardCap;
   price;
   startAndEndTime;
@@ -13,26 +13,18 @@ class SeedBuilder {
   permissionedSeed;
   allowlist;
   tipping;
-  metadata;
 
   constructor(instance) {
     this.instance = instance;
-    return this;
   }
 
-  static async create() {
-    const params = {};
-
-    return contractDeployer.ContractDeployer.deploy("SeedFactory", params);
-  }
-
-  async deploySeed(params) {
-    const deployment = await convertParams("SeedFacotry", params);
-    await this.instance.deploySeed(...deployment);
+  async initialize(params) {
+    const deployment = await convertParams(paramTypes.SEED_INITIALIZE, params);
+    await this.instance.initialize(...deployment);
 
     this.admin = deployment[0];
     this.beneficiary = deployment[1];
-    this.tokens = deployment[2];
+    this.tokenAddresses = deployment[2];
     this.softAndHardCap = deployment[3];
     this.price = deployment[4];
     this.startAndEndTime = deployment[5];
@@ -40,9 +32,10 @@ class SeedBuilder {
     this.permissionedSeed = deployment[7];
     this.allowlist = deployment[8];
     this.tipping = deployment[9];
-    this.metadata = deployment[10];
     return this;
   }
 }
 
-exports.SeedBuilder = SeedBuilder;
+module.exports = {
+  Seed,
+};

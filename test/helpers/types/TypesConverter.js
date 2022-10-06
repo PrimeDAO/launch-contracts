@@ -11,7 +11,6 @@ const getTokenAmount = (tokenDecimal) => (amount) =>
 
 // LBP conversion
 module.exports = {
-  seedConversion,
   getDecimals,
   getTokenAmount,
 };
