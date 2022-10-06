@@ -129,7 +129,7 @@ module.exports = {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
       arbitrumOne: ARBISCAN_API_KEY,
-      rinkeby: ETHERSCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
     },
   },
   namedAccounts: {

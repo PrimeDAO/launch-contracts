@@ -1,6 +1,7 @@
 const { task } = require("hardhat/config");
 const { api } = require("./utils/gnosis.js");
 
+// Find safe address for right network in ./deploy/args/safeAddresses.js
 task("addDelegate", "adds delegate to Gnosis Safe")
   .addParam("safe", "address of safe", undefined)
   .addParam("delegate", "address of delegate", undefined)
