@@ -29,6 +29,7 @@ import "../utils/CloneFactory.sol";
  */
 contract SeedFactory is CloneFactory, Ownable {
     Seed public masterCopy;
+    uint256 internal constant MAX_TIP = (45 / 100) * 10**18; // Max tip expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee)
 
     event SeedCreated(address indexed newSeed, address indexed admin);
 
@@ -38,8 +39,9 @@ contract SeedFactory is CloneFactory, Ownable {
      */
     function setMasterCopy(Seed _masterCopy) external onlyOwner {
         require(
-            address(_masterCopy) != address(0),
-            "SeedFactory: new mastercopy cannot be zero address"
+            address(_masterCopy) != address(0) &&
+                address(_masterCopy) != address(this),
+            "SeedFactory: new mastercopy cannot be set"
         );
         masterCopy = _masterCopy;
     }
@@ -52,40 +54,74 @@ contract SeedFactory is CloneFactory, Ownable {
       * @param _tokens                      Array containing two params:
                                                 - The address of the seed token being distributed.
       *                                         - The address of the funding token being exchanged for seed token.
-      * @param _softHardThresholds          Array containing two params:
+      * @param _softAndHardCap              Array containing two params:
                                                 - the minimum funding token collection threshold in wei denomination.
                                                 - the highest possible funding token amount to be raised in wei denomination.
       * @param _price                       price of a SeedToken, expressed in fundingTokens, with precision of 10**18
-      * @param _startTime                   Distribution start time in unix timecode.
-      * @param _endTime                     Distribution end time in unix timecode.
-      * @param _vestingDurationAndCliff       Array containing two params:
-                                                - Vesting period duration in days.
-                                                - Cliff duration in days.
-      * @param _permissionedSeed      Set to true if only whitelisted adresses are allowed to participate.
-      * @param _fee                   Success fee expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-      * @param _metadata              Seed contract metadata, that is IPFS URI
+      * @param _startTimeAndEndTime         Array containing two params:
+                                                - Distribution start time in unix timecode.
+                                                - Distribution end time in unix timecode.
+      * @param _defaultClassParameters     Array containing three params:
+												- Individual buying cap for de default class, expressed in precision 10*18
+												- Cliff duration, denominated in seconds.
+                                                - Vesting period duration, denominated in seconds.
+      * @param _permissionedSeed            Set to true if only whitelisted adresses are allowed to participate.
+      * @param _whitelistAddresses          Array of addresses to be whitelisted for the default class, at creation time
+      * @param _tipping                     Array of containing three parameters:
+												- Total amount of tipping percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
+												- Tipping vesting period duration denominated in seconds.																								
+												- Tipping cliff duration denominated in seconds.	
+      * @param _metadata                    Seed contract metadata, that is IPFS URI
     */
     function deploySeed(
         address _beneficiary,
         address _admin,
         address[] memory _tokens,
-        uint256[] memory _softHardThresholds,
+        uint256[] memory _softAndHardCap,
         uint256 _price,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint32[] memory _vestingDurationAndCliff,
+        uint256[] memory _startTimeAndEndTime,
+        uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
-        uint256 _fee,
+        address[] memory _whitelistAddresses,
+        uint256[] memory _tipping,
         bytes memory _metadata
     ) external onlyOwner returns (address) {
         {
             require(
                 address(masterCopy) != address(0),
-                "SeedFactory: mastercopy cannot be zero address"
+                "SeedFactory: mastercopy has not been set"
             );
             require(
-                _vestingDurationAndCliff.length == 2,
-                "SeedFactory: Hasn't provided both vesting duration and cliff"
+                _tipping.length == 3 &&
+                    _tokens.length == 2 &&
+                    _softAndHardCap.length == 2 &&
+                    _startTimeAndEndTime.length == 2 &&
+                    _defaultClassParameters.length == 3,
+                "SeedFactory: Invalid array length"
+            );
+            require(
+                _beneficiary != address(0) &&
+                    _admin != address(0) &&
+                    _tokens[0] != address(0) &&
+                    _tokens[1] != address(0),
+                "SeedFactory: Address cannot be zero"
+            );
+            require(
+                _tokens[0] != _tokens[1] && _beneficiary != _admin,
+                "SeedFactory: addresses cannot be identical"
+            );
+            require(
+                _softAndHardCap[1] >= _softAndHardCap[0],
+                "SeedFactory: hardCap cannot be less than softCap"
+            );
+            require(
+                _startTimeAndEndTime[1] > _startTimeAndEndTime[0] &&
+                    block.timestamp < _startTimeAndEndTime[0],
+                "SeedFactory: invalid time"
+            );
+            require(
+                _tipping[0] <= MAX_TIP,
+                "SeedFactory: tip cannot be more than 45%"
             );
         }
 
@@ -99,14 +135,13 @@ contract SeedFactory is CloneFactory, Ownable {
             _beneficiary,
             _admin,
             _tokens,
-            _softHardThresholds,
+            _softAndHardCap,
             _price,
-            _startTime,
-            _endTime,
-            _vestingDurationAndCliff[0],
-            _vestingDurationAndCliff[1],
+            _startTimeAndEndTime,
+            _defaultClassParameters,
             _permissionedSeed,
-            _fee
+            _whitelistAddresses,
+            _tipping
         );
 
         emit SeedCreated(address(_newSeed), _admin);
