@@ -1,4 +1,8 @@
-const ownDeployedContracts = {};
+const ownDeployedContracts = {
+  D2D: {
+    abi: "ERC20",
+  },
+};
 
 // Add external contract addresses like DAI below
 const externalContracts = {

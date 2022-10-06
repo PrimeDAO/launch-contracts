@@ -2,6 +2,10 @@
   "name": "goerli",
   "chainId": "5",
   "contracts": {
+    "D2D": {
+      "address": "0x2EDbfAeFcaC083A1a199C6835D12782A0868E50B",
+      "abi": "ERC20"
+    },
     "Seed": {
       "address": "0x0564448C22484eeAE4B33C75c6f6718Fb05C3b8c",
       "abi": [
