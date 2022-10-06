@@ -9,6 +9,7 @@ const networks = [
   "arbitrum",
   "alfajores",
   "celo",
+  "goerli",
 ];
 
 const compressAbis = (abisObject, sharedAbiConfig, networkName) => {

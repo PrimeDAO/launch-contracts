@@ -7,6 +7,7 @@ const externalContracts = {
   kovan: {},
   alfajores: {},
   celo: {},
+  goerli: {},
 };
 
 module.exports = {
@@ -15,4 +16,5 @@ module.exports = {
   kovan: { ...ownDeployedContracts, ...externalContracts.kovan },
   alfajores: { ...ownDeployedContracts, ...externalContracts.alfajores },
   celo: { ...ownDeployedContracts, ...externalContracts.celo },
+  goerli: { ...ownDeployedContracts, ...externalContracts },
 };
