@@ -7,7 +7,7 @@ const {
   getNamedTestSigners,
 } = require("../../accounts/signers");
 
-class SeedBuilder {
+class Seed {
   instance;
   beneficiary;
   admin;
@@ -32,7 +32,6 @@ class SeedBuilder {
 
   constructor(instance) {
     this.instance = instance;
-    return this;
   }
 
   static async create() {
@@ -133,4 +132,6 @@ class SeedBuilder {
   }
 }
 
-exports.SeedBuilder = SeedBuilder;
+module.exports = {
+  Seed,
+};
