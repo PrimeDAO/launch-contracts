@@ -3,11 +3,12 @@ const { network } = require("hardhat");
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy, execute } = deployments;
   const { root } = await getNamedAccounts();
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 00_deploy_seed_contracts.js ~ line 6 ~ root', root)
   let safeInstance;
 
-  const LOCAL_CHAIN_ID = 31337
-  const chainId = network.config.chainId ?? LOCAL_CHAIN_ID
-  if (chainId !== LOCAL_CHAIN_ID) return
+  const LOCAL_CHAIN_ID = 31337;
+  const chainId = network.config.chainId ?? LOCAL_CHAIN_ID;
+  if (chainId !== LOCAL_CHAIN_ID) return;
 
   // Ethereum Mainnet safe
   // https://github.com/PrimeDAO/contracts-v2/blob/main/deployments/mainnet/Safe.json
@@ -46,15 +47,24 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     safeInstance
   );
 
-  console.log("--- deploying Multicall")
+  console.log("--- deploying Multicall");
   await deploy("Multicall", {
-      from: root,
-      args: [],
-      log: true,
-      waitConfirmations: 1,
-  })
-  console.log("---")
+    from: root,
+    args: [],
+    log: true,
+    waitConfirmations: 1,
+  });
+
+  console.log("--- deploy tokens");
+  await deploy("D2D", {
+    from: root,
+    args: [],
+    log: true,
+  });
+
+
+  console.log("---");
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["Seed"];
+module.exports.tags = ["Seed", "D2D"];
