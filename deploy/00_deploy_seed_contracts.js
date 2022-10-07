@@ -34,15 +34,24 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   //   seedAddress
   // );
 
-  console.log("--- deploying Multicall")
+  console.log("--- deploying Multicall");
   await deploy("Multicall", {
-      from: root,
-      args: [],
-      log: true,
-      waitConfirmations: 1,
-  })
-  console.log("---")
+    from: root,
+    args: [],
+    log: true,
+    waitConfirmations: 1,
+  });
+
+  console.log("--- deploy tokens");
+  await deploy("D2D", {
+    from: root,
+    args: [],
+    log: true,
+  });
+
+
+  console.log("---");
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["Seed"];
+module.exports.tags = ["Seed", "D2D"];
