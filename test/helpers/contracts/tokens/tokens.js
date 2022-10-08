@@ -1,5 +1,11 @@
 const { getRootSigner } = require("../../accounts/signers");
 
+/**
+ *
+ * @param {*} params
+ * @param {*=} from
+ * @returns {any[]}
+ */
 const getERC20TokenInstances = async (params, from) => {
   /**
    * Function returns list with deployed token.

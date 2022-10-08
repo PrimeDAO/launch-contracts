@@ -13,7 +13,8 @@ class ContractDeployer {
   }
 
   static async _deploy(type, from, args) {
-    let instance, builder;
+    let instance;
+    let builder;
     switch (type) {
       case types.SEED_DEPLOY_INSTANCE:
         {

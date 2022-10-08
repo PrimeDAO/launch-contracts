@@ -6,6 +6,10 @@ const {
   constants: { AddressZero },
 } = ethers;
 
+/** @typedef {import('./helpers/types/types').TestParams} TestParams */
+/** @typedef {import('./helpers/types/types').SeedFactory} SeedFactory */
+/** @typedef {import('./helpers/types/types').Seed} Seed */
+
 const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
 const {
   SeedFactoryBuilder,
@@ -27,12 +31,15 @@ const {
 const { SEVEN_DAYS } = require("./helpers/constants/time.js");
 
 describe.only("> Contract: SeedFactory", () => {
-  let SeedFactoryInstance,
-    root,
-    beneficiary,
-    SeedInstance,
-    defaultSeedParameters,
-    tokenInstances;
+  /** @type {SeedFactory} */
+  let SeedFactoryInstance;
+  let root;
+  let admin;
+  let beneficiary;
+  /** @type {Seed} */
+  let SeedInstance;
+  let defaultSeedParameters;
+  let tokenInstances;
 
   before(async () => {
     ({ root, admin, beneficiary } = await getNamedTestSigners());

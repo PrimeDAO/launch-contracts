@@ -19,6 +19,8 @@ const {
   fundingTokenParams,
 } = require("../constants/constants");
 
+/** @typedef {import("../types/types.js").TestParams} TestParams */
+
 async function getDefaultSeedParams(params) {
   const { root, beneficiary, admin } = await getNamedTestSigners();
   const seedTokenInstance = params.tokenInstances[0];
@@ -49,6 +51,7 @@ async function getDefaultSeedParams(params) {
   const tipPercentage = parseEther("0.02").toString();
   const tipVestingCliff = TEN_DAYS.toNumber();
   const tipVestingDuration = HUNDRED_DAYS.toNumber();
+  /** @type * */
   const tipping = [tipPercentage, tipVestingCliff, tipVestingDuration];
 
   return {
@@ -66,6 +69,9 @@ async function getDefaultSeedParams(params) {
   };
 }
 
+/**
+ * @param {TestParams} params
+ */
 async function getSeedInitParams(params) {
   const defaultParams = await getDefaultSeedParams(params);
 

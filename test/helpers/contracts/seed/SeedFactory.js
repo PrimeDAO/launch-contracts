@@ -3,6 +3,8 @@ const { getRootSigner } = require("../../accounts/signers");
 const { types } = require("../../constants/constants");
 const { getERC20TokenInstances } = require("../tokens/tokens");
 
+/** @typedef {import("../../types/types.js").TestParams} TestParams */
+
 class SeedFactory {
   owner;
   instance;
@@ -28,6 +30,9 @@ class SeedFactory {
     this.owner = owner;
   }
 
+  /**
+   * @param {TestParams} params
+   */
   async setMasterCopy(params) {
     if (!params) params = {};
     if (!params.from) params.from = await getRootSigner();
@@ -36,6 +41,9 @@ class SeedFactory {
     return this;
   }
 
+  /**
+   * @param {TestParams} params
+   */
   async transferOwnership(params) {
     if (!params.from) params.from = await getRootSigner();
 
@@ -44,6 +52,9 @@ class SeedFactory {
     return this;
   }
 
+  /**
+   * @param {TestParams} params
+   */
   async deploySeed(params) {
     if (!params) params = {};
     if (!params.from) params.from = await getRootSigner();
