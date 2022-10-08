@@ -23,8 +23,8 @@ const {
 const {
   getDecimals,
   getTokenAmount,
-} = require("./helpers/types/TypesConverter");
-const { SEVEN_DAYS } = require("./helpers/types/time.js");
+} = require("./helpers/constants/TypesConverter");
+const { SEVEN_DAYS } = require("./helpers/constants/time.js");
 
 describe.only("> Contract: SeedFactory", () => {
   let SeedFactoryInstance,

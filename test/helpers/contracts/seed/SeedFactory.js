@@ -1,6 +1,6 @@
 const { getConvertedParams, tokenParams } = require("../../params/constructParams");
 const { getRootSigner } = require("../../accounts/signers");
-const { types } = require("../../types/types");
+const { types } = require("../../constants/constants");
 const { getERC20TokenInstances } = require("../tokens/tokens");
 
 class SeedFactory {

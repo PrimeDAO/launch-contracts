@@ -1,6 +1,7 @@
 // @ts-check
 const contractDeployer = require("../../ContractDeployer");
-const { types } = require("../../../types/types");
+const { types } = require("../../../constants/constants");
+
 
 class SeedBuilder {
   constructor(instance) {

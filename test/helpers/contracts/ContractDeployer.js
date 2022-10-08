@@ -3,7 +3,7 @@ const { Seed } = require("./seed/Seed");
 const { deployContract } = require("./contracts");
 const seedFactory = require("./seed/SeedFactory");
 const { getConvertedParams } = require("../params/constructParams");
-const { types, deploy } = require("../types/types");
+const { types, deploy } = require("../constants/constants");
 
 class ContractDeployer {
   static async deploy(type, params) {

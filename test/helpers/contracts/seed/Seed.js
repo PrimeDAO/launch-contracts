@@ -1,5 +1,5 @@
 const { getConvertedParams } = require("../../params/constructParams");
-const { paramTypes } = require("../../types/types");
+const { paramTypes } = require("../../constants/constants");
 
 class Seed {
   instance;

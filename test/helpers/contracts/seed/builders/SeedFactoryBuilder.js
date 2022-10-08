@@ -1,4 +1,4 @@
-const { types } = require("../../../types/types");
+const { types } = require("../../../constants/constants");
 const contractDeployer = require("../../ContractDeployer");
 
 class SeedFactoryBuilder {

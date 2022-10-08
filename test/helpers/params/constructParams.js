@@ -6,18 +6,18 @@ const {
 } = ethers;
 
 const { getNamedTestSigners } = require("../accounts/signers");
-const { getTokenAmount, getDecimals } = require("../types/TypesConverter");
+const { getTokenAmount, getDecimals } = require("../constants/TypesConverter");
 const {
   TEN_DAYS,
   HUNDRED_DAYS,
   TWENTY_SEC,
   SEVEN_DAYS,
-} = require("../types/time");
+} = require("../constants/time");
 const {
   types,
   seedTokenParams,
   fundingTokenParams,
-} = require("../types/types");
+} = require("../constants/constants");
 
 async function getDefaultSeedParams(params) {
   const { root, beneficiary, admin } = await getNamedTestSigners();
