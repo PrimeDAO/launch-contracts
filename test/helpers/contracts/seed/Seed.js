@@ -1,4 +1,4 @@
-const { convertParams } = require("../../params/constructParams");
+const { getConvertedParams } = require("../../params/constructParams");
 const { paramTypes } = require("../../types/types");
 
 class Seed {
@@ -19,7 +19,7 @@ class Seed {
   }
 
   async initialize(params) {
-    const deployment = await convertParams(paramTypes.SEED_INITIALIZE, params);
+    const deployment = await getConvertedParams(paramTypes.SEED_INITIALIZE, params);
     await this.instance.initialize(...deployment);
 
     this.admin = deployment[0];

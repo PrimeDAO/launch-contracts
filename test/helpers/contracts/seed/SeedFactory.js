@@ -1,4 +1,4 @@
-const { convertParams, tokenParams } = require("../../params/constructParams");
+const { getConvertedParams, tokenParams } = require("../../params/constructParams");
 const { getRootSigner } = require("../../accounts/signers");
 const { types } = require("../../types/types");
 const { getERC20TokenInstances } = require("../tokens/tokens");
@@ -52,7 +52,7 @@ class SeedFactory {
 
     this.tokenInstances = params.tokenInstances;
 
-    const deployment = await convertParams(
+    const deployment = await getConvertedParams(
       types.SEEDFACTORY_DEPLOY_SEED,
       params
     );

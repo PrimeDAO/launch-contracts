@@ -1,3 +1,4 @@
+// @ts-check
 const contractDeployer = require("../../ContractDeployer");
 const { types } = require("../../../types/types");
 
@@ -13,7 +14,7 @@ class SeedBuilder {
     );
   }
   static async createInit(params) {
-    const seedInstance = await this.create();
+    const seedInstance = await this.create(params);
     return await seedInstance.initialize(params);
   }
 }

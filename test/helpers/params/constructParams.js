@@ -1,3 +1,4 @@
+// @ts-check
 const { ethers } = require("hardhat");
 const { time } = require("@openzeppelin/test-helpers");
 const {
@@ -5,7 +6,7 @@ const {
 } = ethers;
 
 const { getNamedTestSigners } = require("../accounts/signers");
-const { getTokenAmount, getDecimals } = require("../types/typesConverter");
+const { getTokenAmount, getDecimals } = require("../types/TypesConverter");
 const {
   TEN_DAYS,
   HUNDRED_DAYS,
@@ -65,7 +66,7 @@ async function getDefaultSeedParams(params) {
   };
 }
 
-async function seedInitParams(params) {
+async function getSeedInitParams(params) {
   const defaultParams = await getDefaultSeedParams(params);
 
   if (!params.from) params.from = defaultParams.from;
@@ -103,7 +104,7 @@ async function seedFactoryDeploySeedParams(params) {
   // console.log(params);
   const defaultMetadata =
     "0x516d63794c7676616d4d44646b65566b4d50686674724b506b445964443344673541434758594371794d76774a32";
-  const defaultParams = await seedInitParams(params);
+  const defaultParams = await getSeedInitParams(params);
   // console.log("seedParams", defaultParams);
 
   defaultParams.push(!params.metadata ? defaultMetadata : params.metadata);
@@ -111,28 +112,28 @@ async function seedFactoryDeploySeedParams(params) {
   return defaultParams;
 }
 
-const seedDeployParams = (params) => {
+const getSeedDeployParams = (params) => {
   return {
     from: params.from,
     args: params.args,
   };
 };
 
-async function convertParams(type, params) {
+async function getConvertedParams(type, params) {
   switch (type) {
     case types.SEED_INITIALIZE:
-      return await seedInitParams(params);
+      return await getSeedInitParams(params);
     case types.SEEDFACTORY_DEPLOY_SEED:
       return await seedFactoryDeploySeedParams(params);
     case types.SEED_DEPLOY_INSTANCE || types.SEEDFACTORY_DEPLOY_INSTANCE:
-      return seedDeployParams(params);
+      return getSeedDeployParams(params);
   }
 }
 
 const tokenParams = () => [seedTokenParams, fundingTokenParams];
 
 module.exports = {
-  convertParams,
+  getConvertedParams,
   seedFactoryDeploySeedParams,
   tokenParams,
 };

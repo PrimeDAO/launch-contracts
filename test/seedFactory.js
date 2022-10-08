@@ -23,7 +23,7 @@ const {
 const {
   getDecimals,
   getTokenAmount,
-} = require("./helpers/types/typesConverter");
+} = require("./helpers/types/TypesConverter");
 const { SEVEN_DAYS } = require("./helpers/types/time.js");
 
 describe.only("> Contract: SeedFactory", () => {

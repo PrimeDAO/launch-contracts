@@ -10,7 +10,7 @@ class SeedFactoryBuilder {
   }
 
   static async createInit(params) {
-    const seedFactoryInstance = await this.create();
+    const seedFactoryInstance = await this.create(params);
     return await seedFactoryInstance.setMasterCopy(params);
   }
 }
