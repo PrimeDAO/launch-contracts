@@ -69,22 +69,10 @@ async function getDefaultSeedParams(params) {
 async function getSeedInitParams(params) {
   const defaultParams = await getDefaultSeedParams(params);
 
-  if (!params.from) params.from = defaultParams.from;
-  if (!params.beneficiary) params.beneficiary = defaultParams.beneficiary;
-  if (!params.admin) params.admin = defaultParams.admin;
-  if (!params.tokenAddresses)
-    params.tokenAddresses = defaultParams.tokenAddresses;
-  if (!params.softAndHardCaps)
-    params.softAndHardCaps = defaultParams.softAndHardCaps;
-  if (!params.price) params.price = defaultParams.price;
-  if (!params.startAndEndTime)
-    params.startAndEndTime = defaultParams.startAndEndTime;
-  if (!params.defaultClassParameters)
-    params.defaultClassParameters = defaultParams.defaultClassParameters;
-  if (!params.permissionedSeed)
-    params.permissionedSeed = defaultParams.permissionedSeed;
-  if (!params.allowlist) params.allowlist = defaultParams.allowlist;
-  if (!params.tipping) params.tipping = defaultParams.tipping;
+  params = {
+    ...defaultParams,
+    ...params
+  }
 
   return [
     params.beneficiary,
