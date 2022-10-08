@@ -1,7 +1,7 @@
 // @ts-check
 const { Seed } = require("./seed/Seed");
 const { deployContract } = require("./contracts");
-const seedFactory = require("./seed/SeedFactory");
+const { SeedFactory } = require("./seed/SeedFactory");
 const { getConvertedParams } = require("../params/constructParams");
 const { types, deploy } = require("../constants/constants");
 
@@ -23,7 +23,7 @@ class ContractDeployer {
         break;
       case types.SEEDFACTORY_DEPLOY_INSTANCE: {
         instance = await deployContract(deploy.SEEDFACTORY, { from, args });
-        builder = new seedFactory.SeedFactory(instance);
+        builder = new SeedFactory(instance);
         builder.setOwner(await builder.instance.owner());
         break;
       }
