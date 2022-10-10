@@ -39,6 +39,7 @@ class Seed {
 
     return contractDeployer.ContractDeployer.deploy("SeedFactory", params);
   }
+
   getFundingAmount(amount) {
     return getTokenAmount(this.fundingTokenDecimal)(amount);
   }
