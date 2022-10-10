@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
-const { convertParams } = require("../../params/constructParams");
-const { types } = require("../../types/types");
-const { getTokenAmount } = require("../../types/TypesConverter");
+const { getConvertedParams } = require("../../params/constructParams");
+const { types } = require("../../constants/constants");
+const { getTokenAmount } = require("../../constants/TypesConverter");
 const {
   getRootSigner,
   getNamedTestSigners,
@@ -48,7 +48,7 @@ class Seed {
     if (!params) params = {};
     if (!params.from) params.from = await getRootSigner();
 
-    const deployment = await convertParams(types.SEED_INITIALIZE, params);
+    const deployment = await getConvertedParams(types.SEED_INITIALIZE, params);
     this.seedTokenInstance = deployment[0][0];
     this.fundingTokenInstance = deployment[0][1];
     this.fundingTokenDecimal = await this.fundingTokenInstance.decimals();
@@ -98,7 +98,7 @@ class Seed {
     if (!params) params = {};
     if (!params.from) params.from = await ethers.getSigner(this.admin);
 
-    const changeClassParams = await convertParams(
+    const changeClassParams = await getConvertedParams(
       types.SEED_CHANGE_CLASS,
       params
     );

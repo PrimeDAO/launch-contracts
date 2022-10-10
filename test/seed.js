@@ -5,7 +5,6 @@ const { BigNumber } = require("ethers");
 
 const { launchFixture } = require("./helpers/fixture");
 const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
-const constants = require("./helpers/types/constants");
 const {
   increaseTime,
   ONE_DAY,
@@ -13,12 +12,12 @@ const {
   TEN_DAYS,
   TWENTY_DAYS,
   FOURTY_DAYS,
-} = require("./helpers/types/time");
+} = require("./helpers/constants/time");
 
 const {
   SeedBuilder,
 } = require("./helpers/contracts/seed/builders/SeedBuilder");
-const { types } = require("./helpers/types/types");
+const { types, EMPTY32BYTES } = require("./helpers/constants/constants");
 
 describe("> Contract: Seed", () => {
   let beneficiary;
@@ -97,9 +96,7 @@ describe("> Contract: Seed", () => {
           const contractDefaultClass = await Seed_initialized.instance.classes(
             0
           );
-          expect(contractDefaultClass.className).to.equal(
-            constants.EMPTY32BYTES
-          );
+          expect(contractDefaultClass.className).to.equal(EMPTY32BYTES);
           expect(contractDefaultClass.classCap).to.equal(
             Seed_initialized.hardCap
           );

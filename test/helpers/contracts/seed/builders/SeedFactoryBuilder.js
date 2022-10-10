@@ -1,12 +1,10 @@
-const { types } = require("../../../types/types");
-const contractDeployer = require("../../ContractDeployer");
+//@ts-check
+const { types } = require("../../../constants/constants");
+const { ContractDeployer } = require("../../ContractDeployer");
 
 class SeedFactoryBuilder {
   static async create(params) {
-    return contractDeployer.ContractDeployer.deploy(
-      types.SEEDFACTORY_DEPLOY_INSTANCE,
-      params
-    );
+    return ContractDeployer.deploy(types.SEEDFACTORY_DEPLOY_INSTANCE, params);
   }
 
   static async createInit(params) {

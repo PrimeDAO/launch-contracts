@@ -1,3 +1,4 @@
+// @ts-check
 const { ethers } = require("hardhat");
 const { time } = require("@openzeppelin/test-helpers");
 const {
@@ -5,7 +6,7 @@ const {
 } = ethers;
 
 const { getNamedTestSigners } = require("../accounts/signers");
-const { getTokenAmount, getDecimals } = require("../types/TypesConverter");
+const { getTokenAmount, getDecimals } = require("../constants/TypesConverter");
 const { getERC20TokenInstances } = require("../contracts/tokens/tokens");
 const {
   TEN_DAYS,
@@ -14,9 +15,13 @@ const {
   FOURTY_DAYS,
   SEVEN_DAYS,
   TWENTY_DAYS,
-} = require("../types/time");
-const { types, classTypes } = require("../types/types");
-const { seedTokenParams, fundingTokenParams } = require("./params");
+} = require("../constants/time");
+const {
+  types,
+  classTypes,
+  seedTokenParams,
+  fundingTokenParams,
+} = require("../constants/constants");
 
 async function getDefaultSeedParams(params) {
   if (!params.tokenInstances)
@@ -69,25 +74,9 @@ async function getDefaultSeedParams(params) {
 }
 
 async function seedInitParams(params) {
-  if (!params) params = {};
   const defaultParams = await getDefaultSeedParams(params);
 
-  if (!params.from) params.from = defaultParams.from;
-  if (!params.beneficiary) params.beneficiary = defaultParams.beneficiary;
-  if (!params.admin) params.admin = defaultParams.admin;
-  if (!params.tokenAddresses)
-    params.tokenAddresses = defaultParams.tokenAddresses;
-  if (!params.softAndHardCaps)
-    params.softAndHardCaps = defaultParams.softAndHardCaps;
-  if (!params.price) params.price = defaultParams.price;
-  if (!params.startAndEndTime)
-    params.startAndEndTime = defaultParams.startAndEndTime;
-  if (!params.defaultClassParameters)
-    params.defaultClassParameters = defaultParams.defaultClassParameters;
-  if (!params.permissionedSeed)
-    params.permissionedSeed = defaultParams.permissionedSeed;
-  if (!params.allowlist) params.allowlist = defaultParams.allowlist;
-  if (!params.tipping) params.tipping = defaultParams.tipping;
+  params = { ...defaultParams, ...params };
 
   return [
     defaultParams.tokenInstances,
@@ -169,7 +158,7 @@ const seedDeployParams = (params) => {
   };
 };
 
-async function convertParams(type, params) {
+async function getConvertedParams(type, params) {
   switch (type) {
     case types.SEED_INITIALIZE:
       return await seedInitParams(params);
@@ -185,7 +174,7 @@ async function convertParams(type, params) {
 const tokenParams = () => [seedTokenParams, fundingTokenParams];
 
 module.exports = {
-  convertParams,
+  getConvertedParams,
   seedFactoryDeploySeedParams,
   tokenParams,
   seedInitParams,

@@ -13,14 +13,14 @@ const { launchFixture } = require("./helpers/fixture");
 const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
 const {
   tokenParams,
-  convertParams,
+  getConvertedParams,
 } = require("./helpers/params/constructParams.js");
 const {
   getERC20TokenInstances,
 } = require("./helpers/contracts/tokens/tokens.js");
-const { getTokenAmount } = require("./helpers/types/TypesConverter");
-const { types } = require("./helpers/types/types");
-const { SEVEN_DAYS } = require("./helpers/types/time.js");
+const { getTokenAmount } = require("./helpers/constants/TypesConverter");
+const { types } = require("./helpers/constants/constants");
+const { SEVEN_DAYS } = require("./helpers/constants/time.js");
 
 describe("> Contract: SeedFactory", () => {
   let root;
@@ -119,7 +119,7 @@ describe("> Contract: SeedFactory", () => {
         await loadFixture(launchFixture));
       tokenInstances = await getERC20TokenInstances(tokenParams());
       const params = { tokenInstances: tokenInstances };
-      defaultSeedParameters = await convertParams(
+      defaultSeedParameters = await getConvertedParams(
         types.SEEDFACTORY_DEPLOY_SEED,
         params
       );

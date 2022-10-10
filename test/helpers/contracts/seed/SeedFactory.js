@@ -1,6 +1,6 @@
-const { convertParams } = require("../../params/constructParams");
+const { getConvertedParams } = require("../../params/constructParams");
 const { getRootSigner } = require("../../accounts/signers");
-const { types } = require("../../types/types");
+const { types } = require("../../constants/constants");
 
 class SeedFactory {
   owner;
@@ -53,7 +53,7 @@ class SeedFactory {
     if (!params) params = {};
     if (!params.from) params.from = await getRootSigner();
 
-    const deployment = await convertParams(
+    const deployment = await getConvertedParams(
       types.SEEDFACTORY_DEPLOY_SEED,
       params
     );
