@@ -9,6 +9,7 @@ const getDecimals = async (token) => await token.decimals();
 const getTokenAmount = (tokenDecimal) => (amount) =>
   parseUnits(amount, tokenDecimal.toString());
 
+// LBP conversion
 module.exports = {
   getDecimals,
   getTokenAmount,

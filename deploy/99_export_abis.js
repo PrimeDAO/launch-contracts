@@ -1,6 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
-const sharedAbiConfig = require("./sharedAbiConfig");
+const sharedAbiConfig = require("../lib/configs/sharedAbiConfig");
 
 const networks = [
   "rinkeby",
