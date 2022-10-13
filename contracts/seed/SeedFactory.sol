@@ -50,7 +50,7 @@ contract SeedFactory is CloneFactory, Ownable {
       * @dev                                Deploys Seed contract.
       * @param _beneficiary                 The address that recieves fees.
       * @param _admin                       The address of the admin of this contract. Funds contract
-                                            and has permissions to whitelist users, pause and close contract.
+                                            and has permissions to allowlist users, pause and close contract.
       * @param _tokens                      Array containing two params:
                                                 - The address of the seed token being distributed.
       *                                         - The address of the funding token being exchanged for seed token.
@@ -65,8 +65,8 @@ contract SeedFactory is CloneFactory, Ownable {
 												- Individual buying cap for de default class, expressed in precision 10*18
 												- Cliff duration, denominated in seconds.
                                                 - Vesting period duration, denominated in seconds.
-      * @param _permissionedSeed            Set to true if only whitelisted adresses are allowed to participate.
-      * @param _whitelistAddresses          Array of addresses to be whitelisted for the default class, at creation time
+      * @param _permissionedSeed            Set to true if only allowlisted adresses are allowed to participate.
+      * @param _allowlistAddresses          Array of addresses to be allowlisted for the default class, at creation time
       * @param _tipping                     Array of containing three parameters:
 												- Total amount of tipping percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
 												- Tipping vesting period duration denominated in seconds.																								
@@ -82,7 +82,7 @@ contract SeedFactory is CloneFactory, Ownable {
         uint256[] memory _startTimeAndEndTime,
         uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
-        address[] memory _whitelistAddresses,
+        address[] memory _allowlistAddresses,
         uint256[] memory _tipping,
         bytes memory _metadata
     ) external onlyOwner returns (address) {
@@ -140,7 +140,7 @@ contract SeedFactory is CloneFactory, Ownable {
             _startTimeAndEndTime,
             _defaultClassParameters,
             _permissionedSeed,
-            _whitelistAddresses,
+            _allowlistAddresses,
             _tipping
         );
 

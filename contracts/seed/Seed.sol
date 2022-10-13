@@ -180,7 +180,7 @@ contract Seed {
       * @dev                            Initialize Seed.
       * @param _beneficiary             The address that recieves fees.
       * @param _admin                   The address of the admin of this contract. Funds contract
-                                            and has permissions to whitelist users, pause and close contract.
+                                            and has permissions to allowlist users, pause and close contract.
       * @param _tokens                  Array containing two params:
                                             - The address of the seed token being distributed.
       *                                     - The address of the funding token being exchanged for seed token.
@@ -195,8 +195,8 @@ contract Seed {
 											- Individual buying cap for de default class, expressed in precision 10*18
 											- Cliff duration, denominated in seconds.
                                             - Vesting period duration, denominated in seconds.
-      * @param _permissionedSeed        Set to true if only whitelisted adresses are allowed to participate.
-      * @param _whitelistAddresses      Array of addresses to be whitelisted for the default class, at creation time
+      * @param _permissionedSeed        Set to true if only allowlisted adresses are allowed to participate.
+      * @param _allowlistAddresses      Array of addresses to be allowlisted for the default class, at creation time
       * @param _tipping                 Array of containing three parameters:
 											- Total amount of tipping percentage expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee, 10**16 = 1%)
 											- Tipping vesting period duration denominated in seconds.																								
@@ -211,7 +211,7 @@ contract Seed {
         uint256[] memory _startTimeAndEndTime,
         uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
-        address[] memory _whitelistAddresses, // Note: the addresses will be added to the default class in the next PR
+        address[] memory _allowlistAddresses,
         uint256[] memory _tipping
     ) external {
         require(!initialized, "Seed: contract already initialized");
@@ -236,7 +236,7 @@ contract Seed {
         // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
         //  where FEE_PRECISION = 10**16
         feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
-        // Adding default class of contributors(specifically for non-whitelisted seed)
+        // Adding default class of contributors(specifically for non-allowlisted seed)
 
         _addClass(
             bytes32(""),
@@ -245,6 +245,16 @@ contract Seed {
             _defaultClassParameters[1],
             _defaultClassParameters[2]
         );
+
+        // Add allowlist to the default class
+        if (permissionedSeed == true && _allowlistAddresses.length > 0) {
+            uint256 arrayLength = _allowlistAddresses.length;
+            for (uint256 i; i < arrayLength; ++i) {
+                _addToClass(0, _allowlistAddresses[i]); // Value 0 for the default class
+            }
+            _addAddressesToAllowlist(_allowlistAddresses);
+        }
+
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired; //ToDo: check how this value fits with the
     }
@@ -431,7 +441,7 @@ contract Seed {
     /**
       * @dev                Shut down contributions (buying).
                             Supersedes the normal logic that eventually shuts down buying anyway.
-                            Also shuts down the admin's ability to alter the whitelist.
+                            Also shuts down the admin's ability to alter the allowlist.
     */
     function close() external onlyAdmin {
         // close seed token distribution
@@ -506,7 +516,7 @@ contract Seed {
         uint256 arrayLength = _allowlist.length;
         if (permissionedSeed) {
             for (uint256 i; i < arrayLength; ++i) {
-                _addToAllowlist(_allowlist[i]);
+                _addAddressesToAllowlist(_allowlist[i]);
             }
         }
         for (uint256 i; i < arrayLength; ++i) {
@@ -519,8 +529,9 @@ contract Seed {
     }
 
     /**
-     * @dev                     Add multiple addresses to contributor class, and if applicable allowlist them.
-     * @param _buyers        Array of addresses to whitelist addresses in batch
+     * @dev                     Add multiple addresses to contributor classes, and if applicable
+                                    allowlist them.
+     * @param _buyers           Array of addresses to be allowlisted
      * @param _classes          Array of classes assigned in batch
      */
     function allowlist(address[] memory _buyers, uint8[] memory _classes)
@@ -529,7 +540,7 @@ contract Seed {
         notComplete
     {
         if (permissionedSeed) {
-            _addToAllowlist(_buyers);
+            _addAddressesToAllowlist(_buyers);
         }
         _addMultipleAdressesToClass(_buyers, _classes);
     }
@@ -566,9 +577,9 @@ contract Seed {
 
     /**
      * @dev                     Add address to allowlist.
-     * @param _buyers        Address which needs to be whitelisted
+     * @param _buyers        Address which needs to be allowlisted
      */
-    function _addToAllowlist(address[] memory _buyers) internal {
+    function _addAddressesToAllowlist(address[] memory _buyers) internal {
         uint256 arrayLength = _buyers.length;
         for (uint256 i; i < arrayLength; ++i) {
             funders[_buyers[i]].allowlist = true;
@@ -577,10 +588,10 @@ contract Seed {
 
     /**
      * @dev                     Remove address from allowlist.
-     * @param _buyer             Address which needs to be unwhitelisted
+     * @param _buyer             Address which needs to be un-allowlisted
      */
     function unallowlist(address _buyer) external onlyAdmin notComplete {
-        require(permissionedSeed == true, "Seed: seed is not whitelisted");
+        require(permissionedSeed == true, "Seed: seed is not permissioned");
 
         funders[_buyer].allowlist = false;
     }
