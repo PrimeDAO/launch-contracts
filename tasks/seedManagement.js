@@ -1,5 +1,5 @@
 var { task } = require("hardhat/config");
-var { SeedArguments } = require("../test/args/seed-test-args.json");
+var { SeedArguments } = require("../lib/params/seed-test-args.json");
 
 // async function createSeed() {
 //   console.log("Creating Seed...");
