@@ -72,9 +72,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given the Seed is permissonless", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_initializedPermissonless;
       before(async () => {
         Seed_initializedPermissonless = await SeedBuilder.create();
@@ -160,17 +158,11 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given the Seed is permissoned", () => {
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder1;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /** @type {FunderPortfolio}*/
       let funder2;
-      /**
-       * @type {Seed}
-       */
+      /** @type {Seed}*/
       let Seed_initializedPermissoned;
       before(async () => {
         const params = {
@@ -211,9 +203,7 @@ describe("> Contract: Seed", () => {
     });
   });
   describe("$ Function allowlist", () => {
-    /**
-     * @type {Seed}
-     */
+    /**@type {Seed}*/
     let Seed_funded;
     beforeEach(async () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
@@ -275,9 +265,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given seed is permission-less", () => {
-      /**
-       * @type {FunderPortfolio}
-       */
+      /** @type {FunderPortfolio} */
       let funder;
       describe("» when adding single buyer to class allowlist", () => {
         it("should succees", async () => {
@@ -347,9 +335,7 @@ describe("> Contract: Seed", () => {
       before(async () => {
         ({ Seed_fundedPermissioned } = await loadFixture(launchFixture));
       });
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder;
       describe("» when adding single buyer to class allowlist", () => {
         it("should succees", async () => {
@@ -475,9 +461,7 @@ describe("> Contract: Seed", () => {
     });
   });
   describe("$ Function: addClassesAndAllowlists", () => {
-    /**
-     * @type {Seed}
-     */
+    /**@type {Seed}*/
     let Seed_funded;
     beforeEach(async () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
@@ -553,7 +537,6 @@ describe("> Contract: Seed", () => {
         ).to.be.revertedWith("Seed: caps are invalid");
       });
     });
-
     describe("# given mismatching array lengths ", () => {
       let addClassParams;
       beforeEach(() => {
@@ -691,33 +674,19 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given the Seed is permission-less", () => {
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder1;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder2;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder3;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder4;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder5;
-      /**
-       * @type {FunderPortfolio}
-       */
+      /**@type {FunderPortfolio}*/
       let funder6;
-      /**
-       * @type {ClassesParameters}
-       */
+      /**@type {ClassesParameters}*/
       let classesParams;
       beforeEach(async () => {
         classesParams = {
@@ -941,9 +910,7 @@ describe("> Contract: Seed", () => {
     });
   });
   describe("$ Function: changeClass()", () => {
-    /**
-     * @type {Seed}
-     */
+    /**@type {Seed}*/
     let Seed_initialized;
     beforeEach(async () => {
       ({ Seed_initialized } = await loadFixture(launchFixture));
@@ -998,9 +965,7 @@ describe("> Contract: Seed", () => {
       });
       describe("» when called with valid parameters", () => {
         it("should succeed in changing the class paramaters", async () => {
-          /**
-           * @type {ContributorClassFromContract}
-           */
+          /**@type {ContributorClassFromContract}*/
           let contributorClass;
           const updatedClassParams = getChangeClassParams({
             class: classTypes.CLASS_DEFAULT,
@@ -1045,9 +1010,7 @@ describe("> Contract: Seed", () => {
     });
   });
   describe("$ Function: buy()", () => {
-    /**
-     * @type {Seed}
-     */
+    /**@type {Seed}*/
     let Seed_funded;
     describe("# when the Seed is not active", () => {
       beforeEach(async () => {
@@ -1072,9 +1035,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given the Seed is permissioned", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_fundedPermissioned;
       beforeEach(async () => {
         ({ Seed_fundedPermissioned } = await loadFixture(launchFixture));
@@ -1147,9 +1108,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when the hardCap has been reached", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_fundedLowHardCap;
       before(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
@@ -1185,9 +1144,7 @@ describe("> Contract: Seed", () => {
     });
     describe("# given the user is part of a contributor class", () => {
       // Add more tests when changing function to add classes in the Seed contract
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_fundedLowHardCap;
       beforeEach(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
@@ -1217,9 +1174,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when the Seed is not live", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_notBuyable;
       before(async () => {
         const currentTime = await getCurrentTime();
@@ -1260,9 +1215,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when buying has been successful", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_funded;
       let buyParams;
       let seedAmountBought;
@@ -1284,9 +1237,7 @@ describe("> Contract: Seed", () => {
         );
       });
       it("should update funders fundingAmount", async () => {
-        /**
-         * @type {FunderPortfolio}
-         */
+        /**@type {FunderPortfolio}*/
         let funder;
         funder = await Seed_funded.getFunder(buyer1.address);
 
@@ -1298,9 +1249,7 @@ describe("> Contract: Seed", () => {
         expect(funder.fundingAmount).to.equal(buyParams.fundingAmount);
       });
       it("should update the funding collected through the class", async () => {
-        /**
-         * @type {ContributorClassFromContract}
-         */
+        /**@type {ContributorClassFromContract}*/
         let contributorClass;
         const funder = await Seed_funded.getFunder(buyer1.address);
         contributorClass = await Seed_funded.getClass(funder.class);
@@ -1350,9 +1299,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when softCap has been reached", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_fundedLowHardCap;
       before(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
@@ -1365,9 +1312,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when hardCap has been reached", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_fundedLowHardCap;
       beforeEach(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
@@ -1406,9 +1351,7 @@ describe("> Contract: Seed", () => {
   });
   describe("$ Function: calculateClaim()", () => {});
   describe("$ Function: claim()", () => {
-    /**
-     * @type {Seed}
-     */
+    /**@type {Seed}*/
     let Seed_funded;
     before(async () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
@@ -1422,9 +1365,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# when the endTime or hardCap has not been reached ", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed} */
       let Seed_funded;
       before(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
@@ -1438,9 +1379,7 @@ describe("> Contract: Seed", () => {
       });
     });
     describe("# given the Seed is not live anymore (endTime or hardCap reached)", () => {
-      /**
-       * @type {Seed}
-       */
+      /**@type {Seed}*/
       let Seed_funded;
       beforeEach(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
@@ -1512,9 +1451,7 @@ describe("> Contract: Seed", () => {
       });
       describe("» when the vesting duration has ended", () => {
         it("should transfer all tokens", async () => {
-          /**
-           *  @type {FunderPortfolio}
-           */
+          /**@type {FunderPortfolio}*/
           const funder = await Seed_funded.getFunder(buyer1.address);
           await increaseTime(HUNDRED_DAYS);
           const seedTokenAmount = Seed_funded.getSeedAmountFromFundingAmount(
@@ -1534,9 +1471,7 @@ describe("> Contract: Seed", () => {
       });
       describe(" when claiming general", () => {
         it("should update funders total amount claimed", async () => {
-          /**
-           * @type {FunderPortfolio}
-           */
+          /**@type {FunderPortfolio}*/
           let funder;
           funder = await Seed_funded.getFunder(buyer1.address);
           await increaseTime(HUNDRED_DAYS);
