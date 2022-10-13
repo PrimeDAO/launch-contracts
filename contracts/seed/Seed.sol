@@ -245,6 +245,16 @@ contract Seed {
             _defaultClassParameters[1],
             _defaultClassParameters[2]
         );
+
+        // Add allowlist to the default class
+        if (permissionedSeed == true && _allowlistAddresses.length > 0) {
+            uint256 arrayLength = _allowlistAddresses.length;
+            for (uint256 i; i < arrayLength; ++i) {
+                _addToClass(0, _allowlistAddresses[i]); // Value 0 for the default class
+            }
+            _addAddressesToAllowlist(_allowlistAddresses);
+        }
+
         seedRemainder = seedAmountRequired;
         feeRemainder = feeAmountRequired; //ToDo: check how this value fits with the
     }
@@ -506,7 +516,7 @@ contract Seed {
         uint256 arrayLength = _allowlist.length;
         if (permissionedSeed) {
             for (uint256 i; i < arrayLength; ++i) {
-                _addToAllowlist(_allowlist[i]);
+                _addAddressesToAllowlist(_allowlist[i]);
             }
         }
         for (uint256 i; i < arrayLength; ++i) {
@@ -530,7 +540,7 @@ contract Seed {
         notComplete
     {
         if (permissionedSeed) {
-            _addToAllowlist(_buyers);
+            _addAddressesToAllowlist(_buyers);
         }
         _addMultipleAdressesToClass(_buyers, _classes);
     }
@@ -569,7 +579,7 @@ contract Seed {
      * @dev                     Add address to allowlist.
      * @param _buyers        Address which needs to be allowlisted
      */
-    function _addToAllowlist(address[] memory _buyers) internal {
+    function _addAddressesToAllowlist(address[] memory _buyers) internal {
         uint256 arrayLength = _buyers.length;
         for (uint256 i; i < arrayLength; ++i) {
             funders[_buyers[i]].allowlist = true;
