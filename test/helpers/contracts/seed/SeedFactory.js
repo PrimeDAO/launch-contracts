@@ -24,6 +24,7 @@ class SeedFactory {
   allowlist;
   metadata;
 
+  /** @constructor */
   constructor(instance) {
     this.instance = instance;
     return this;
@@ -33,14 +34,16 @@ class SeedFactory {
     this.owner = owner;
   }
 
-  async setMasterCopy(params) {
-    if (!params) params = {};
+  async setMasterCopy(params = {}) {
     if (!params.from) params.from = await getRootSigner();
 
     await this.instance.connect(params.from).setMasterCopy(params.seedAddress);
     return this;
   }
 
+  /**
+   * @param {{from?: string, newOwner: string}} params
+   */
   async transferOwnership(params) {
     if (!params.from) params.from = await getRootSigner();
 
@@ -49,8 +52,7 @@ class SeedFactory {
     return this;
   }
 
-  async deploySeed(params) {
-    if (!params) params = {};
+  async deploySeed(params = {}) {
     if (!params.from) params.from = await getRootSigner();
 
     const deployment = await getConvertedParams(

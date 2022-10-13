@@ -1,17 +1,25 @@
-const contractDeployer = require("../../ContractDeployer");
+//@ts-check
+const { ContractDeployer } = require("../../ContractDeployer");
 const { types } = require("../../../constants/constants");
+/** @typedef {import("../../../types/types.js").Contract} Contract */
 
+/**
+ * Deploys a new Seed with different configuration
+ * @class
+ */
 class SeedBuilder {
-  constructor(instance) {
-    this.instance = instance;
+  /**
+   * @param {*=} params
+   * @returns {Promise<Contract | undefined>}
+   */
+  static async create(params) {
+    return ContractDeployer.deploy(types.SEED_DEPLOY_INSTANCE, params);
   }
 
-  static async create(params) {
-    return contractDeployer.ContractDeployer.deploy(
-      types.SEED_DEPLOY_INSTANCE,
-      params
-    );
-  }
+  /**
+   * @param {*=} params
+   * @returns {Promise<Contract | undefined>}
+   */
   static async createInit(params) {
     const seedInstance = await this.create();
     return await seedInstance.initialize(params);
