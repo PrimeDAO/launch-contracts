@@ -33,10 +33,10 @@ async function launchFixture() {
   });
 
   const Seed_highNumClasses = await SeedBuilder.createInit();
-  await Seed_highNumClasses.addClassAndAllowlist({
+  await Seed_highNumClasses.addClassesAndAllowlists({
     numberOfRandomClasses: 100,
   });
-  await Seed_highNumClasses.addClassAndAllowlist({
+  await Seed_highNumClasses.addClassesAndAllowlists({
     numberOfRandomClasses: 100,
   });
 

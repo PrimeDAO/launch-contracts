@@ -1,11 +1,18 @@
 const { ethers } = require("hardhat");
 const { getConvertedParams } = require("../../params/constructParams");
-const { types } = require("../../constants/constants");
+const { types, PRECISION } = require("../../constants/constants");
 const { getTokenAmount } = require("../../constants/TypesConverter");
 const {
   getRootSigner,
   getNamedTestSigners,
 } = require("../../accounts/signers");
+const { BigNumber } = require("ethers");
+
+/**
+ * @typedef {import("../../types/types").SignerWithAddress} SignerWithAddress
+ * @typedef {import("../../types/types").Address} Address
+ * @typedef {import("../../types/types").Contract} Contract
+ */
 
 class Seed {
   instance;
@@ -30,22 +37,112 @@ class Seed {
   fundingTokenDecimal;
   seedTokenDecimal;
 
+  /** @constructor */
   constructor(instance) {
     this.instance = instance;
   }
 
-  static async create() {
-    const params = {};
+  async getFunder(address) {
+    return await this.instance.funders(address);
+  }
 
+  async getSeedRemainder() {
+    return await this.instance.seedRemainder();
+  }
+
+  async getFundingCollected() {
+    return await this.instance.fundingCollected();
+  }
+
+  async getSeedAmountRequired() {
+    return await this.instance.seedAmountRequired();
+  }
+
+  async getIsFunded() {
+    return await this.instance.isFunded();
+  }
+
+  async getVestingStartTime() {
+    return await this.instance.vestingStartTime();
+  }
+
+  async getMinimumReached() {
+    return await this.instance.minimumReached();
+  }
+
+  async getMaximumReached() {
+    return await this.instance.maximumReached();
+  }
+
+  async getTotalFunderCount() {
+    return await this.instance.totalFunderCount();
+  }
+
+  async getSeedClaimed() {
+    return await this.instance.seedClaimed();
+  }
+
+  async getFundingWithdrawn() {
+    return await this.instance.fundingWithdrawn();
+  }
+
+  async getClass(classId) {
+    return await this.instance.classes(classId);
+  }
+
+  static async create(params = {}) {
     return contractDeployer.ContractDeployer.deploy("SeedFactory", params);
   }
 
+  /**
+   *
+   * @returns {BigNumber}
+   */
+  async getSeedAmoundRequired() {
+    return await this.instance.seedAmountRequired();
+  }
+
+  /**
+   * @param {string} amount
+   * @returns {BigNumber}
+   */
   getFundingAmount(amount) {
     return getTokenAmount(this.fundingTokenDecimal)(amount);
   }
 
-  async initialize(params) {
-    if (!params) params = {};
+  /**
+   * @param {string} amount
+   * @returns {BigNumber}
+   */
+  getSeedAmount(amount) {
+    return getTokenAmount(this.seedTokenDecimal)(amount);
+  }
+
+  /**
+   * @param {string | BigNumber} fundingAmount
+   * @returns {BigNumber}
+   */
+  getSeedAmountFromFundingAmount(fundingAmount) {
+    return BigNumber.from(fundingAmount)
+      .div(BigNumber.from(this.price))
+      .mul(BigNumber.from(PRECISION.toString()));
+  }
+  /**
+   *
+   * @param {{from?: SignerWithAddress,
+   *          tokensInstances?: Contract[],
+   *          beneficiary?: Address,
+   *          admin?: Address,
+   *          tokenAddresses? : Address[],
+   *          softAndHardCap?: BigNumber[] | string[],
+   *          defaultClassParameters?: [BigNumber | string, number, number],
+   *          permissionedSeed?: boolean,
+   *          allowlist?: Address[],
+   *          tipping?: [BigNumber | string, number, number]
+   *         }} params
+   * @returns {this}
+   */
+  async initialize(params = {}) {
     if (!params.from) params.from = await getRootSigner();
 
     const deployment = await getConvertedParams(types.SEED_INITIALIZE, params);
@@ -77,25 +174,34 @@ class Seed {
     return this;
   }
 
-  async getSeedAmoundRequired() {
-    return await this.instance.seedAmountRequired();
-  }
-
-  async close(params) {
-    if (!params) params = {};
+  /**
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async close(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     await this.instance.connect(params.from).close();
     return this;
   }
 
-  async pause(params) {
-    if (!params) params = {};
+  /**
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async pause(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     await this.instance.connect(params.from).pause();
   }
 
-  async changeClass(params) {
-    if (!params) params = {};
+  /**
+   * @param {{from?: SignerWithAddress,
+   *          class?: number,
+   *          className?: string,
+   *          classCap?: string | BigNumber,
+   *          individualCap?: string | BigNumber,
+   *          vestingCliff?: number
+   *          vestingDuration?: number
+   *        }} params
+   */
+  async changeClass(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
 
     const changeClassParams = await getConvertedParams(
@@ -110,8 +216,10 @@ class Seed {
       .changeClass(...changeClassParams);
   }
 
-  async buy(params) {
-    if (!params) params = {};
+  /**
+   * @param {{from?: SignerWithAddress, fundingAmount?: string | BigNumber}} params
+   */
+  async buy(params = {}) {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
     if (!params.fundingAmount)
       params.fundingAmount = this.getFundingAmount("10");
@@ -120,16 +228,65 @@ class Seed {
       .connect(params.from)
       .approve(this.instance.address, params.fundingAmount);
 
-    await this.instance.connect(params.from).buy(params.fundingAmount);
+    return await this.instance.connect(params.from).buy(params.fundingAmount);
   }
-  async whitelist(params) {
-    if (!params) params = {};
+
+  /**
+   * @param {{from?: SignerWithAddress,
+   *          numberOfRandomClasses?: number,
+   *          classesParameters?: {class1?: {}, class2?: {}, class3?: {}}
+   *        }} params
+   */
+  async addClassesAndAllowlists(params = {}) {
+    let functionParams;
     if (!params.from) params.from = await ethers.getSigner(this.admin);
-    if (!params.buyer) params.buyer = (await getNamedTestSigners()).buyer1;
-    if (!params.class) params.class = 0; // Contributor Class
+    if (params.numberOfRandomClasses) {
+      functionParams = await getConvertedParams(
+        types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM,
+        params
+      );
+    } else {
+      functionParams = await getConvertedParams(
+        types.SEED_ADD_CLASS_AND_WHITELIST,
+        params
+      );
+    }
+
     await this.instance
       .connect(params.from)
-      .whitelist(params.buyer.address, params.class);
+      .addClassesAndAllowlists(...functionParams);
+  }
+
+  /**
+   * @param {{from?: SignerWithAddress, allowlist?: Address[], classes?: number[]}} params
+   */
+  async setAllowlist(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    if (!params.allowlist)
+      params.allowlist = [(await getNamedTestSigners()).buyer1.address];
+    if (!params.classes) params.classes = [0]; // Contributor Class
+
+    await this.instance
+      .connect(params.from)
+      .allowlist(params.allowlist, params.classes);
+  }
+
+  /**
+   * @param {{from?: SignerWithAddress, claimAmount?: string | BigNumber}} params
+   */
+  async claim(params = {}) {
+    if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
+    if (!params.claimAmount)
+      params.claimAmount = await this.calculateClaim(params);
+    return await this.instance.claim(params.from.address, params.claimAmount);
+  }
+
+  /**
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async calculateClaim(params = {}) {
+    if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
+    return await this.instance.calculateClaim(params.from.address);
   }
 }
 
