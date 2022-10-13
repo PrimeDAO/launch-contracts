@@ -12,10 +12,10 @@
 // Copyright (C) 2021 PrimeDao
 
 // solium-disable linebreak-style
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "../utils/CloneFactory.sol";
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./LBPManager.sol";
 
 /**

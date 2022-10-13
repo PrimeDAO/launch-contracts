@@ -49,19 +49,9 @@ module.exports = {
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
       saveDeployments: true,
     },
-    rinkeby: {
-      ...sharedNetworkConfig,
-      url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-      saveDeployments: true,
-    },
     goerli: {
       ...sharedNetworkConfig,
       url: `https://goerli.infura.io/v3/${INFURA_KEY}`,
-      saveDeployments: true,
-    },
-    kovan: {
-      ...sharedNetworkConfig,
-      url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
       saveDeployments: true,
     },
     ganache: {
@@ -93,7 +83,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.10",
+        version: "0.8.17",
         settings: {
           optimizer: {
             enabled: true,
@@ -101,26 +91,6 @@ module.exports = {
           },
         },
       },
-      {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      { version: "0.6.12" },
-      { version: "0.5.16" },
     ],
   },
   etherscan: {

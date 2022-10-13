@@ -10,9 +10,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /* solium-disable */
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
-import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ILBPFactory {
     function create(

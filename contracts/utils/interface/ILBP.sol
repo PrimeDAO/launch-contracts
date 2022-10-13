@@ -10,10 +10,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /* solium-disable */
 
-import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IVault.sol";
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 interface ILBP is IERC20 {
     function updateWeightsGradually(

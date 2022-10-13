@@ -12,9 +12,9 @@
 // Copyright (C) 2021 PrimeDao
 
 // solium-disable linebreak-style
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
-import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../utils/interface/ILBPFactory.sol";
 import "../utils/interface/IVault.sol";
 import "../utils/interface/ILBP.sol";
