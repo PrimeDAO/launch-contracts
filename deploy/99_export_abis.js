@@ -9,6 +9,7 @@ const networks = [
   "arbitrum",
   "alfajores",
   "celo",
+  "localhost"
 ];
 
 const compressAbis = (abisObject, sharedAbiConfig, networkName) => {
@@ -43,9 +44,11 @@ const exportAbiFunction = async ({ run, network, deployments }) => {
 
   // export ABIs of deployed contracts via hardhat
   const targetExportPath = path.resolve(__dirname, `../exports/${name}.json`);
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 99_export_abis.js ~ line 47 ~ targetExportPath', targetExportPath)
   await run("export", { export: targetExportPath });
   // compress ABIs according to sharedAbiConfig
   const exportedAbis = JSON.parse(await fs.readFile(targetExportPath));
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 99_export_abis.js ~ line 51 ~ exportedAbis', exportedAbis)
   const compressedAbis = compressAbis(exportedAbis, sharedAbiConfig, name);
   await fs.writeFile(targetExportPath, JSON.stringify(compressedAbis, null, 2));
 

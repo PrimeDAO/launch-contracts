@@ -11,7 +11,7 @@
     "coverage": "hardhat coverage",
     "deploy:contracts:local": "npx hardhat run deploy/00_deploy_seed_contracts.js --network localhost --tags Export",
     "deploy:contracts:local2": "npx hardhat deploy --network localhost --tags Export,$npm_config_tags",
-    "deploy:contracts:localhost": "npx hardhat deploy --network localhost --tags Export",
+    "deploy:contracts:localhost": "npx hardhat deploy --network localhost --tags Export,$npm_config_tags",
     "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
     "deploy:contracts:goerli": "npx hardhat deploy --network goerli --tags Export,$npm_config_tags",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
