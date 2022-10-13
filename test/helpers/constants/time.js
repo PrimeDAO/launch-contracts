@@ -6,6 +6,7 @@ const SEVEN_DAYS = time.duration.days(7);
 const TEN_DAYS = time.duration.days(10);
 const TWENTY_DAYS = time.duration.days(20);
 const FOURTY_DAYS = time.duration.days(40);
+const EIGHTY_DAYS = time.duration.days(80);
 const HUNDRED_DAYS = time.duration.days(100);
 
 const increaseTime = async (duration) => await time.increase(duration);
@@ -18,6 +19,7 @@ module.exports = {
   TEN_DAYS,
   TWENTY_DAYS,
   FOURTY_DAYS,
+  EIGHTY_DAYS,
   HUNDRED_DAYS,
   ONE_MINUTE,
   increaseTime,

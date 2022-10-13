@@ -4,16 +4,34 @@ const { deployContract } = require("./contracts");
 const { SeedFactory } = require("./seed/SeedFactory");
 const { getConvertedParams } = require("../params/constructParams");
 const { types, deploy } = require("../constants/constants");
+/**
+ * @typedef {import("../types/types").ParamsType} ParamsType
+ * @typedef {import("../types/types.js").Contract} Contract
+ * @typedef {import("../types/types").DeployParams} DeployParams
+ */
 
 class ContractDeployer {
+  /**
+   * @param  {number} type
+   * @param {DeployParams} params
+   * @returns {Promise<Contract | undefined>}
+   */
   static async deploy(type, params) {
     const { from, args } = getConvertedParams(type, params);
 
     return await this._deploy(type, from, args);
   }
 
+  /**
+   *
+   * @param {*} type
+   * @param {*} from
+   * @param {*} args
+   * @returns {Promise<Contract | undefined>}
+   */
   static async _deploy(type, from, args) {
-    let instance, builder;
+    let instance;
+    let builder;
     switch (type) {
       case types.SEED_DEPLOY_INSTANCE:
         {
@@ -30,6 +48,8 @@ class ContractDeployer {
       case "LBP":
         // ToDo: add this section when LBP gets added to repo
         break;
+      default:
+        return;
     }
     return builder;
   }

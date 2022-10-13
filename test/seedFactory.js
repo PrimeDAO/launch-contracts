@@ -7,9 +7,7 @@ const {
   utils: { parseEther },
   constants: { AddressZero },
 } = ethers;
-
 const { launchFixture } = require("./helpers/fixture");
-
 const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
 const {
   tokenParams,
@@ -21,6 +19,10 @@ const {
 const { getTokenAmount } = require("./helpers/constants/TypesConverter");
 const { types } = require("./helpers/constants/constants");
 const { SEVEN_DAYS } = require("./helpers/constants/time.js");
+/**
+ * @typedef {import("./helpers/types/types").SeedFactory} SeedFactory
+ * @typedef {import("./helpers/types/types").Seed} Seed
+ */
 
 describe("> Contract: SeedFactory", () => {
   let root;
@@ -30,6 +32,9 @@ describe("> Contract: SeedFactory", () => {
     ({ root, admin, beneficiary } = await getNamedTestSigners());
   });
   describe("$ Function: transferOwnership()", () => {
+    /**
+     * @type {SeedFactory}
+     */
     let SeedFactory_deployed;
     before(async () => {
       ({ SeedFactory_deployed } = await loadFixture(launchFixture));
@@ -68,7 +73,13 @@ describe("> Contract: SeedFactory", () => {
     });
   });
   describe("$ Function: setMasterCopy()", () => {
+    /**
+     * @type {SeedFactory}
+     */
     let SeedFactory_deployed;
+    /**
+     * @type {Seed}
+     */
     let Seed_initialized;
     before(async () => {
       ({ SeedFactory_deployed, Seed_initialized } = await loadFixture(
@@ -110,7 +121,13 @@ describe("> Contract: SeedFactory", () => {
     });
   });
   describe("$ Function: deploySeed()", () => {
+    /**
+     * @type {SeedFactory}
+     */
     let SeedFactory_deployed;
+    /**
+     * @type {SeedFactory}
+     */
     let SeedFactory_initialized;
     let tokenInstances;
     let defaultSeedParameters;
@@ -135,8 +152,8 @@ describe("> Contract: SeedFactory", () => {
       });
     });
     describe("# given invalid deployment parameters", () => {
-      describe("» when calling function deploySeed()", () => {
-        it("should fail on invalid tipping array length", async () => {
+      describe("» when calling with invalid tipping array length", () => {
+        it("should revert", async () => {
           const tipPercentage = defaultSeedParameters[9][0];
           const tipVestingCliff = defaultSeedParameters[9][1];
           const params = { tipping: [tipPercentage, tipVestingCliff] };
@@ -145,7 +162,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail on invalid tokenAddresses array length", async () => {
+      });
+      describe("» when calling with invalid tokenAddresses array length", () => {
+        it("should revert", async () => {
           const seedTokenAddress = defaultSeedParameters[2][0];
           const fundingTokenAddress = defaultSeedParameters[2][1];
           const thirdAddress = SeedFactory_initialized.instance.address;
@@ -161,7 +180,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail on invalid startTimeAndEndTime array length", async () => {
+      });
+      describe("» when calling with invalid startTimeAndEndTime array length", () => {
+        it("should revert", async () => {
           const startTime = defaultSeedParameters[5][0];
           const endTime = defaultSeedParameters[5][1];
           const params = { startAndEndTime: [startTime, endTime, startTime] };
@@ -170,7 +191,10 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail on invalid defaultClassParameters array length", async () => {
+      });
+
+      describe("» when calling with invalid defaultClassParameters array length", () => {
+        it("should revert", async () => {
           const params = {
             defaultClassParameters: [
               defaultSeedParameters[6][0],
@@ -182,7 +206,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Invalid array length");
         });
-        it("should fail if tokenAddresses having identical addresses", async () => {
+      });
+      describe("» when calling with tokenAddresses having identical addresses", () => {
+        it("should revert", async () => {
           const seedTokenAddress = defaultSeedParameters[2][0];
           const params = {
             tokenAddresses: [seedTokenAddress, seedTokenAddress],
@@ -192,7 +218,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
         });
-        it("should fail if admin and beneficiary having identical addresses", async () => {
+      });
+      describe("» when calling with admin and beneficiary having identical addresses", () => {
+        it("should revert", async () => {
           const beneficiaryAddress = defaultSeedParameters[0];
           const params = {
             beneficiary: beneficiaryAddress,
@@ -203,21 +231,27 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
         });
-        it("should fail if beneficiary is equal zero", async () => {
+      });
+      describe("» when calling with beneficiary is equal zero", () => {
+        it("should revert", async () => {
           const params = { beneficiary: AddressZero };
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
-        it("should fail if admin is equal zero", async () => {
+      });
+      describe("» when calling with admin is equal zero", () => {
+        it("should revert", async () => {
           const params = { admin: AddressZero };
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
-        it("should fail if SeedToken is equal zero", async () => {
+      });
+      describe("» when calling with SeedToken is equal zero", () => {
+        it("should revert", async () => {
           const fundingTokenAddress = defaultSeedParameters[2][1];
           const params = { tokenAddresses: [AddressZero, fundingTokenAddress] };
 
@@ -225,7 +259,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
-        it("should fail is FundingToken is equal zero", async () => {
+      });
+      describe("» when calling with FundingToken is equal zero", () => {
+        it("should revert", async () => {
           const seedTokenAddress = defaultSeedParameters[2][0];
           const params = { tokenAddresses: [seedTokenAddress, AddressZero] };
 
@@ -233,7 +269,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Address cannot be zero");
         });
-        it("should fail if softcap bigger than hardcap", async () => {
+      });
+      describe("» when calling with softcap bigger than hardcap", () => {
+        it("should revert", async () => {
           const fundingTokenDecimal = await tokenInstances[1].decimals();
           const getFundingAmounts = getTokenAmount(fundingTokenDecimal);
           const toLargeSoftCap = getFundingAmounts("110").toString();
@@ -247,7 +285,9 @@ describe("> Contract: SeedFactory", () => {
             "SeedFactory: hardCap cannot be less than softCap"
           );
         });
-        it("should fail if startTime > endTime", async () => {
+      });
+      describe("» when calling with startTime > endTime", () => {
+        it("should revert", async () => {
           const startTime = defaultSeedParameters[5][0] + SEVEN_DAYS;
           const endTime = defaultSeedParameters[5][1];
           const params = {
@@ -258,7 +298,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: invalid time");
         });
-        it("should fail on startTime < current time", async () => {
+      });
+      describe("» when calling with startTime < current time", () => {
+        it("should revert", async () => {
           const startTime = (await time.latest()).toNumber();
           const endTime = defaultSeedParameters[5][1];
           const params = {
@@ -269,7 +311,9 @@ describe("> Contract: SeedFactory", () => {
             SeedFactory_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: invalid time");
         });
-        it("should fail on tipping > max tipping", async () => {
+      });
+      describe("» when calling with tipping > max tipping", () => {
+        it("should revert", async () => {
           const invalidTipPercentage = parseEther("0.50").toString();
           const tipVestingClif = defaultSeedParameters[9][1];
           const tipVestingDuration = defaultSeedParameters[9][2];

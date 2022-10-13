@@ -9,6 +9,10 @@ async function getNamedTestSigners() {
     admin: signers[2],
     buyer1: signers[3],
     buyer2: signers[4],
+    buyer3: signers[5],
+    buyer4: signers[6],
+    buyer5: signers[7],
+    buyer6: signers[8],
   };
 }
 
