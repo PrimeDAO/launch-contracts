@@ -16,10 +16,9 @@
 // solium-disable linebreak-style
 /* solhint-disable space-after-comma */
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
-import "openzeppelin-contracts-sol8/token/ERC20/IERC20.sol";
-import "openzeppelin-contracts-sol8/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Seed.sol";
 import "../utils/CloneFactory.sol";
 
