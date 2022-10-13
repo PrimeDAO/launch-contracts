@@ -70,18 +70,25 @@ contract Seed {
 
     ContributorClass[] public classes; // Array of contributor classes
 
-    mapping(address => bool) public whitelisted; // funders that are whitelisted and allowed to contribute
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
 
-    event SeedsPurchased(address indexed recipient, uint256 amountPurchased);
-    event TokensClaimed(address indexed recipient, uint256 amount);
-    event FundingReclaimed(address indexed recipient, uint256 amountReclaimed);
+    event SeedsPurchased(
+        address indexed recipient,
+        uint256 indexed amountPurchased,
+        uint256 indexed seedRemainder
+    );
+    event TokensClaimed(address indexed recipient, uint256 indexed amount);
+    event FundingReclaimed(
+        address indexed recipient,
+        uint256 indexed amountReclaimed
+    );
     event MetadataUpdated(bytes indexed metadata);
 
     struct FunderPortfolio {
         uint8 class; // Contibutor class id
         uint256 totalClaimed; // Total amount of seed tokens claimed
         uint256 fundingAmount; // Total amount of funding tokens contributed
+        bool allowlist; // If permissioned Seed, funder needs to be allowlisted
     }
     // ToDo: add comments
     struct ContributorClass {
@@ -104,20 +111,49 @@ contract Seed {
         _;
     }
 
-    modifier classRestriction(uint256 _classCap, uint256 _individualCap) {
+    modifier notComplete() {
         require(
-            classes.length + 1 < 256,
-            "Seed: can't add more then 256 classes"
+            !closed && block.timestamp < vestingStartTime,
+            "Seed: Sale has been completed"
         );
+        _;
+    }
+
+    modifier classRestriction(uint256 _classCap, uint256 _individualCap) {
         require(
             _individualCap <= _classCap && _classCap <= hardCap,
             "Seed: caps are invalid"
         );
-        require(
-            block.timestamp < startTime,
-            "Seed: vesting is already started"
-        );
         require(!closed, "Seed: should not be closed");
+        require(_classCap > 0, "Seed: class Cap should be bigger then 0");
+        _;
+    }
+
+    modifier classBatchRestrictions(
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations,
+        address[][] memory _allowlist
+    ) {
+        uint256 arrayLength = _classNames.length;
+        require(
+            arrayLength == _classCaps.length &&
+                arrayLength == _individualCaps.length &&
+                arrayLength == _vestingCliffs.length &&
+                arrayLength == _vestingDurations.length &&
+                arrayLength == _allowlist.length,
+            "Seed: All provided arrays should be same size"
+        );
+        require(
+            arrayLength <= 100,
+            "Seed: Can't add batch with more then 100 classes"
+        );
+        require(
+            classes.length + arrayLength <= 256,
+            "Seed: can't add more then 256 classes"
+        );
         _;
     }
 
@@ -214,63 +250,6 @@ contract Seed {
     }
 
     /**
-     * @dev                           Add contributor class.
-     * @param _className                   The name of the class
-     * @param _classCap               The total cap of the contributor class, denominated in Wei.
-     * @param _individualCap          The personal cap of each contributor in this class, denominated in Wei.
-     * @param _vestingCliff     The cliff duration, denominated in seconds.
-     * @param _vestingDuration   The vesting duration for this contributors class.
-     */
-    function addClass(
-        bytes32 _className,
-        uint256 _classCap,
-        uint256 _individualCap,
-        uint256 _vestingCliff,
-        uint256 _vestingDuration
-    ) external onlyAdmin {
-        _addClass(
-            _className,
-            _classCap,
-            _individualCap,
-            _vestingCliff,
-            _vestingDuration
-        );
-    }
-
-    /**
-     * @dev                       Set contributor class.
-     * @param _address            Address of the contributor.
-     * @param _class              Class of the contributor.
-     */
-    function setClass(address _address, uint8 _class) public onlyAdmin {
-        require(_class < classes.length, "Seed: incorrect class chosen");
-        require(!closed, "Seed: should not be closed");
-        require(
-            block.timestamp < startTime,
-            "Seed: vesting is already started"
-        );
-        funders[_address].class = _class;
-    }
-
-    /**
-     * @dev                       Set contributor classes.
-     * @param _addresses          Addresses of the contributors.
-     * @param _classes            Classes of the contributor.
-     */
-    function setClassBatch(address[] memory _addresses, uint8[] memory _classes)
-        external
-        onlyAdmin
-    {
-        require(
-            _classes.length == _addresses.length,
-            "Seed: incorrect data passed"
-        );
-        for (uint256 i = 0; i < _addresses.length; i++) {
-            setClass(_addresses[i], _classes[i]);
-        }
-    }
-
-    /**
      * @dev                     Change parameters in the class.
      * @param _class            Class for changing.
      * @param _className        The name of the class
@@ -297,58 +276,17 @@ contract Seed {
     }
 
     /**
-     * @dev                           Add contributor class batch.
-     * @param _classNames                  Array of the names of the classes
-     * @param _classCaps              The total caps of the contributor class, denominated in Wei
-     * @param _individualCaps         The personal caps of each contributor in this class, denominated in Wei.
-     * @param _vestingCliffs     The cliff duration, denominated in seconds.
-     * @param _vestingDurations  The vesting durations for this contributors class.
-     */
-    function addClassBatch(
-        bytes32[] memory _classNames,
-        uint256[] memory _classCaps,
-        uint256[] memory _individualCaps,
-        uint256[] memory _vestingCliffs,
-        uint256[] memory _vestingDurations
-    ) external onlyAdmin {
-        uint256 arrayLength = _classNames.length;
-        require(
-            arrayLength <= 100,
-            "Seed: Can't add batch with more then 100 classes"
-        );
-        require(
-            classes.length + arrayLength < 256,
-            "Seed: can't add more then 256 classes"
-        );
-        require(
-            arrayLength == _classCaps.length &&
-                arrayLength == _individualCaps.length &&
-                arrayLength == _vestingCliffs.length &&
-                arrayLength == _vestingDurations.length,
-            "Seed: All provided arrays should be same size"
-        );
-        for (uint8 i = 0; i < arrayLength; i++) {
-            _addClass(
-                _classNames[i],
-                _classCaps[i],
-                _individualCaps[i],
-                _vestingCliffs[i],
-                _vestingDurations[i]
-            );
-        }
-    }
-
-    /**
      * @dev                     Buy seed tokens.
      * @param _fundingAmount    The amount of funding tokens to contribute.
      */
     function buy(uint256 _fundingAmount) external isActive returns (uint256) {
+        FunderPortfolio storage funder = funders[msg.sender];
         require(
-            !permissionedSeed || whitelisted[msg.sender],
+            !permissionedSeed || funder.allowlist,
             "Seed: sender has no rights"
         );
 
-        ContributorClass memory userClass = classes[funders[msg.sender].class];
+        ContributorClass memory userClass = classes[funder.class];
         require(!maximumReached, "Seed: maximum funding reached");
         require(_fundingAmount > 0, "Seed: cannot buy 0 tokens");
         // Checks if contributor has exceeded his personal or class cap.
@@ -359,8 +297,7 @@ contract Seed {
         );
 
         require(
-            (funders[msg.sender].fundingAmount + _fundingAmount) <=
-                userClass.individualCap,
+            (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: maximum personal funding reached"
         );
 
@@ -387,8 +324,7 @@ contract Seed {
         );
 
         fundingCollected += _fundingAmount;
-        classes[funders[msg.sender].class]
-            .classFundingCollected += _fundingAmount;
+        classes[funder.class].classFundingCollected += _fundingAmount;
         // the amount of seed tokens still to be distributed
         seedRemainder = seedRemainder - seedAmount;
         if (fundingCollected >= softCap) {
@@ -401,10 +337,10 @@ contract Seed {
         }
 
         //functionality of addFunder
-        if (funders[msg.sender].fundingAmount == 0) {
+        if (funder.fundingAmount == 0) {
             totalFunderCount++;
         }
-        funders[msg.sender].fundingAmount += _fundingAmount;
+        funder.fundingAmount += _fundingAmount;
 
         // Here we are sending amount of tokens to pay for seed tokens to purchase
 
@@ -414,7 +350,7 @@ contract Seed {
             _fundingAmount
         );
 
-        emit SeedsPurchased(msg.sender, seedAmount);
+        emit SeedsPurchased(msg.sender, seedAmount, seedRemainder);
 
         return (seedAmount);
     }
@@ -536,54 +472,117 @@ contract Seed {
         }
     }
 
-    //ToDo: add header
-    function _whitelist(address _buyer, uint8 _class) internal {
-        whitelisted[_buyer] = true;
-        funders[_buyer].class = _class;
-    }
-
-    /**
-     * @dev                     Add address to whitelist.
-     * @param _buyer            Address which needs to be whitelisted
-     * @param _class            Class to which buyer will be assigned
-     */
-    function whitelist(address _buyer, uint8 _class) external onlyAdmin {
-        require(_class < classes.length, "Seed: incorrect class chosen");
-        require(!closed, "Seed: should not be closed");
-        require(permissionedSeed == true, "Seed: seed is not whitelisted");
-
-        _whitelist(_buyer, _class);
-    }
-
-    /**
-     * @dev                     Add multiple addresses to whitelist.
-     * @param _buyers           Array of addresses to whitelist addresses in batch
-     * @param _classes          Array of classes assigned in batch
-     */
-    function whitelistBatch(address[] memory _buyers, uint8[] memory _classes)
+    //ToDo: add comment
+    function addClassesAndAllowlists(
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations,
+        address[][] memory _allowlist
+    )
         external
         onlyAdmin
+        notComplete
+        classBatchRestrictions(
+            _classNames,
+            _classCaps,
+            _individualCaps,
+            _vestingCliffs,
+            _vestingDurations,
+            _allowlist
+        )
     {
-        require(!closed, "Seed: should not be closed");
-        require(permissionedSeed == true, "Seed: seed is not whitelisted");
-        for (uint256 i = 0; i < _buyers.length; i++) {
-            require(
-                _classes[i] < classes.length,
-                "Seed: incorrect class chosen"
+        uint256 currentClassId = uint256(classes.length);
+        for (uint8 i; i < _classNames.length; ++i) {
+            _addClass(
+                _classNames[i],
+                _classCaps[i],
+                _individualCaps[i],
+                _vestingCliffs[i],
+                _vestingDurations[i]
             );
-            _whitelist(_buyers[i], _classes[i]);
+        }
+        uint256 arrayLength = _allowlist.length;
+        if (permissionedSeed) {
+            for (uint256 i; i < arrayLength; ++i) {
+                _addToAllowlist(_allowlist[i]);
+            }
+        }
+        for (uint256 i; i < arrayLength; ++i) {
+            uint256 numberOfAddresses = _allowlist[i].length;
+            for (uint256 j; j < numberOfAddresses; ++j) {
+                _addToClass(uint8(currentClassId), _allowlist[i][j]);
+            }
+            ++currentClassId;
         }
     }
 
     /**
-     * @dev                     Remove address from whitelist.
-     * @param buyer             Address which needs to be unwhitelisted
+     * @dev                     Add multiple addresses to contributor class, and if applicable allowlist them.
+     * @param _buyers        Array of addresses to whitelist addresses in batch
+     * @param _classes          Array of classes assigned in batch
      */
-    function unwhitelist(address buyer) external onlyAdmin {
-        require(!closed, "Seed: should not be closed");
+    function allowlist(address[] memory _buyers, uint8[] memory _classes)
+        external
+        onlyAdmin
+        notComplete
+    {
+        if (permissionedSeed) {
+            _addToAllowlist(_buyers);
+        }
+        _addMultipleAdressesToClass(_buyers, _classes);
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _classId              Class of the contributor.
+     * @param _buyer            Address of the contributor.
+     */
+    function _addToClass(uint8 _classId, address _buyer) internal {
+        require(_classId < classes.length, "Seed: incorrect class chosen");
+        funders[_buyer].class = _classId;
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _buyers          Address of the contributor.
+     * @param _classes            Class of the contributor.
+     */
+    function _addMultipleAdressesToClass(
+        address[] memory _buyers,
+        uint8[] memory _classes
+    ) internal {
+        uint256 arrayLength = _buyers.length;
+        require(
+            _classes.length == arrayLength,
+            "Seed: mismatch in array length"
+        );
+
+        for (uint256 i; i < arrayLength; ++i) {
+            _addToClass(_classes[i], _buyers[i]);
+        }
+    }
+
+    /**
+     * @dev                     Add address to allowlist.
+     * @param _buyers        Address which needs to be whitelisted
+     */
+    function _addToAllowlist(address[] memory _buyers) internal {
+        uint256 arrayLength = _buyers.length;
+        for (uint256 i; i < arrayLength; ++i) {
+            funders[_buyers[i]].allowlist = true;
+        }
+    }
+
+    /**
+     * @dev                     Remove address from allowlist.
+     * @param _buyer             Address which needs to be unwhitelisted
+     */
+    function unallowlist(address _buyer) external onlyAdmin notComplete {
         require(permissionedSeed == true, "Seed: seed is not whitelisted");
 
-        whitelisted[buyer] = false;
+        funders[_buyer].allowlist = false;
     }
 
     /**
