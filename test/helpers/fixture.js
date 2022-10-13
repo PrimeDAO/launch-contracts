@@ -32,6 +32,14 @@ async function launchFixture() {
     Seed: Seed_fundedLowHardCap,
   });
 
+  const Seed_highNumClasses = await SeedBuilder.createInit();
+  await Seed_highNumClasses.addClassAndAllowlist({
+    numberOfRandomClasses: 100,
+  });
+  await Seed_highNumClasses.addClassAndAllowlist({
+    numberOfRandomClasses: 100,
+  });
+
   const SeedFactory_deployed = await SeedFactoryBuilder.create();
 
   const SeedFactory_initialized = await SeedFactoryBuilder.createInit({
@@ -44,6 +52,7 @@ async function launchFixture() {
     Seed_funded,
     Seed_fundedPermissioned,
     Seed_fundedLowHardCap,
+    Seed_highNumClasses,
     SeedFactory_initialized,
   };
 }
