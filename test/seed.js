@@ -63,99 +63,150 @@ describe("> Contract: Seed", () => {
     } = await getNamedTestSigners());
   });
   describe("$ Function: initialize()", () => {
-    /**
-     * @type {Seed}
-     */
-    let Seed_initialized;
-    before(async () => {
-      // Note: not sure why bet getting the Seed from the fixture does not work, but only here
-      // ({ Seed_initialized } = await loadFixture(launchFixture));
-      Seed_initialized = await SeedBuilder.createInit();
-    });
     describe("# when the Seed has already been initialized", () => {
       it("should revert", async () => {
+        const Seed_initialized = await SeedBuilder.createInit();
         await expect(Seed_initialized.initialize()).to.be.revertedWith(
           "Seed: contract already initialized"
         );
       });
     });
-    describe("# when the Seed has not been initialized", () => {
-      it("should set beneficiary", async () => {
-        expect(await Seed_initialized.instance.beneficiary()).to.equal(
-          Seed_initialized.beneficiary
-        );
+    describe("# given the Seed is permissonless", () => {
+      /**
+       * @type {Seed}
+       */
+      let Seed_initializedPermissonless;
+      before(async () => {
+        Seed_initializedPermissonless = await SeedBuilder.create();
+        await Seed_initializedPermissonless.initialize();
       });
-      it("should set admin", async () => {
-        expect(await Seed_initialized.instance.admin()).to.equal(
-          Seed_initialized.admin
-        );
+      describe("» when the Seed has been initialized", () => {
+        it("should set beneficiary", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.beneficiary()
+          ).to.equal(Seed_initializedPermissonless.beneficiary);
+        });
+        it("should set admin", async () => {
+          expect(await Seed_initializedPermissonless.instance.admin()).to.equal(
+            Seed_initializedPermissonless.admin
+          );
+        });
+        it("should set tokens", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.seedToken()
+          ).to.equal(Seed_initializedPermissonless.seedTokenAddress);
+          expect(
+            await Seed_initializedPermissonless.instance.fundingToken()
+          ).to.equal(Seed_initializedPermissonless.fundingTokenAddress);
+        });
+        it("should set caps", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.softCap()
+          ).to.equal(Seed_initializedPermissonless.softCap);
+          expect(
+            await Seed_initializedPermissonless.instance.hardCap()
+          ).to.equal(Seed_initializedPermissonless.hardCap);
+        });
+        it("should set price", async () => {
+          expect(await Seed_initializedPermissonless.instance.price()).to.equal(
+            Seed_initializedPermissonless.price
+          );
+        });
+        it("should set start and end time", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.startTime()
+          ).to.equal(Seed_initializedPermissonless.startTime);
+          expect(
+            await Seed_initializedPermissonless.instance.endTime()
+          ).to.equal(Seed_initializedPermissonless.endTime);
+        });
+        it("should set permission", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.permissionedSeed()
+          ).to.equal(Seed_initializedPermissonless.permissionedSeed);
+        });
+        it("should set vestingStartTime", async () => {
+          expect(
+            await Seed_initializedPermissonless.instance.vestingStartTime()
+          ).to.equal(Seed_initializedPermissonless.endTime + 1);
+        });
+        it("should set defaultContributorClass", async () => {
+          const parameterDefaultClass =
+            Seed_initializedPermissonless.classes[0];
+          const contractDefaultClass =
+            await Seed_initializedPermissonless.instance.classes(
+              classTypes.CLASS_DEFAULT
+            );
+          expect(contractDefaultClass.className).to.equal(EMPTY32BYTES);
+          expect(contractDefaultClass.classCap).to.equal(
+            Seed_initializedPermissonless.hardCap
+          );
+          expect(contractDefaultClass.individualCap).to.equal(
+            parameterDefaultClass[0]
+          );
+          expect(contractDefaultClass.vestingCliff).to.equal(
+            parameterDefaultClass[1]
+          );
+          expect(contractDefaultClass.vestingDuration).to.equal(
+            parameterDefaultClass[2]
+          );
+        });
+        it("should set tipping", async () => {
+          // ToDo in next PR
+        });
+        it("should calculate seedAmountRequired", async () => {
+          // ToDo in next PR
+        });
       });
-      it("should set tokens", async () => {
-        expect(await Seed_initialized.instance.seedToken()).to.equal(
-          Seed_initialized.seedTokenAddress
-        );
-        expect(await Seed_initialized.instance.fundingToken()).to.equal(
-          Seed_initialized.fundingTokenAddress
-        );
-      });
-      it("should set caps", async () => {
-        expect(await Seed_initialized.instance.softCap()).to.equal(
-          Seed_initialized.softCap
-        );
-        expect(await Seed_initialized.instance.hardCap()).to.equal(
-          Seed_initialized.hardCap
-        );
-      });
-      it("should set price", async () => {
-        expect(await Seed_initialized.instance.price()).to.equal(
-          Seed_initialized.price
-        );
-      });
-      it("should set start and end time", async () => {
-        expect(await Seed_initialized.instance.startTime()).to.equal(
-          Seed_initialized.startTime
-        );
-        expect(await Seed_initialized.instance.endTime()).to.equal(
-          Seed_initialized.endTime
-        );
+    });
+    describe("# given the Seed is permissoned", () => {
+      /**
+       * @type {FunderPortfolio}
+       */
+      let funder1;
+      /**
+       * @type {FunderPortfolio}
+       */
+      let funder2;
+      /**
+       * @type {Seed}
+       */
+      let Seed_initializedPermissoned;
+      before(async () => {
+        const params = {
+          permissionedSeed: true,
+          allowlist: [buyer1.address, buyer2.address],
+        };
+        Seed_initializedPermissoned = await SeedBuilder.create();
+        await Seed_initializedPermissoned.initialize(params);
       });
       it("should set permission", async () => {
-        expect(await Seed_initialized.instance.permissionedSeed()).to.equal(
-          Seed_initialized.permissionedSeed
-        );
+        expect(
+          await Seed_initializedPermissoned.instance.permissionedSeed()
+        ).to.equal(Seed_initializedPermissoned.permissionedSeed);
       });
-      it("should set vestingStartTime", async () => {
-        expect(await Seed_initialized.instance.vestingStartTime()).to.equal(
-          Seed_initialized.endTime + 1
-        );
+      it("should set addresses to allowlist", async () => {
+        funder1 = await Seed_initializedPermissoned.getFunder(buyer1.address);
+        funder2 = await Seed_initializedPermissoned.getFunder(buyer2.address);
+
+        expect(funder1.allowlist).to.be.true;
+        expect(funder2.allowlist).to.be.true;
       });
-      it("should set defaultContributorClass", async () => {
-        const parameterDefaultClass = Seed_initialized.classes[0];
-        const contractDefaultClass = await Seed_initialized.instance.classes(
-          classTypes.CLASS_DEFAULT
+      it("should not set any allowlist", async () => {
+        const Seed_initializedPermissonedNoAllowlist =
+          await SeedBuilder.create();
+        await Seed_initializedPermissonedNoAllowlist.initialize({
+          permissionedSeed: true,
+        });
+        funder1 = await Seed_initializedPermissonedNoAllowlist.getFunder(
+          buyer1.address
         );
-        expect(contractDefaultClass.className).to.equal(EMPTY32BYTES);
-        expect(contractDefaultClass.classCap).to.equal(
-          Seed_initialized.hardCap
+        funder2 = await Seed_initializedPermissonedNoAllowlist.getFunder(
+          buyer2.address
         );
-        expect(contractDefaultClass.individualCap).to.equal(
-          parameterDefaultClass[0]
-        );
-        expect(contractDefaultClass.vestingCliff).to.equal(
-          parameterDefaultClass[1]
-        );
-        expect(contractDefaultClass.vestingDuration).to.equal(
-          parameterDefaultClass[2]
-        );
-      });
-      it("should set allowlist", async () => {
-        // ToDo in next PR
-      });
-      it("should set tipping", async () => {
-        // ToDo in next PR
-      });
-      it("should calculate seedAmountRequired", async () => {
-        // ToDo in next PR
+
+        expect(funder1.allowlist).to.be.false;
+        expect(funder2.allowlist).to.be.false;
       });
     });
   });
