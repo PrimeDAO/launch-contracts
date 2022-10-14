@@ -1,20 +1,25 @@
-const { expect } = require("chai");
 const { waffle, ethers } = require("hardhat");
-const { loadFixture } = waffle;
 const {
   BigNumber,
-  utils: { formatBytes32String },
+  utils: { formatBytes32String, parseEther },
 } = ethers;
+const { expect } = require("chai");
+const { loadFixture } = waffle;
 const { launchFixture } = require("./helpers/fixture");
-const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
+const {
+  getNamedTestSigners,
+  fundSignersAndSeed,
+} = require("./helpers/accounts/signers.js");
 const {
   increaseTime,
-  ONE_DAY,
   getCurrentTime,
+  ONE_DAY,
+  FIVE_DAYS,
   TEN_DAYS,
   TWENTY_DAYS,
   FOURTY_DAYS,
   HUNDRED_DAYS,
+  increaseTimeTo,
 } = require("./helpers/constants/time");
 const { getChangeClassParams } = require("./helpers/params/constructParams");
 const {
@@ -24,11 +29,16 @@ const {
   types,
   EMPTY32BYTES,
   classTypes,
+  PRECISION,
 } = require("./helpers/constants/constants");
+const {
+  tokenAmountToPrecisionNormalizedFloat,
+} = require("./helpers/constants/TypesConverter");
 /**
  * @typedef {import("./helpers/types/types.js").Seed} Seed
  * @typedef {import("./helpers/types/types").ContributorClassFromContract} ContributorClassFromContract
  * @typedef {import("./helpers/types/types").FunderPortfolio} FunderPortfolio
+ * @typedef {import("./helpers/types/types").Tip} Tip
  * @typedef {import("./helpers/types/types").AllowlistParams} AllowlistParams
  * @typedef {import("./helpers/types/types").ClassesParameters} ClassesParameters
  */
@@ -73,71 +83,68 @@ describe("> Contract: Seed", () => {
     });
     describe("# given the Seed is permissonless", () => {
       /**@type {Seed}*/
-      let Seed_initializedPermissonless;
+      let Seed_permissonless;
       before(async () => {
-        Seed_initializedPermissonless = await SeedBuilder.create();
-        await Seed_initializedPermissonless.initialize();
+        Seed_permissonless = await SeedBuilder.create();
+        await Seed_permissonless.initialize();
       });
       describe("» when the Seed has been initialized", () => {
         it("should set beneficiary", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.beneficiary()
-          ).to.equal(Seed_initializedPermissonless.beneficiary);
+          expect(await Seed_permissonless.instance.beneficiary()).to.equal(
+            Seed_permissonless.beneficiary
+          );
         });
         it("should set admin", async () => {
-          expect(await Seed_initializedPermissonless.instance.admin()).to.equal(
-            Seed_initializedPermissonless.admin
+          expect(await Seed_permissonless.instance.admin()).to.equal(
+            Seed_permissonless.admin
           );
         });
         it("should set tokens", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.seedToken()
-          ).to.equal(Seed_initializedPermissonless.seedTokenAddress);
-          expect(
-            await Seed_initializedPermissonless.instance.fundingToken()
-          ).to.equal(Seed_initializedPermissonless.fundingTokenAddress);
+          expect(await Seed_permissonless.instance.seedToken()).to.equal(
+            Seed_permissonless.seedTokenAddress
+          );
+          expect(await Seed_permissonless.instance.fundingToken()).to.equal(
+            Seed_permissonless.fundingTokenAddress
+          );
         });
         it("should set caps", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.softCap()
-          ).to.equal(Seed_initializedPermissonless.softCap);
-          expect(
-            await Seed_initializedPermissonless.instance.hardCap()
-          ).to.equal(Seed_initializedPermissonless.hardCap);
+          expect(await Seed_permissonless.instance.softCap()).to.equal(
+            Seed_permissonless.softCap
+          );
+          expect(await Seed_permissonless.instance.hardCap()).to.equal(
+            Seed_permissonless.hardCap
+          );
         });
         it("should set price", async () => {
-          expect(await Seed_initializedPermissonless.instance.price()).to.equal(
-            Seed_initializedPermissonless.price
+          expect(await Seed_permissonless.instance.price()).to.equal(
+            Seed_permissonless.price
           );
         });
         it("should set start and end time", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.startTime()
-          ).to.equal(Seed_initializedPermissonless.startTime);
-          expect(
-            await Seed_initializedPermissonless.instance.endTime()
-          ).to.equal(Seed_initializedPermissonless.endTime);
+          expect(await Seed_permissonless.instance.startTime()).to.equal(
+            Seed_permissonless.startTime
+          );
+          expect(await Seed_permissonless.instance.endTime()).to.equal(
+            Seed_permissonless.endTime
+          );
         });
         it("should set permission", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.permissionedSeed()
-          ).to.equal(Seed_initializedPermissonless.permissionedSeed);
+          expect(await Seed_permissonless.instance.permissionedSeed()).to.equal(
+            Seed_permissonless.permissionedSeed
+          );
         });
         it("should set vestingStartTime", async () => {
-          expect(
-            await Seed_initializedPermissonless.instance.vestingStartTime()
-          ).to.equal(Seed_initializedPermissonless.endTime + 1);
+          expect(await Seed_permissonless.instance.vestingStartTime()).to.equal(
+            Seed_permissonless.endTime + 1
+          );
         });
         it("should set defaultContributorClass", async () => {
-          const parameterDefaultClass =
-            Seed_initializedPermissonless.classes[0];
+          const parameterDefaultClass = Seed_permissonless.classes[0];
           const contractDefaultClass =
-            await Seed_initializedPermissonless.instance.classes(
-              classTypes.CLASS_DEFAULT
-            );
+            await Seed_permissonless.instance.classes(classTypes.CLASS_DEFAULT);
           expect(contractDefaultClass.className).to.equal(EMPTY32BYTES);
           expect(contractDefaultClass.classCap).to.equal(
-            Seed_initializedPermissonless.hardCap
+            Seed_permissonless.hardCap
           );
           expect(contractDefaultClass.individualCap).to.equal(
             parameterDefaultClass[0]
@@ -149,11 +156,53 @@ describe("> Contract: Seed", () => {
             parameterDefaultClass[2]
           );
         });
-        it("should set tipping", async () => {
-          // ToDo in next PR
+        it("should set tip parameters", async () => {
+          /**@type {Tip}*/
+          const tip = await Seed_permissonless.getTip();
+          expect(Seed_permissonless.tipPercentage).to.equal(tip.tipPercentage);
+          expect(Seed_permissonless.tipVestingCliff).to.equal(tip.vestingCliff);
+          expect(Seed_permissonless.tipVestingDuration).to.equal(
+            tip.vestingDuration
+          );
+        });
+        it("should calculate correct totalBuyableAmount", async () => {
+          const hardCap = Seed_permissonless.hardCap;
+          const price = Seed_permissonless.price;
+          const totalBuyableSeed = BigNumber.from(hardCap)
+            .mul(BigNumber.from(PRECISION))
+            .div(BigNumber.from(price));
+
+          expect(await Seed_permissonless.instance.totalBuyableSeed()).to.equal(
+            totalBuyableSeed
+          );
+        });
+        it("should calculate correct tipAmount", async () => {
+          /**@type {Tip}*/
+          const tip = await Seed_permissonless.getTip();
+          const hardCap = Seed_permissonless.hardCap;
+          const price = Seed_permissonless.price;
+          const totalBuyableSeed = BigNumber.from(hardCap)
+            .mul(BigNumber.from(PRECISION))
+            .div(BigNumber.from(price));
+          const tipAmount = BigNumber.from(totalBuyableSeed)
+            .mul(BigNumber.from(Seed_permissonless.tipPercentage))
+            .div(PRECISION);
+
+          expect(tip.tipAmount).to.equal(tipAmount);
         });
         it("should calculate seedAmountRequired", async () => {
-          // ToDo in next PR
+          const hardCap = Seed_permissonless.hardCap;
+          const price = Seed_permissonless.price;
+          const totalBuyableSeed = BigNumber.from(hardCap)
+            .mul(BigNumber.from(PRECISION))
+            .div(BigNumber.from(price));
+          const tipAmount = BigNumber.from(totalBuyableSeed)
+            .mul(BigNumber.from(Seed_permissonless.tipPercentage))
+            .div(PRECISION);
+
+          expect(await Seed_permissonless.getSeedAmoundRequired()).to.equal(
+            tipAmount.add(totalBuyableSeed)
+          );
         });
       });
     });
@@ -163,23 +212,23 @@ describe("> Contract: Seed", () => {
       /** @type {FunderPortfolio}*/
       let funder2;
       /** @type {Seed}*/
-      let Seed_initializedPermissoned;
+      let Seed_permissoned;
       before(async () => {
         const params = {
           permissionedSeed: true,
           allowlist: [buyer1.address, buyer2.address],
         };
-        Seed_initializedPermissoned = await SeedBuilder.create();
-        await Seed_initializedPermissoned.initialize(params);
+        Seed_permissoned = await SeedBuilder.create();
+        await Seed_permissoned.initialize(params);
       });
       it("should set permission", async () => {
-        expect(
-          await Seed_initializedPermissoned.instance.permissionedSeed()
-        ).to.equal(Seed_initializedPermissoned.permissionedSeed);
+        expect(await Seed_permissoned.instance.permissionedSeed()).to.equal(
+          Seed_permissoned.permissionedSeed
+        );
       });
       it("should set addresses to allowlist", async () => {
-        funder1 = await Seed_initializedPermissoned.getFunder(buyer1.address);
-        funder2 = await Seed_initializedPermissoned.getFunder(buyer2.address);
+        funder1 = await Seed_permissoned.getFunder(buyer1.address);
+        funder2 = await Seed_permissoned.getFunder(buyer2.address);
 
         expect(funder1.allowlist).to.be.true;
         expect(funder2.allowlist).to.be.true;
@@ -199,6 +248,36 @@ describe("> Contract: Seed", () => {
 
         expect(funder1.allowlist).to.be.false;
         expect(funder2.allowlist).to.be.false;
+      });
+    });
+    describe("# given the Seed has no tip", () => {
+      /** @type {Seed}*/
+      let Seed_noTip;
+      before(async () => {
+        const params = {
+          tip: [0, 0, 0],
+        };
+        Seed_noTip = await SeedBuilder.create();
+        await Seed_noTip.initialize(params);
+      });
+      it("should set tip parameters to 0", async () => {
+        /**@type {Tip}*/
+        const tip = await Seed_noTip.getTip();
+
+        expect(tip.tipAmount).to.equal(0);
+        expect(tip.vestingCliff).to.equal(0);
+        expect(tip.vestingDuration).to.equal(0);
+      });
+      it("should calculate correct seedAmountRequired", async () => {
+        const hardCap = Seed_noTip.hardCap;
+        const price = Seed_noTip.price;
+        const totalBuyableSeed = BigNumber.from(hardCap)
+          .mul(BigNumber.from(PRECISION))
+          .div(BigNumber.from(price));
+
+        expect(await Seed_noTip.getSeedAmoundRequired()).to.equal(
+          totalBuyableSeed
+        );
       });
     });
   });
@@ -1349,7 +1428,121 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: calculateClaim()", () => {});
+  describe("$ Function: calculateClaimFunder()", () => {});
+  describe("$ Function: calculateClaimBeneficiary()", () => {
+    /**@type {Seed}*/
+    let Seed_funded;
+    /**@type {Tip} */
+    let tip;
+    let tipAmount;
+    let vestingDuration;
+    let vestingCliff;
+    let vestingStartTime;
+    let elapsedSeconds;
+    let amountVestedDivBySec;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      vestingStartTime = await Seed_funded.getVestingStartTime();
+      tip = await Seed_funded.getTip();
+      tipAmount = tip.tipAmount;
+      vestingCliff = tip.vestingCliff;
+      vestingDuration = tip.vestingDuration;
+    });
+    describe("» when vestingStartTime has not been reached", () => {
+      it("should return 0", async () => {
+        await increaseTime(ONE_DAY);
+        const claimableAmount = await Seed_funded.calculateClaimBeneficiary();
+
+        expect(await claimableAmount).to.equal(0);
+      });
+    });
+    describe("» when vestingCliff has not ended", () => {
+      it("should return 0", async () => {
+        await increaseTimeTo(Seed_funded.endTime + 1);
+        const claimableAmount = await Seed_funded.calculateClaimBeneficiary();
+
+        expect(await claimableAmount).to.equal(0);
+      });
+    });
+    describe("» when cliff ended but vestingDuration has not ended yet", () => {
+      it("should return right amount", async () => {
+        // Claim 1
+        // Increase time to after cliff
+        await increaseTimeTo(Seed_funded.endTime + 1 + vestingCliff.toNumber());
+
+        elapsedSeconds = BigNumber.from(
+          (await getCurrentTime()).toNumber()
+        ).sub(BigNumber.from(vestingStartTime));
+
+        // (elapsedSeconds * tipAmount) / vestingDuration
+        amountVestedDivBySec = elapsedSeconds
+          .mul(tipAmount)
+          .div(vestingDuration);
+
+        // Subtract claimable amount from earlier claimed
+        const claimableAmount1 = amountVestedDivBySec.sub(tip.totalClaimed);
+
+        const claimableAmountFromContract =
+          await Seed_funded.calculateClaimBeneficiary();
+
+        expect(await claimableAmountFromContract).to.equal(claimableAmount1);
+
+        // Claim 2
+        await increaseTime(FIVE_DAYS);
+        tip = await Seed_funded.getTip();
+
+        elapsedSeconds = BigNumber.from(
+          (await getCurrentTime()).toNumber()
+        ).sub(BigNumber.from(vestingStartTime));
+
+        // (elapsedSeconds * tipAmount) / vestingDuration
+        amountVestedDivBySec = elapsedSeconds
+          .mul(tipAmount)
+          .div(vestingDuration);
+
+        // Subtract claimable amount from earlier claimed
+        const claimableAmount2 = amountVestedDivBySec.sub(tip.totalClaimed);
+
+        const claimableAmountFromContrac2 =
+          await Seed_funded.calculateClaimBeneficiary();
+
+        expect(await claimableAmountFromContrac2).to.equal(claimableAmount2);
+      });
+    });
+    describe("» when vestingDuration has ended", () => {
+      it("should return right amount", async () => {
+        await increaseTimeTo(
+          Seed_funded.endTime + 1 + vestingDuration.toNumber()
+        );
+
+        elapsedSeconds = BigNumber.from(
+          (await getCurrentTime()).toNumber()
+        ).sub(BigNumber.from(vestingStartTime));
+
+        // (elapsedSeconds * tipAmount) / vestingDuration
+        amountVestedDivBySec = elapsedSeconds
+          .mul(tipAmount)
+          .div(vestingDuration);
+
+        // Subtract claimable amount from earlier claimed
+        const claimableAmount1 = tokenAmountToPrecisionNormalizedFloat(
+          amountVestedDivBySec.sub(tip.totalClaimed),
+          Seed_funded.seedTokenDecimal
+        );
+
+        const claimableAmountFromContract =
+          tokenAmountToPrecisionNormalizedFloat(
+            await await Seed_funded.calculateClaimBeneficiary(),
+            Seed_funded.seedTokenDecimal
+          );
+
+        expect(claimableAmountFromContract).to.be.closeTo(
+          claimableAmount1,
+          0.001
+        );
+      });
+    });
+  });
   describe("$ Function: claim()", () => {
     /**@type {Seed}*/
     let Seed_funded;
@@ -1398,7 +1591,9 @@ describe("> Contract: Seed", () => {
       describe("» when the user want to claim more than is available", () => {
         it("should revert", async () => {
           await increaseTime(TWENTY_DAYS);
-          const claimableAmount = await Seed_funded.calculateClaim(buyer1);
+          const claimableAmount = await Seed_funded.calculateClaimFunder(
+            buyer1
+          );
           const toHighAmount = BigNumber.from(claimableAmount).add(
             Seed_funded.getSeedAmount("10")
           );
@@ -1426,7 +1621,7 @@ describe("> Contract: Seed", () => {
             await Seed_funded.seedTokenInstance.balanceOf(buyer1.address)
           ).to.equal(0);
 
-          const claimableAmount = await Seed_funded.calculateClaim();
+          const claimableAmount = await Seed_funded.calculateClaimFunder();
           await Seed_funded.claim();
 
           expect(
@@ -1469,7 +1664,7 @@ describe("> Contract: Seed", () => {
           ).to.equal(seedTokenAmount);
         });
       });
-      describe(" when claiming general", () => {
+      describe("» when claiming", () => {
         it("should update funders total amount claimed", async () => {
           /**@type {FunderPortfolio}*/
           let funder;
@@ -1488,14 +1683,312 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: claimTip()", () => {
+    /**@type {Tip} */
+    let tip;
+    let tipAmount;
+    let totalClaimed;
+    let claimableAmount;
+    let seedTokenDecimal;
+    describe("# when Seed is initialized without tip", () => {
+      /** @type {Seed}*/
+      let Seed_noTip;
+      before(async () => {
+        const params = {
+          tip: [0, 0, 0],
+        };
+        Seed_noTip = await SeedBuilder.create();
+        await Seed_noTip.initialize(params);
+        await fundSignersAndSeed({ Seed: Seed_noTip });
+        await increaseTimeTo(Seed_noTip.endTime + 1);
+        seedTokenDecimal = Seed_noTip.seedTokenDecimal;
+      });
+      it("should revert", async () => {
+        await expect(Seed_noTip.claimTip()).to.be.revertedWith(
+          "Seed: amount claimable is 0"
+        );
+      });
+    });
+    describe("# given Seed is initialized with tip", () => {
+      /** @type {Seed}*/
+      let Seed_withTip;
+      describe("» when Seed is not complete yet", () => {
+        before(async () => {
+          const { Seed_funded } = await loadFixture(launchFixture);
+          Seed_withTip = Seed_funded;
+        });
+        it("should revert", async () => {
+          await expect(Seed_withTip.claimTip()).to.be.revertedWith(
+            "Seed: the distribution has not yet finished"
+          );
+        });
+      });
+      describe("» when Seed tip vestingCliff hasn't ended", () => {
+        before(async () => {
+          const { Seed_funded } = await loadFixture(launchFixture);
+          Seed_withTip = Seed_funded;
+        });
+        it("should revert", async () => {
+          await increaseTimeTo(Seed_withTip.endTime); //  EndTime reached
+          await increaseTime(FIVE_DAYS); // Half of cliff
+
+          await expect(Seed_withTip.claimTip()).to.be.revertedWith(
+            "Seed: amount claimable is 0"
+          );
+        });
+      });
+      describe("» when claiming (Seed Complete)", () => {
+        beforeEach(async () => {
+          const { Seed_funded } = await loadFixture(launchFixture);
+          Seed_withTip = Seed_funded;
+          await increaseTimeTo(Seed_withTip.startTime);
+          await Seed_withTip.buy();
+          await increaseTime(FOURTY_DAYS);
+          seedTokenDecimal = Seed_withTip.seedTokenDecimal;
+        });
+        it("should update tip claimed amount and beneficiary SeedToken balance", async () => {
+          // Claim first time
+          tip = await Seed_withTip.getTip();
+          tipAmount = tip.tipAmount;
+
+          expect(tip.totalClaimed).to.equal(0);
+          expect(
+            await Seed_withTip.seedTokenInstance.balanceOf(beneficiary.address)
+          ).to.equal(0);
+
+          // Convert claimable amount from precision of SeedToken to float
+          claimableAmount = tokenAmountToPrecisionNormalizedFloat(
+            await Seed_withTip.calculateClaimBeneficiary(),
+            seedTokenDecimal
+          );
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          // Convert totalClamed  from precision of SeedToken to float
+          totalClaimed = tokenAmountToPrecisionNormalizedFloat(
+            tip.totalClaimed,
+            seedTokenDecimal
+          );
+
+          expect(totalClaimed).to.be.closeTo(
+            claimableAmount,
+            0.0001 // Delta
+          );
+
+          const beneficiaryBalanceClaim1 =
+            tokenAmountToPrecisionNormalizedFloat(
+              await Seed_withTip.seedTokenInstance.balanceOf(
+                beneficiary.address
+              ),
+              seedTokenDecimal
+            );
+
+          expect(beneficiaryBalanceClaim1).to.equal(totalClaimed);
+
+          // Claim second time
+          const currentTotalClaimed = totalClaimed;
+          await increaseTime(TWENTY_DAYS);
+          claimableAmount = tokenAmountToPrecisionNormalizedFloat(
+            await Seed_withTip.calculateClaimBeneficiary(),
+            seedTokenDecimal
+          );
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          // Convert totalClamed  from precision of SeedToken to float
+          totalClaimed = tokenAmountToPrecisionNormalizedFloat(
+            tip.totalClaimed,
+            seedTokenDecimal
+          );
+
+          expect(totalClaimed).to.be.closeTo(
+            claimableAmount + currentTotalClaimed,
+            0.0001 // Delta
+          );
+
+          const beneficiaryBalanceClaim2 =
+            tokenAmountToPrecisionNormalizedFloat(
+              await Seed_withTip.seedTokenInstance.balanceOf(
+                beneficiary.address
+              ),
+              seedTokenDecimal
+            );
+          expect(beneficiaryBalanceClaim2).to.be.closeTo(
+            claimableAmount + currentTotalClaimed,
+            0.0001 // Delta
+          );
+        });
+        it("should emit the right amount in event", async () => {
+          tip = await Seed_withTip.getTip();
+
+          expect(tip.totalClaimed).to.equal(0);
+
+          // Get event
+          const tx = await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+          const receipt = await tx.wait();
+          const event = receipt.events.filter((x) => {
+            return x.event == "TipClaimed";
+          });
+
+          tip = await Seed_withTip.getTip();
+          const totalClaimedFromEvent = event[0].args[0];
+
+          expect(tip.totalClaimed.toString()).to.equal(
+            totalClaimedFromEvent.toString()
+          );
+        });
+      });
+      describe("» when claiming (Seed Incomplete", () => {
+        beforeEach(async () => {
+          const { Seed_funded } = await loadFixture(launchFixture);
+          Seed_withTip = Seed_funded;
+          await increaseTime(FOURTY_DAYS);
+          seedTokenDecimal = Seed_withTip.seedTokenDecimal;
+        });
+        it("should update tip claimed amount and beneficiary SeedToken balance", async () => {
+          // Claim first time
+          tip = await Seed_withTip.getTip();
+          tipAmount = tip.tipAmount;
+
+          expect(tip.totalClaimed).to.equal(0);
+          expect(
+            await Seed_withTip.seedTokenInstance.balanceOf(beneficiary.address)
+          ).to.equal(0);
+
+          // Convert claimable amount from precision of SeedToken to float
+          claimableAmount = tokenAmountToPrecisionNormalizedFloat(
+            await Seed_withTip.calculateClaimBeneficiary(),
+            seedTokenDecimal
+          );
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          // Convert totalClamed  from precision of SeedToken to float
+          totalClaimed = tokenAmountToPrecisionNormalizedFloat(
+            tip.totalClaimed,
+            seedTokenDecimal
+          );
+
+          expect(totalClaimed).to.be.closeTo(
+            claimableAmount,
+            0.0001 // Delta
+          );
+
+          const beneficiaryBalanceClaim1 =
+            tokenAmountToPrecisionNormalizedFloat(
+              await Seed_withTip.seedTokenInstance.balanceOf(
+                beneficiary.address
+              ),
+              seedTokenDecimal
+            );
+
+          expect(beneficiaryBalanceClaim1).to.equal(totalClaimed);
+
+          // Claim second time
+          const currentTotalClaimed = totalClaimed;
+          await increaseTime(TWENTY_DAYS);
+          claimableAmount = tokenAmountToPrecisionNormalizedFloat(
+            await Seed_withTip.calculateClaimBeneficiary(),
+            seedTokenDecimal
+          );
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          // Convert totalClamed  from precision of SeedToken to float
+          totalClaimed = tokenAmountToPrecisionNormalizedFloat(
+            tip.totalClaimed,
+            seedTokenDecimal
+          );
+
+          expect(totalClaimed).to.be.closeTo(
+            claimableAmount + currentTotalClaimed,
+            0.0001 // Delta
+          );
+
+          const beneficiaryBalanceClaim2 =
+            tokenAmountToPrecisionNormalizedFloat(
+              await Seed_withTip.seedTokenInstance.balanceOf(
+                beneficiary.address
+              ),
+              seedTokenDecimal
+            );
+          expect(beneficiaryBalanceClaim2).to.be.closeTo(
+            claimableAmount + currentTotalClaimed,
+            0.0001 // Delta
+          );
+        });
+      });
+      describe("» when initialized without cliff", () => {
+        before(async () => {
+          const params = {
+            tip: [parseEther("0.02").toString(), 0, TEN_DAYS.toNumber()],
+          };
+          Seed_withTip = await SeedBuilder.create();
+          await Seed_withTip.initialize(params);
+          await fundSignersAndSeed({ Seed: Seed_withTip });
+        });
+        it("should start counting duration after Seed complete", async () => {
+          await increaseTimeTo(Seed_withTip.endTime + 1); // increase to endTime
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+        });
+      });
+      describe("» when initialized without duration", () => {
+        before(async () => {
+          const params = {
+            tip: [parseEther("0.02").toString(), TEN_DAYS.toNumber(), 0],
+          };
+          Seed_withTip = await SeedBuilder.create();
+          await Seed_withTip.initialize(params);
+          await fundSignersAndSeed({ Seed: Seed_withTip });
+        });
+        it("should claim full amount after cliff", async () => {
+          tip = await Seed_withTip.getTip();
+          tipAmount = tip.tipAmount;
+          await increaseTimeTo(
+            Seed_withTip.endTime + Seed_withTip.tipVestingCliff
+          );
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          expect(tip.totalClaimed).to.equal(tipAmount);
+        });
+      });
+      describe("» when initialized without cliff and duration", () => {
+        before(async () => {
+          const params = {
+            tip: [parseEther("0.02").toString(), 0, 0],
+          };
+          Seed_withTip = await SeedBuilder.create();
+          await Seed_withTip.initialize(params);
+          await fundSignersAndSeed({ Seed: Seed_withTip });
+        });
+        it("should claim full amount when Seed complete", async () => {
+          tip = await Seed_withTip.getTip();
+          tipAmount = tip.tipAmount;
+          await increaseTimeTo(Seed_withTip.endTime);
+
+          await expect(Seed_withTip.claimTip()).to.not.be.reverted;
+
+          tip = await Seed_withTip.getTip();
+          expect(tip.totalClaimed).to.equal(tipAmount);
+        });
+      });
+    });
+  });
+  describe("$ Function: retrieveSeedTokens()", () => {});
   describe("$ Function: retrieveFundingTokens()", () => {});
   describe("$ Function: pause()", () => {
     // Will be found in other tests
   });
   describe("$ Function: unpause()", () => {});
   describe("$ Function: close()", () => {});
-  describe("$ Function: retrieveSeedTokens()", () => {});
-  describe("$ Function: whitelist()", () => {});
   describe("$ Function: whitelistBatch()", () => {});
   describe("$ Function: unwhitelist()", () => {});
   describe("$ Function: withdraw()", () => {});
