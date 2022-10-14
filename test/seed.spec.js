@@ -11,23 +11,22 @@ const {
   fundSignersAndSeed,
 } = require("./helpers/accounts/signers.js");
 const {
-  increaseTime,
-  getCurrentTime,
   ONE_DAY,
   FIVE_DAYS,
   TEN_DAYS,
   TWENTY_DAYS,
   FOURTY_DAYS,
   HUNDRED_DAYS,
+  getCurrentTime,
+  increaseTime,
   increaseTimeTo,
 } = require("./helpers/constants/time");
-const { getChangeClassParams } = require("./helpers/params/constructParams");
+const { getConvertedParams } = require("./helpers/params/constructParams");
 const {
   SeedBuilder,
 } = require("./helpers/contracts/seed/builders/SeedBuilder");
 const {
   types,
-  EMPTY32BYTES,
   classTypes,
   PRECISION,
 } = require("./helpers/constants/constants");
@@ -46,7 +45,7 @@ const {
 async function convertSeedToComplete(Seed) {
   await increaseTime(ONE_DAY);
   await Seed.buy();
-  await increaseTime(TEN_DAYS);
+  await increaseTimeTo(Seed.endTime + 1);
 }
 
 describe("> Contract: Seed", () => {
@@ -142,18 +141,20 @@ describe("> Contract: Seed", () => {
           const parameterDefaultClass = Seed_permissonless.classes[0];
           const contractDefaultClass =
             await Seed_permissonless.instance.classes(classTypes.CLASS_DEFAULT);
-          expect(contractDefaultClass.className).to.equal(EMPTY32BYTES);
+          expect(contractDefaultClass.className).to.equal(
+            parameterDefaultClass[0]
+          );
           expect(contractDefaultClass.classCap).to.equal(
             Seed_permissonless.hardCap
           );
           expect(contractDefaultClass.individualCap).to.equal(
-            parameterDefaultClass[0]
-          );
-          expect(contractDefaultClass.vestingCliff).to.equal(
             parameterDefaultClass[1]
           );
-          expect(contractDefaultClass.vestingDuration).to.equal(
+          expect(contractDefaultClass.vestingCliff).to.equal(
             parameterDefaultClass[2]
+          );
+          expect(contractDefaultClass.vestingDuration).to.equal(
+            parameterDefaultClass[3]
           );
         });
         it("should set tip parameters", async () => {
@@ -294,7 +295,7 @@ describe("> Contract: Seed", () => {
         await Seed_funded.close();
 
         await expect(Seed_funded.setAllowlist()).to.be.revertedWith(
-          "Seed: Sale has been completed"
+          "Seed: sale not live"
         );
       });
       describe("# when Seed has ended", () => {
@@ -304,7 +305,7 @@ describe("> Contract: Seed", () => {
           await increaseTime(HUNDRED_DAYS);
 
           await expect(Seed_funded.setAllowlist()).to.be.revertedWith(
-            "Seed: Sale has been completed"
+            "Seed: sale not live"
           );
         });
       });
@@ -560,13 +561,13 @@ describe("> Contract: Seed", () => {
         await Seed_funded.close();
 
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: Sale has been completed"
+          "Seed: sale not live"
         );
       });
       it("should revert when ended", async () => {
         await increaseTime(TWENTY_DAYS);
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: Sale has been completed"
+          "Seed: sale not live"
         );
       });
     });
@@ -1035,10 +1036,9 @@ describe("> Contract: Seed", () => {
         it("should revert", async () => {
           const localSeed = await SeedBuilder.createInit();
           await localSeed.changeClass();
-          // await expect(localSeed.changeClass()).to.not.be.reverted;
           await localSeed.close();
           await expect(localSeed.changeClass()).to.be.revertedWith(
-            "Seed: should not be closed"
+            "Seed: sale not live"
           );
         });
       });
@@ -1046,9 +1046,10 @@ describe("> Contract: Seed", () => {
         it("should succeed in changing the class paramaters", async () => {
           /**@type {ContributorClassFromContract}*/
           let contributorClass;
-          const updatedClassParams = getChangeClassParams({
-            class: classTypes.CLASS_DEFAULT,
-          });
+          const updatedClassParams = await getConvertedParams(
+            types.SEED_CHANGE_CLASS,
+            { class: classTypes.CLASS_DEFAULT }
+          );
           const params = {
             from: admin,
             class: classTypes.CLASS_DEFAULT,
@@ -1982,6 +1983,131 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: getAllClasses()", () => {
+    /** @type {Seed}*/
+    let Seed_funded;
+    /**@type {ClassesParameters} */
+    let classesParams;
+    /**@type {ContributorClassFromContract} */
+    let defaultClass;
+    /**@type {ContributorClassFromContract} */
+    let class1;
+    /**@type {ContributorClassFromContract} */
+    let class2;
+    /**@type {ContributorClassFromContract} */
+    let class3;
+    before(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      classesParams = {
+        class1: {
+          className: "buyer1",
+          classCap: Seed_funded.getFundingAmount("10").toString(),
+          individualCap: Seed_funded.getFundingAmount("5").toString(),
+          vestingCliff: TEN_DAYS.toNumber(),
+          vestingDuration: TWENTY_DAYS.toNumber(),
+          allowlist: [[buyer1.address, buyer2.address]],
+        },
+        class2: {
+          className: "buyer2",
+          classCap: Seed_funded.getFundingAmount("15").toString(),
+          individualCap: Seed_funded.getFundingAmount("10").toString(),
+          vestingCliff: TWENTY_DAYS.toNumber(),
+          vestingDuration: FOURTY_DAYS.toNumber(),
+          allowlist: [[buyer3.address, buyer4.address]],
+        },
+        class3: {
+          className: "buyer3",
+          classCap: Seed_funded.getFundingAmount("20").toString(),
+          individualCap: Seed_funded.getFundingAmount("15").toString(),
+          vestingCliff: FOURTY_DAYS.toNumber(),
+          vestingDuration: HUNDRED_DAYS.toNumber(),
+          allowlist: [[buyer5.address, buyer6.address]],
+        },
+      };
+    });
+    describe(" when only default class", () => {
+      it("should return class", async () => {
+        defaultClass = await Seed_funded.getClass(classTypes.CLASS_DEFAULT);
+        const {
+          ["0"]: classNames,
+          ["1"]: classCaps,
+          ["2"]: individualCaps,
+          ["3"]: vestingCliffs,
+          ["4"]: vestingDurations,
+          ["5"]: classFundingCollected,
+        } = await Seed_funded.getAllClasses();
+
+        expect(await classNames[0]).to.equal(defaultClass.className); // set to empty string in contract
+        expect(await classCaps[0]).to.equal(Seed_funded.hardCap); //  classCap is set to hardcap in contract
+        expect(await individualCaps[0]).to.equal(defaultClass.individualCap);
+        expect(await vestingCliffs[0]).to.equal(defaultClass.vestingCliff);
+        expect(await vestingDurations[0]).to.equal(
+          defaultClass.vestingDuration
+        );
+        expect(await classFundingCollected[0]).to.equal(
+          defaultClass.classFundingCollected
+        );
+      });
+    });
+    describe(" when multiple classes", () => {
+      it("should return classes", async () => {
+        await expect(
+          Seed_funded.addClassesAndAllowlists({
+            classesParameters: classesParams,
+          })
+        ).to.not.be.reverted;
+
+        defaultClass = await Seed_funded.getClass(classTypes.CLASS_DEFAULT);
+        class1 = await Seed_funded.getClass(classTypes.CLASS_1);
+        class2 = await Seed_funded.getClass(classTypes.CLASS_2);
+        class3 = await Seed_funded.getClass(classTypes.CLASS_3);
+
+        const {
+          ["0"]: classNames,
+          ["1"]: classCaps,
+          ["2"]: individualCaps,
+          ["3"]: vestingCliffs,
+          ["4"]: vestingDurations,
+          ["5"]: classFundingCollected,
+        } = await Seed_funded.getAllClasses();
+
+        expect(await classNames[0]).to.equal(defaultClass.className); // for default class, className is set to empty string in contract
+        expect(await classNames[1]).to.equal(class1.className);
+        expect(await classNames[2]).to.equal(class2.className);
+        expect(await classNames[3]).to.equal(class3.className);
+        expect(await classCaps[0]).to.equal(Seed_funded.hardCap); // for default class, classCap is set to hardcap in contract
+        expect(await classCaps[1]).to.equal(class1.classCap);
+        expect(await classCaps[2]).to.equal(class2.classCap);
+        expect(await classCaps[3]).to.equal(class3.classCap);
+        expect(await individualCaps[0]).to.equal(defaultClass.individualCap);
+        expect(await individualCaps[1]).to.equal(class1.individualCap);
+        expect(await individualCaps[2]).to.equal(class2.individualCap);
+        expect(await individualCaps[3]).to.equal(class3.individualCap);
+        expect(await vestingCliffs[0]).to.equal(defaultClass.vestingCliff);
+        expect(await vestingCliffs[1]).to.equal(class1.vestingCliff);
+        expect(await vestingCliffs[2]).to.equal(class2.vestingCliff);
+        expect(await vestingCliffs[3]).to.equal(class3.vestingCliff);
+        expect(await vestingDurations[0]).to.equal(
+          defaultClass.vestingDuration
+        );
+        expect(await vestingDurations[1]).to.equal(class1.vestingDuration);
+        expect(await vestingDurations[2]).to.equal(class2.vestingDuration);
+        expect(await vestingDurations[3]).to.equal(class3.vestingDuration);
+        expect(await classFundingCollected[0]).to.equal(
+          defaultClass.classFundingCollected
+        );
+        expect(await classFundingCollected[1]).to.equal(
+          class1.classFundingCollected
+        );
+        expect(await classFundingCollected[2]).to.equal(
+          class2.classFundingCollected
+        );
+        expect(await classFundingCollected[3]).to.equal(
+          class3.classFundingCollected
+        );
+      });
+    });
+  });
   describe("$ Function: retrieveSeedTokens()", () => {});
   describe("$ Function: retrieveFundingTokens()", () => {});
   describe("$ Function: pause()", () => {
@@ -1989,7 +2115,6 @@ describe("> Contract: Seed", () => {
   });
   describe("$ Function: unpause()", () => {});
   describe("$ Function: close()", () => {});
-  describe("$ Function: whitelistBatch()", () => {});
   describe("$ Function: unwhitelist()", () => {});
   describe("$ Function: withdraw()", () => {});
   describe("$ Function: updateMetadata()", () => {});
