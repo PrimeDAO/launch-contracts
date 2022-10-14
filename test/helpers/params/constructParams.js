@@ -63,7 +63,7 @@ async function getDefaultSeedParams(params) {
   const tipPercentage = parseEther("0.02").toString();
   const tipVestingCliff = TEN_DAYS.toNumber();
   const tipVestingDuration = HUNDRED_DAYS.toNumber();
-  const tipping = [tipPercentage, tipVestingCliff, tipVestingDuration];
+  const tip = [tipPercentage, tipVestingCliff, tipVestingDuration];
 
   return {
     from: root.address,
@@ -76,7 +76,7 @@ async function getDefaultSeedParams(params) {
     defaultClassParameters: defaultClassParameters,
     permissionedSeed: permissioned,
     allowlist: allowlist,
-    tipping: tipping,
+    tip: tip,
     tokenInstances: [seedTokenInstance, fundingTokenInstance],
   };
 }
@@ -100,7 +100,7 @@ async function seedInitParams(params) {
     params.defaultClassParameters,
     params.permissionedSeed,
     params.allowlist,
-    params.tipping,
+    params.tip,
   ];
 }
 

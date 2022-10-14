@@ -2,20 +2,20 @@ const { SeedBuilder } = require("./contracts/seed/builders/SeedBuilder.js");
 const {
   SeedFactoryBuilder,
 } = require("./contracts/seed/builders/SeedFactoryBuilder.js");
-const { fundSigners } = require("./accounts/signers");
+const { fundSignersAndSeed } = require("./accounts/signers");
 
 async function launchFixture() {
   const Seed_initialized = await SeedBuilder.createInit();
 
   const Seed_funded = await SeedBuilder.createInit();
-  await fundSigners({
+  await fundSignersAndSeed({
     Seed: Seed_funded,
   });
 
   const Seed_fundedPermissioned = await SeedBuilder.createInit({
     permissionedSeed: true,
   });
-  await fundSigners({
+  await fundSignersAndSeed({
     Seed: Seed_fundedPermissioned,
   });
 
@@ -28,7 +28,7 @@ async function launchFixture() {
   const Seed_fundedLowHardCap = await SeedBuilder.createInit(
     lowHardCapSeedParams
   );
-  await fundSigners({
+  await fundSignersAndSeed({
     Seed: Seed_fundedLowHardCap,
   });
 

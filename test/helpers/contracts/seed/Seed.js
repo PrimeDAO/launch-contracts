@@ -86,6 +86,10 @@ class Seed {
     return await this.instance.fundingWithdrawn();
   }
 
+  async getTip() {
+    return await this.instance.tip();
+  }
+
   async getClass(classId) {
     return await this.instance.classes(classId);
   }
@@ -96,7 +100,7 @@ class Seed {
 
   /**
    *
-   * @returns {BigNumber}
+   * @returns {Promise<BigNumber>}
    */
   async getSeedAmoundRequired() {
     return await this.instance.seedAmountRequired();
@@ -138,9 +142,9 @@ class Seed {
    *          defaultClassParameters?: [BigNumber | string, number, number],
    *          permissionedSeed?: boolean,
    *          allowlist?: Address[],
-   *          tipping?: [BigNumber | string, number, number]
+   *          tip?: [BigNumber | string, number, number]
    *         }} params
-   * @returns {this}
+   * @returns {Promise<this>}
    */
   async initialize(params = {}) {
     if (!params.from) params.from = await getRootSigner();
@@ -277,16 +281,30 @@ class Seed {
   async claim(params = {}) {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
     if (!params.claimAmount)
-      params.claimAmount = await this.calculateClaim(params);
+      params.claimAmount = await this.calculateClaimFunder(params);
     return await this.instance.claim(params.from.address, params.claimAmount);
   }
 
   /**
    * @param {{from?: SignerWithAddress}} params
    */
-  async calculateClaim(params = {}) {
+  async claimTip(params = {}) {
+    if (!params.from) params.from = await getRootSigner();
+    return await this.instance.connect(params.from).claimTip();
+  }
+
+  /**
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async calculateClaimFunder(params = {}) {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
-    return await this.instance.calculateClaim(params.from.address);
+    return await this.instance.callStatic.calculateClaimFunder(
+      params.from.address
+    );
+  }
+
+  async calculateClaimBeneficiary() {
+    return await this.instance.callStatic.calculateClaimBeneficiary();
   }
 }
 
