@@ -34,8 +34,8 @@ contract Seed {
     address public admin;
     uint256 public softCap;
     uint256 public hardCap;
-    uint256 public seedAmountRequired; // Amount of seed required for distribution
-    uint256 public feeAmountRequired; // Amount of seed required for fee
+    uint256 public seedAmountRequired; // Amount of seed required for distribution (buyable + tip)
+    uint256 public totalBuyableSeed; // Amount of buyable seed tokens
     uint256 public startTime;
     uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
     //     maximumReached has not been reached by then
@@ -46,7 +46,6 @@ contract Seed {
     IERC20 public fundingToken;
     bytes public metadata; // IPFS Hash
 
-    uint256 internal constant MAX_FEE = (45 / 100) * 10**18; // ToDo: remove max fee, has been moved to SeedFactory
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
     // Contract logic
@@ -60,13 +59,11 @@ contract Seed {
     uint256 public totalFunderCount; // Total funders that have contributed.
     uint256 public seedRemainder; // Amount of seed tokens remaining to be distributed
     uint256 public seedClaimed; // Amount of seed token claimed by the user.
-    uint256 public feeRemainder; // Amount of seed tokens remaining for the fee
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
-    uint256 public feeClaimed; //Amount of all fee claimed when the seed was claimed.
 
     uint256 public price;
-    uint256 private fee;
+    Tip public tip;
 
     ContributorClass[] public classes; // Array of contributor classes
 
@@ -83,6 +80,7 @@ contract Seed {
         uint256 indexed amountReclaimed
     );
     event MetadataUpdated(bytes indexed metadata);
+    event TipClaimed(uint256 indexed amountClaimed);
 
     struct FunderPortfolio {
         uint8 class; // Contibutor class id
@@ -98,6 +96,15 @@ contract Seed {
         uint256 vestingCliff;
         uint256 vestingDuration; // Vesting duration for class
         uint256 classFundingCollected; // Total amount of staked tokens
+    }
+
+    // ToDo: add comment
+    struct Tip {
+        uint256 tipPercentage;
+        uint256 vestingCliff;
+        uint256 vestingDuration;
+        uint256 tipAmount;
+        uint256 totalClaimed;
     }
 
     modifier onlyAdmin() {
@@ -197,10 +204,10 @@ contract Seed {
                                             - Vesting period duration, denominated in seconds.
       * @param _permissionedSeed        Set to true if only allowlisted adresses are allowed to participate.
       * @param _allowlistAddresses      Array of addresses to be allowlisted for the default class, at creation time
-      * @param _tipping                 Array of containing three parameters:
-											- Total amount of tipping percentage expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee, 10**16 = 1%)
-											- Tipping vesting period duration denominated in seconds.																								
-											- Tipping cliff duration denominated in seconds.	
+      * @param _tip                     Array of containing three parameters:
+											- Total amount of tip percentage expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee, 10**16 = 1%)
+											- Tip vesting period duration denominated in seconds.																								
+											- Tipcliff duration denominated in seconds.	
     */
     function initialize(
         address _beneficiary,
@@ -212,7 +219,7 @@ contract Seed {
         uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
         address[] memory _allowlistAddresses,
-        uint256[] memory _tipping
+        uint256[] memory _tip
     ) external {
         require(!initialized, "Seed: contract already initialized");
         initialized = true;
@@ -227,17 +234,13 @@ contract Seed {
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
-        fee = _tipping[0];
         price = _price;
 
-        feeClaimed = 0;
+        totalBuyableSeed = (hardCap * PRECISION) / _price;
 
-        seedAmountRequired = (hardCap * PRECISION) / _price;
-        // (seedAmountRequired*fee) / (100*FEE_PRECISION) = (seedAmountRequired*fee) / PRECISION
-        //  where FEE_PRECISION = 10**16
-        feeAmountRequired = (seedAmountRequired * fee) / PRECISION;
-        // Adding default class of contributors(specifically for non-allowlisted seed)
-
+        uint256 tipAmount = (totalBuyableSeed * _tip[0]) / PRECISION; //ToDo: Check why calculation is done this way, and not like 2 lines above
+        tip = Tip(_tip[0], _tip[1], _tip[2], tipAmount, 0); // test if this is possible like this
+        // Add default class
         _addClass(
             bytes32(""),
             hardCap,
@@ -255,8 +258,8 @@ contract Seed {
             _addAddressesToAllowlist(_allowlistAddresses);
         }
 
-        seedRemainder = seedAmountRequired;
-        feeRemainder = feeAmountRequired; //ToDo: check how this value fits with the
+        seedRemainder = totalBuyableSeed;
+        seedAmountRequired = tipAmount + seedRemainder;
     }
 
     /**
@@ -320,7 +323,7 @@ contract Seed {
             require(
                 // classSeedAmountRequired is an amount which is needed to be sold
                 // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
-                seedToken.balanceOf(address(this)) >= seedAmountRequired, // ToDo: had (seedAmountRequired + feeAmountRequired here) Wait for answer from bizdev
+                seedToken.balanceOf(address(this)) >= seedAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
             isFunded = true;
@@ -376,9 +379,10 @@ contract Seed {
             endTime < block.timestamp || maximumReached,
             "Seed: the distribution has not yet finished"
         );
+
         uint256 amountClaimable;
 
-        amountClaimable = calculateClaim(_funder);
+        amountClaimable = calculateClaimFunder(_funder);
         require(amountClaimable > 0, "Seed: amount claimable is 0");
         require(
             amountClaimable >= _claimAmount,
@@ -392,6 +396,26 @@ contract Seed {
         seedToken.safeTransfer(_funder, _claimAmount);
 
         emit TokensClaimed(_funder, _claimAmount);
+    }
+
+    function claimTip() external returns (uint256) {
+        require(
+            endTime < block.timestamp || maximumReached,
+            "Seed: the distribution has not yet finished"
+        );
+
+        uint256 amountClaimable;
+
+        amountClaimable = calculateClaimBeneficiary();
+        require(amountClaimable > 0, "Seed: amount claimable is 0");
+
+        tip.totalClaimed += amountClaimable;
+
+        seedToken.safeTransfer(beneficiary, amountClaimable);
+
+        emit TipClaimed(amountClaimable);
+
+        return amountClaimable;
     }
 
     /**
@@ -469,13 +493,13 @@ contract Seed {
                 seedToken.balanceOf(address(this)) > 0,
                 "Seed: Failed to transfer Seed Token" // ToDo: better error message
             );
-            seedToken.safeTransfer(
-                _refundReceiver,
-                seedToken.balanceOf(address(this))
-            );
+            // subtract tip from Seed tokens
+            uint256 retrievableSeedAmount = seedToken.balanceOf(address(this)) -
+                tip.tipAmount;
+            seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
-            // seed tokens to transfer = balance of seed tokens - totalSeedDistributed
-            uint256 totalSeedDistributed = seedAmountRequired - seedRemainder;
+            // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
+            uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
                 totalSeedDistributed;
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
@@ -634,29 +658,57 @@ contract Seed {
      * @dev                     Calculates the maximum claim
      * @param _funder           Address of funder to find the maximum claim
      */
-    function calculateClaim(address _funder) public view returns (uint256) {
+    function calculateClaimFunder(address _funder)
+        public
+        view
+        returns (uint256)
+    {
         FunderPortfolio memory tokenFunder = funders[_funder];
         uint8 currentId = tokenFunder.class;
         ContributorClass memory claimed = classes[currentId];
 
+        return
+            _calculateClaim(
+                seedAmountForFunder(_funder),
+                claimed.vestingCliff,
+                claimed.vestingDuration,
+                tokenFunder.totalClaimed
+            );
+    }
+
+    function calculateClaimBeneficiary() public view returns (uint256) {
+        return
+            _calculateClaim(
+                tip.tipAmount,
+                tip.vestingCliff,
+                tip.vestingDuration,
+                tip.totalClaimed
+            );
+    }
+
+    function _calculateClaim(
+        uint256 seedAmount,
+        uint256 vestingCliff,
+        uint256 vestingDuration,
+        uint256 totalClaimed
+    ) internal view returns (uint256) {
         if (block.timestamp < vestingStartTime) {
             return 0;
         }
 
         // Check cliff was reached
         uint256 elapsedSeconds = block.timestamp - vestingStartTime;
-        if (elapsedSeconds < claimed.vestingCliff) {
+        if (elapsedSeconds < vestingCliff) {
             return 0;
         }
 
-        uint256 currentVestingDuration = claimed.vestingDuration;
         // If over vesting duration, all tokens vested
-        if (elapsedSeconds >= currentVestingDuration) {
-            return seedAmountForFunder(_funder) - tokenFunder.totalClaimed;
+        if (elapsedSeconds >= vestingDuration) {
+            return seedAmount - totalClaimed;
         } else {
-            uint256 amountVested = (elapsedSeconds *
-                seedAmountForFunder(_funder)) / currentVestingDuration;
-            return amountVested - tokenFunder.totalClaimed;
+            uint256 amountVested = (elapsedSeconds * seedAmount) /
+                vestingDuration;
+            return amountVested - totalClaimed;
         }
     }
 
