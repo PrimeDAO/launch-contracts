@@ -66,10 +66,10 @@ contract SeedFactory is CloneFactory, Ownable {
                                                 - Vesting period duration, denominated in seconds.
       * @param _permissionedSeed            Set to true if only allowlisted adresses are allowed to participate.
       * @param _allowlistAddresses          Array of addresses to be allowlisted for the default class, at creation time
-      * @param _tipping                     Array of containing three parameters:
-												- Total amount of tipping percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-												- Tipping vesting period duration denominated in seconds.																								
-												- Tipping cliff duration denominated in seconds.	
+      * @param _tip                     Array of containing three parameters:
+												- Total amount of tip percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
+												- Tip vesting period duration denominated in seconds.																								
+												- Tip cliff duration denominated in seconds.	
       * @param _metadata                    Seed contract metadata, that is IPFS URI
     */
     function deploySeed(
@@ -82,7 +82,7 @@ contract SeedFactory is CloneFactory, Ownable {
         uint256[] memory _defaultClassParameters,
         bool _permissionedSeed,
         address[] memory _allowlistAddresses,
-        uint256[] memory _tipping,
+        uint256[] memory _tip,
         bytes memory _metadata
     ) external onlyOwner returns (address) {
         {
@@ -91,7 +91,7 @@ contract SeedFactory is CloneFactory, Ownable {
                 "SeedFactory: mastercopy has not been set"
             );
             require(
-                _tipping.length == 3 &&
+                _tip.length == 3 &&
                     _tokens.length == 2 &&
                     _softAndHardCap.length == 2 &&
                     _startTimeAndEndTime.length == 2 &&
@@ -119,7 +119,7 @@ contract SeedFactory is CloneFactory, Ownable {
                 "SeedFactory: invalid time"
             );
             require(
-                _tipping[0] <= MAX_TIP,
+                _tip[0] <= MAX_TIP,
                 "SeedFactory: tip cannot be more than 45%"
             );
         }
@@ -140,7 +140,7 @@ contract SeedFactory is CloneFactory, Ownable {
             _defaultClassParameters,
             _permissionedSeed,
             _allowlistAddresses,
-            _tipping
+            _tip
         );
 
         emit SeedCreated(address(_newSeed), _admin);

@@ -152,11 +152,11 @@ describe("> Contract: SeedFactory", () => {
       });
     });
     describe("# given invalid deployment parameters", () => {
-      describe("» when calling with invalid tipping array length", () => {
+      describe("» when calling with invalid tip array length", () => {
         it("should revert", async () => {
           const tipPercentage = defaultSeedParameters[9][0];
           const tipVestingCliff = defaultSeedParameters[9][1];
-          const params = { tipping: [tipPercentage, tipVestingCliff] };
+          const params = { tip: [tipPercentage, tipVestingCliff] };
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
@@ -312,13 +312,13 @@ describe("> Contract: SeedFactory", () => {
           ).to.be.revertedWith("SeedFactory: invalid time");
         });
       });
-      describe("» when calling with tipping > max tipping", () => {
+      describe("» when calling with tip > max tip", () => {
         it("should revert", async () => {
           const invalidTipPercentage = parseEther("0.50").toString();
           const tipVestingClif = defaultSeedParameters[9][1];
           const tipVestingDuration = defaultSeedParameters[9][2];
           const params = {
-            tipping: [invalidTipPercentage, tipVestingClif, tipVestingDuration],
+            tip: [invalidTipPercentage, tipVestingClif, tipVestingDuration],
           };
 
           await expect(
