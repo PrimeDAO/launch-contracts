@@ -31,7 +31,7 @@ const {
  * @typedef {import("hardhat-deploy/dist/types.js").Address} Address
  */
 
-async function getDefaultSeedParams(params) {
+async function getDefaultSeedParams(params = {}) {
   if (!params.tokenInstances)
     params.tokenInstances = await getERC20TokenInstances(tokenParams());
 
@@ -404,13 +404,15 @@ async function getConvertedParams(type, params) {
     case types.SEED_DEPLOY_INSTANCE || types.SEEDFACTORY_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
     case types.SEED_CHANGE_CLASS:
-      return getChangeClassParams(params);
+      return Promise.resolve(getChangeClassParams(params));
     case types.SEED_ALLOWLIST:
       return await getAllowlistArrays(params);
     case types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM:
       return Promise.resolve(getClassAndWhitelistParamsFromNumber(params));
     case types.SEED_ADD_CLASS_AND_WHITELIST:
       return Promise.resolve(getClassAndWhitelistParams(params));
+    case types.SEED_TOKEN_PARAMS:
+      return Promise.resolve(tokenParams());
   }
 }
 
@@ -418,8 +420,4 @@ const tokenParams = () => [seedTokenParams, fundingTokenParams];
 
 module.exports = {
   getConvertedParams,
-  seedFactoryDeploySeedParams,
-  tokenParams,
-  seedInitParams,
-  getChangeClassParams,
 };

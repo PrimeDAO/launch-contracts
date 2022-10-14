@@ -9,10 +9,7 @@ const {
 } = ethers;
 const { launchFixture } = require("./helpers/fixture");
 const { getNamedTestSigners } = require("./helpers/accounts/signers.js");
-const {
-  tokenParams,
-  getConvertedParams,
-} = require("./helpers/params/constructParams.js");
+const { getConvertedParams } = require("./helpers/params/constructParams.js");
 const {
   getERC20TokenInstances,
 } = require("./helpers/contracts/tokens/tokens.js");
@@ -134,7 +131,9 @@ describe("> Contract: SeedFactory", () => {
     beforeEach(async () => {
       ({ Seed_initialized, SeedFactory_initialized, SeedFactory_deployed } =
         await loadFixture(launchFixture));
-      tokenInstances = await getERC20TokenInstances(tokenParams());
+      tokenInstances = await getERC20TokenInstances(
+        await getConvertedParams(types.SEED_TOKEN_PARAMS)
+      );
       const params = { tokenInstances: tokenInstances };
       defaultSeedParameters = await getConvertedParams(
         types.SEEDFACTORY_DEPLOY_SEED,
