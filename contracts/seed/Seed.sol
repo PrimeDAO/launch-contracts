@@ -21,7 +21,6 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PrimeDAO Seed contract
@@ -118,10 +117,10 @@ contract Seed {
         _;
     }
 
-    modifier notComplete() {
+    modifier isLive() {
         require(
             !closed && block.timestamp < vestingStartTime,
-            "Seed: Sale has been completed"
+            "Seed: sale not live"
         );
         _;
     }
@@ -131,7 +130,6 @@ contract Seed {
             _individualCap <= _classCap && _classCap <= hardCap,
             "Seed: caps are invalid"
         );
-        require(!closed, "Seed: should not be closed");
         require(_classCap > 0, "Seed: class Cap should be bigger then 0");
         _;
     }
@@ -237,9 +235,9 @@ contract Seed {
         price = _price;
 
         totalBuyableSeed = (hardCap * PRECISION) / _price;
-
-        uint256 tipAmount = (totalBuyableSeed * _tip[0]) / PRECISION; //ToDo: Check why calculation is done this way, and not like 2 lines above
-        tip = Tip(_tip[0], _tip[1], _tip[2], tipAmount, 0); // test if this is possible like this
+        // Calculate tip
+        uint256 tipAmount = (totalBuyableSeed * _tip[0]) / PRECISION;
+        tip = Tip(_tip[0], _tip[1], _tip[2], tipAmount, 0);
         // Add default class
         _addClass(
             bytes32(""),
@@ -278,7 +276,7 @@ contract Seed {
         uint256 _individualCap,
         uint256 _vestingCliff,
         uint256 _vestingDuration
-    ) external onlyAdmin classRestriction(_classCap, _individualCap) {
+    ) external classRestriction(_classCap, _individualCap) onlyAdmin isLive {
         require(_class < classes.length, "Seed: incorrect class chosen");
 
         classes[_class].className = _className;
@@ -321,8 +319,6 @@ contract Seed {
 
         if (!isFunded) {
             require(
-                // classSeedAmountRequired is an amount which is needed to be sold
-                // So when it's reached, for others will their balance be bigger or not - doesn't matter anymore.
                 seedToken.balanceOf(address(this)) >= seedAmountRequired,
                 "Seed: sufficient seeds not provided"
             );
@@ -517,7 +513,7 @@ contract Seed {
     )
         external
         onlyAdmin
-        notComplete
+        isLive
         classBatchRestrictions(
             _classNames,
             _classCaps,
@@ -561,7 +557,7 @@ contract Seed {
     function allowlist(address[] memory _buyers, uint8[] memory _classes)
         external
         onlyAdmin
-        notComplete
+        isLive
     {
         if (permissionedSeed) {
             _addAddressesToAllowlist(_buyers);
@@ -614,7 +610,7 @@ contract Seed {
      * @dev                     Remove address from allowlist.
      * @param _buyer             Address which needs to be un-allowlisted
      */
-    function unallowlist(address _buyer) external onlyAdmin notComplete {
+    function unAllowlist(address _buyer) external onlyAdmin isLive {
         require(permissionedSeed == true, "Seed: seed is not permissioned");
 
         funders[_buyer].allowlist = false;
@@ -709,6 +705,36 @@ contract Seed {
             uint256 amountVested = (elapsedSeconds * seedAmount) /
                 vestingDuration;
             return amountVested - totalClaimed;
+        }
+    }
+
+    function getAllClasses()
+        external
+        view
+        returns (
+            bytes32[] memory classNames,
+            uint256[] memory classCaps,
+            uint256[] memory individualCaps,
+            uint256[] memory vestingCliffs,
+            uint256[] memory vestingDurations,
+            uint256[] memory classFundingsCollected
+        )
+    {
+        uint256 numberOfClasses = classes.length;
+        classNames = new bytes32[](numberOfClasses);
+        classCaps = new uint256[](numberOfClasses);
+        individualCaps = new uint256[](numberOfClasses);
+        vestingCliffs = new uint256[](numberOfClasses);
+        vestingDurations = new uint256[](numberOfClasses);
+        classFundingsCollected = new uint256[](numberOfClasses);
+        for (uint256 i; i < numberOfClasses; ++i) {
+            ContributorClass storage class = classes[i];
+            classNames[i] = class.className;
+            classCaps[i] = class.classCap;
+            individualCaps[i] = class.individualCap;
+            vestingCliffs[i] = class.vestingCliff;
+            vestingDurations[i] = class.vestingDuration;
+            classFundingsCollected[i] = class.classFundingCollected;
         }
     }
 
