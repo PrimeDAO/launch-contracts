@@ -20,7 +20,7 @@ async function getRootSigner() {
   return (await ethers.getSigners())[0];
 }
 
-async function fundSigners(params) {
+async function fundSignersAndSeed(params) {
   const { root, admin, buyer1, buyer2 } = await getNamedTestSigners();
   if (!params.admin) params.admin = admin;
   if (!params.buyers) params.buyers = [buyer1, buyer2];
@@ -51,5 +51,5 @@ async function fundSigners(params) {
 module.exports = {
   getNamedTestSigners,
   getRootSigner,
-  fundSigners,
+  fundSignersAndSeed,
 };

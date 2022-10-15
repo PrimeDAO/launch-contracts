@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 const { getConvertedParams } = require("../../params/constructParams");
-const { types, PRECISION } = require("../../constants/constants");
+const { types, PRECISION, EMPTY32BYTES } = require("../../constants/constants");
 const { getTokenAmount } = require("../../constants/TypesConverter");
 const {
   getRootSigner,
@@ -9,9 +9,10 @@ const {
 const { BigNumber } = require("ethers");
 
 /**
+ * @typedef {import("../../types/types").ContributorClassParams} ContributorClassParams
  * @typedef {import("../../types/types").SignerWithAddress} SignerWithAddress
- * @typedef {import("../../types/types").Address} Address
  * @typedef {import("../../types/types").Contract} Contract
+ * @typedef {import("../../types/types").Address} Address
  */
 
 class Seed {
@@ -86,6 +87,10 @@ class Seed {
     return await this.instance.fundingWithdrawn();
   }
 
+  async getTip() {
+    return await this.instance.tip();
+  }
+
   async getClass(classId) {
     return await this.instance.classes(classId);
   }
@@ -96,7 +101,7 @@ class Seed {
 
   /**
    *
-   * @returns {BigNumber}
+   * @returns {Promise<BigNumber>}
    */
   async getSeedAmoundRequired() {
     return await this.instance.seedAmountRequired();
@@ -127,6 +132,27 @@ class Seed {
       .div(BigNumber.from(this.price))
       .mul(BigNumber.from(PRECISION.toString()));
   }
+
+  /**
+   * @dev The TotalBuyableSeed is calculated inside the Seed.initialize() function
+   * @returns {BigNumber}
+   */
+  calculateTotalBuyableSeed() {
+    return BigNumber.from(this.hardCap)
+      .mul(BigNumber.from(PRECISION))
+      .div(BigNumber.from(this.price));
+  }
+
+  /**
+   * @dev The tipAmount is calculated inside the Seed.initialize() function
+   * @returns {BigNumber}
+   */
+  calculateTipAmount() {
+    return BigNumber.from(this.calculateTotalBuyableSeed())
+      .mul(BigNumber.from(this.tipPercentage))
+      .div(PRECISION);
+  }
+
   /**
    *
    * @param {{from?: SignerWithAddress,
@@ -138,9 +164,9 @@ class Seed {
    *          defaultClassParameters?: [BigNumber | string, number, number],
    *          permissionedSeed?: boolean,
    *          allowlist?: Address[],
-   *          tipping?: [BigNumber | string, number, number]
+   *          tip?: [BigNumber | string, number, number]
    *         }} params
-   * @returns {this}
+   * @returns {Promise<this>}
    */
   async initialize(params = {}) {
     if (!params.from) params.from = await getRootSigner();
@@ -163,7 +189,7 @@ class Seed {
     this.price = deployment[4];
     this.startTime = deployment[5][0];
     this.endTime = deployment[5][1];
-    this.classes.push(deployment[6]);
+    this.classes.push([EMPTY32BYTES, ...deployment[6]]);
     this.permissionedSeed = deployment[7];
     this.allowlist = deployment[8];
     this.tipPercentage = deployment[9][0];
@@ -234,7 +260,8 @@ class Seed {
   /**
    * @param {{from?: SignerWithAddress,
    *          numberOfRandomClasses?: number,
-   *          classesParameters?: {class1?: {}, class2?: {}, class3?: {}}
+   *          classesParameters?: {class1?: ContributorClassParams,
+   *          class2?: ContributorClassParams, class3?: ContributorClassParams}
    *        }} params
    */
   async addClassesAndAllowlists(params = {}) {
@@ -250,6 +277,16 @@ class Seed {
         types.SEED_ADD_CLASS_AND_WHITELIST,
         params
       );
+    }
+    for (let i = 0; i < functionParams.length; i++) {
+      const classParams = [
+        functionParams[0][i],
+        functionParams[1][i],
+        functionParams[2][i],
+        functionParams[3][i],
+        functionParams[4][i],
+      ];
+      this.classes.push(classParams);
     }
 
     await this.instance
@@ -277,16 +314,34 @@ class Seed {
   async claim(params = {}) {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
     if (!params.claimAmount)
-      params.claimAmount = await this.calculateClaim(params);
+      params.claimAmount = await this.calculateClaimFunder(params);
     return await this.instance.claim(params.from.address, params.claimAmount);
   }
 
   /**
    * @param {{from?: SignerWithAddress}} params
    */
-  async calculateClaim(params = {}) {
+  async claimTip(params = {}) {
+    if (!params.from) params.from = await getRootSigner();
+    return await this.instance.connect(params.from).claimTip();
+  }
+
+  /**
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async calculateClaimFunder(params = {}) {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
-    return await this.instance.calculateClaim(params.from.address);
+    return await this.instance.callStatic.calculateClaimFunder(
+      params.from.address
+    );
+  }
+
+  async calculateClaimBeneficiary() {
+    return await this.instance.callStatic.calculateClaimBeneficiary();
+  }
+
+  async getAllClasses() {
+    return await this.instance.callStatic.getAllClasses();
   }
 }
 

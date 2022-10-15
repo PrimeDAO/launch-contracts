@@ -45,6 +45,15 @@
  */
 
 /**
+ * @typedef {Object} Tip
+ * @property {BigNumber} tipAmount
+ * @property {BigNumber} vestingCliff
+ * @property {BigNumber} vestingDuration
+ * @property {BigNumber} tipAmount
+ * @property {BigNumber} totalClaimed
+ */
+
+/**
  * @typedef {Object} ContributorClassParams
  * @property {string=} className
  * @property {string=} classCap
@@ -78,7 +87,7 @@
  * @property {SignerWithAddress=} from -
  * @property {Address=} newOwner -
  * @property {Address=} seedAddress -
- * @property {*=} tipping - [tipPercentage, tipVestingCliff]
+ * @property {*=} tip - [tipPercentage, tipVestingCliff]
  * @property {Array<number, number>=} startAndEndTime - [startTime, endTime]
  * @property {*=} defaultClassParameters -
  * @property {Array<Address, Address>=} tokenAddresses - [seedTokenAddress, seedTokenAddress]
