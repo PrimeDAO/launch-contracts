@@ -117,7 +117,7 @@ contract Seed {
         _;
     }
 
-    modifier live() {
+    modifier isLive() {
         require(
             !closed && block.timestamp < vestingStartTime,
             "Seed: sale not live"
@@ -276,7 +276,7 @@ contract Seed {
         uint256 _individualCap,
         uint256 _vestingCliff,
         uint256 _vestingDuration
-    ) external classRestriction(_classCap, _individualCap) onlyAdmin live {
+    ) external classRestriction(_classCap, _individualCap) onlyAdmin isLive {
         require(_class < classes.length, "Seed: incorrect class chosen");
 
         classes[_class].className = _className;
@@ -325,7 +325,6 @@ contract Seed {
             isFunded = true;
         }
 
-        // fundingAmount is an amount of fundingTokens required to buy _seedAmount of SeedTokens
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
         // total fundingAmount should not be greater than the hardCap
         require(
@@ -514,7 +513,7 @@ contract Seed {
     )
         external
         onlyAdmin
-        live
+        isLive
         classBatchRestrictions(
             _classNames,
             _classCaps,
@@ -558,7 +557,7 @@ contract Seed {
     function allowlist(address[] memory _buyers, uint8[] memory _classes)
         external
         onlyAdmin
-        live
+        isLive
     {
         if (permissionedSeed) {
             _addAddressesToAllowlist(_buyers);
@@ -611,7 +610,7 @@ contract Seed {
      * @dev                     Remove address from allowlist.
      * @param _buyer             Address which needs to be un-allowlisted
      */
-    function unAllowlist(address _buyer) external onlyAdmin live {
+    function unAllowlist(address _buyer) external onlyAdmin isLive {
         require(permissionedSeed == true, "Seed: seed is not permissioned");
 
         funders[_buyer].allowlist = false;
