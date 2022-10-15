@@ -131,6 +131,27 @@ class Seed {
       .div(BigNumber.from(this.price))
       .mul(BigNumber.from(PRECISION.toString()));
   }
+
+  /**
+   * @dev The TotalBuyableSeed is calculated inside the Seed.initialize() function
+   * @returns {BigNumber}
+   */
+  calculateTotalBuyableSeed() {
+    return BigNumber.from(this.hardCap)
+      .mul(BigNumber.from(PRECISION))
+      .div(BigNumber.from(this.price));
+  }
+
+  /**
+   * @dev The tipAmount is calculated inside the Seed.initialize() function
+   * @returns {BigNumber}
+   */
+  calculateTipAmount() {
+    return BigNumber.from(this.calculateTotalBuyableSeed())
+      .mul(BigNumber.from(this.tipPercentage))
+      .div(PRECISION);
+  }
+
   /**
    *
    * @param {{from?: SignerWithAddress,

@@ -29,7 +29,6 @@ const {
   types,
   EMPTY32BYTES,
   classTypes,
-  PRECISION,
 } = require("./helpers/constants/constants");
 const {
   tokenAmountToPrecisionNormalizedFloat,
@@ -166,11 +165,8 @@ describe("> Contract: Seed", () => {
           );
         });
         it("should calculate correct totalBuyableAmount", async () => {
-          const hardCap = Seed_permissonless.hardCap;
-          const price = Seed_permissonless.price;
-          const totalBuyableSeed = BigNumber.from(hardCap)
-            .mul(BigNumber.from(PRECISION))
-            .div(BigNumber.from(price));
+          const totalBuyableSeed =
+            Seed_permissonless.calculateTotalBuyableSeed();
 
           expect(await Seed_permissonless.instance.totalBuyableSeed()).to.equal(
             totalBuyableSeed
@@ -179,26 +175,14 @@ describe("> Contract: Seed", () => {
         it("should calculate correct tipAmount", async () => {
           /**@type {Tip}*/
           const tip = await Seed_permissonless.getTip();
-          const hardCap = Seed_permissonless.hardCap;
-          const price = Seed_permissonless.price;
-          const totalBuyableSeed = BigNumber.from(hardCap)
-            .mul(BigNumber.from(PRECISION))
-            .div(BigNumber.from(price));
-          const tipAmount = BigNumber.from(totalBuyableSeed)
-            .mul(BigNumber.from(Seed_permissonless.tipPercentage))
-            .div(PRECISION);
+          const tipAmount = Seed_permissonless.calculateTipAmount();
 
           expect(tip.tipAmount).to.equal(tipAmount);
         });
         it("should calculate seedAmountRequired", async () => {
-          const hardCap = Seed_permissonless.hardCap;
-          const price = Seed_permissonless.price;
-          const totalBuyableSeed = BigNumber.from(hardCap)
-            .mul(BigNumber.from(PRECISION))
-            .div(BigNumber.from(price));
-          const tipAmount = BigNumber.from(totalBuyableSeed)
-            .mul(BigNumber.from(Seed_permissonless.tipPercentage))
-            .div(PRECISION);
+          const totalBuyableSeed =
+            Seed_permissonless.calculateTotalBuyableSeed();
+          const tipAmount = Seed_permissonless.calculateTipAmount();
 
           expect(await Seed_permissonless.getSeedAmoundRequired()).to.equal(
             tipAmount.add(totalBuyableSeed)
@@ -229,7 +213,6 @@ describe("> Contract: Seed", () => {
       it("should set addresses to allowlist", async () => {
         funder1 = await Seed_permissoned.getFunder(buyer1.address);
         funder2 = await Seed_permissoned.getFunder(buyer2.address);
-
         expect(funder1.allowlist).to.be.true;
         expect(funder2.allowlist).to.be.true;
       });
@@ -269,11 +252,7 @@ describe("> Contract: Seed", () => {
         expect(tip.vestingDuration).to.equal(0);
       });
       it("should calculate correct seedAmountRequired", async () => {
-        const hardCap = Seed_noTip.hardCap;
-        const price = Seed_noTip.price;
-        const totalBuyableSeed = BigNumber.from(hardCap)
-          .mul(BigNumber.from(PRECISION))
-          .div(BigNumber.from(price));
+        const totalBuyableSeed = Seed_noTip.calculateTotalBuyableSeed();
 
         expect(await Seed_noTip.getSeedAmoundRequired()).to.equal(
           totalBuyableSeed
