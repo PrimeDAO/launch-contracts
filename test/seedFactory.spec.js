@@ -17,8 +17,8 @@ const { getTokenAmount } = require("./helpers/constants/TypesConverter");
 const { types } = require("./helpers/constants/constants");
 const { SEVEN_DAYS } = require("./helpers/constants/time.js");
 /**
- * @typedef {import("./helpers/types/types").SeedFactory} SeedFactory
- * @typedef {import("./helpers/types/types").Seed} Seed
+ * @typedef {import("../lib/types/types").SeedFactory} SeedFactory
+ * @typedef {import("../lib/types/types").Seed} Seed
  */
 
 describe("> Contract: SeedFactory", () => {

@@ -9,10 +9,10 @@ const {
 const { BigNumber } = require("ethers");
 
 /**
- * @typedef {import("../../types/types").ContributorClassParams} ContributorClassParams
- * @typedef {import("../../types/types").SignerWithAddress} SignerWithAddress
- * @typedef {import("../../types/types").Contract} Contract
- * @typedef {import("../../types/types").Address} Address
+ * @typedef {import("../../../../lib/types/types").ContributorClassParams} ContributorClassParams
+ * @typedef {import("../../../../lib/types/types").SignerWithAddress} SignerWithAddress
+ * @typedef {import("../../../../lib/types/types").Contract} Contract
+ * @typedef {import("../../../../lib/types/types").Address} Address
  */
 
 class Seed {

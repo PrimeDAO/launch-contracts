@@ -1,7 +1,7 @@
 //@ts-check
 const { types } = require("../../../constants/constants");
 const { ContractDeployer } = require("../../ContractDeployer");
-/** @typedef {import("../../../types/types.js").Contract} Contract */
+/** @typedef {import("../../../../../lib/types/types").Contract} Contract */
 
 /**
  * Deploys a new SeedFactory with different configuration

@@ -1,8 +1,8 @@
 const { formatUnits } = require("ethers/lib/utils");
 const { ethers } = require("hardhat");
 /**
- * @typedef {import("../types/types").BigNumber} BigNumber
- * @typedef {import("../types/types").Contract} Contract
+ * @typedef {import("../../../lib/types/types").BigNumber} BigNumber
+ * @typedef {import("../../../lib/types/types").Contract} Contract
  */
 
 const {

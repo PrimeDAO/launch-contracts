@@ -1,8 +1,8 @@
 const { ethers } = require("hardhat");
 const { getRootSigner } = require("../accounts/signers");
 /**
- * @typedef {import("../types/types").SignerWithAddress} SignerWithAddress
- * @typedef {import("../types/types").Contract} Contract
+ * @typedef {import(".../../../lib/types/types").SignerWithAddress} SignerWithAddress
+ * @typedef {import("../../../lib/types/types").Contract} Contract
  */
 
 /**
