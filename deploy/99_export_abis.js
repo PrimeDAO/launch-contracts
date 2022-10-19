@@ -3,7 +3,7 @@ const path = require("path");
 const sharedAbiConfig = require("../lib/configs/sharedAbiConfig");
 
 const networks = [
-  "rinkeby",
+  "goerli",
   "mainnet",
   "kovan",
   "arbitrum",

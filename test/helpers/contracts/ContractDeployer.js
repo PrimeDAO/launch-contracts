@@ -5,9 +5,9 @@ const { SeedFactory } = require("./seed/SeedFactory");
 const { getConvertedParams } = require("../params/constructParams");
 const { types, deploy } = require("../constants/constants");
 /**
- * @typedef {import("../types/types").ParamsType} ParamsType
- * @typedef {import("../types/types.js").Contract} Contract
- * @typedef {import("../types/types").DeployParams} DeployParams
+ * @typedef {import("../../../lib/types/types").ParamsType} ParamsType
+ * @typedef {import("../../../lib/types/types").Contract} Contract
+ * @typedef {import("../../../lib/types/types").DeployParams} DeployParams
  */
 
 class ContractDeployer {

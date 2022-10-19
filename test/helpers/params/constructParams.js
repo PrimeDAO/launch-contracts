@@ -23,11 +23,11 @@ const {
   fundingTokenParams,
 } = require("../constants/constants");
 /**
- * @typedef {import("../types/types.js").TestParams} TestParams
- * @typedef {import("../types/types.js").SeedInitParams} SeedInitParams
- * @typedef  {import("../types/types.js").AllowlistParams} AllowlistParams
- * @typedef  {import("../types/types.js").ContributorClassFromContract} ContributorClassFromContract
- * @typedef  {import("../types/types.js").GetClassParamsFromTypeParams} GetClassParamsFromTypeParams
+ * @typedef {import("../../../lib/types/types").TestParams} TestParams
+ * @typedef {import("../../../lib/types/types").SeedInitParams} SeedInitParams
+ * @typedef  {import("../../../lib/types/types").AllowlistParams} AllowlistParams
+ * @typedef  {import("../../../lib/types/types").ContributorClassFromContract} ContributorClassFromContract
+ * @typedef  {import("../../../lib/types/types").GetClassParamsFromTypeParams} GetClassParamsFromTypeParams
  * @typedef {import("hardhat-deploy/dist/types.js").Address} Address
  */
 

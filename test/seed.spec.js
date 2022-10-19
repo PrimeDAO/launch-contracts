@@ -25,20 +25,17 @@ const { getConvertedParams } = require("./helpers/params/constructParams");
 const {
   SeedBuilder,
 } = require("./helpers/contracts/seed/builders/SeedBuilder");
-const {
-  types,
-  classTypes,
-} = require("./helpers/constants/constants");
+const { types, classTypes } = require("./helpers/constants/constants");
 const {
   tokenAmountToPrecisionNormalizedFloat,
 } = require("./helpers/constants/TypesConverter");
 /**
- * @typedef {import("./helpers/types/types.js").Seed} Seed
- * @typedef {import("./helpers/types/types").ContributorClassFromContract} ContributorClassFromContract
- * @typedef {import("./helpers/types/types").FunderPortfolio} FunderPortfolio
- * @typedef {import("./helpers/types/types").Tip} Tip
- * @typedef {import("./helpers/types/types").AllowlistParams} AllowlistParams
- * @typedef {import("./helpers/types/types").ClassesParameters} ClassesParameters
+ * @typedef {import("../lib/types/types").Seed} Seed
+ * @typedef {import("../lib/types/types").ContributorClassFromContract} ContributorClassFromContract
+ * @typedef {import("../lib/types/types").FunderPortfolio} FunderPortfolio
+ * @typedef {import("../lib/types/types").Tip} Tip
+ * @typedef {import("../lib/types/types").AllowlistParams} AllowlistParams
+ * @typedef {import("../lib/types/types").ClassesParameters} ClassesParameters
  */
 
 async function convertSeedToComplete(Seed) {

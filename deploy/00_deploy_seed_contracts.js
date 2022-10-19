@@ -1,21 +1,10 @@
-const { network } = require("hardhat");
+const { getSafeAddress } = require("../lib/params/safeAddresses");
 
-const deployFunction = async ({ getNamedAccounts, deployments }) => {
-  const { deploy, execute } = deployments;
+const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
+  const { deploy } = deployments;
   const { root } = await getNamedAccounts();
-  let safeInstance;
 
-  // Ethereum Mainnet safe
-  // https://github.com/PrimeDAO/contracts-v2/blob/main/deployments/mainnet/Safe.json
-
-  const networkName = network.name;
-  switch (networkName) {
-    case "mainnet":
-      safeInstance = "0x52F50f557704938Df066EC4Db7426D66538E7796";
-      break;
-    default:
-      safeInstance = root;
-  }
+  const safeAddress = getSafeAddress();
 
   await deploy("SeedFactory", {
     from: root,
@@ -29,18 +18,11 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     log: true,
   });
 
-  await execute(
-    "SeedFactory",
-    { from: root, log: true, gasPrice: 10000000000 },
-    "setMasterCopy",
-    seedAddress
-  );
-  await execute(
-    "SeedFactory",
-    { from: root, log: true, gasPrice: 10000000000 },
-    "transferOwnership",
-    safeInstance
-  );
+  const seedFactoryInstance = await ethers.getContract("SeedFactory");
+
+  await seedFactoryInstance.setMasterCopy(seedAddress);
+
+  await seedFactoryInstance.transferOwnership(safeAddress);
 };
 
 module.exports = deployFunction;
