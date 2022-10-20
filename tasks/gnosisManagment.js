@@ -1,5 +1,5 @@
 const { task } = require("hardhat/config");
-const { api } = require("./utils/gnosis.js");
+const { api } = require("../lib/gnosis");
 
 // Find safe address for right network in ../lib/params/safeAddresses.js or inside the deployments
 // folder under the respective network
