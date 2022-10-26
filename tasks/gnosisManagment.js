@@ -33,3 +33,17 @@ task("addDelegate", "adds delegate to Gnosis Safe")
       return;
     }
   );
+
+task(
+  "getDelegates",
+  "returns the addresses of the delegates, and prints it to the console"
+)
+  .addParam("safe", "address of the safe")
+  .setAction(async ({ safe: safeAddress }) => {
+    console.log(
+      `The following addresses are delegates for the safe with address ${safeAddress}:`
+    );
+    const gnosis = api(safeAddress, network.name);
+    const delegates = await gnosis.getDelegates();
+    console.log(delegates);
+  });
