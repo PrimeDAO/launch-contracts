@@ -315,7 +315,7 @@ class Seed {
     if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
     if (!params.claimAmount)
       params.claimAmount = await this.calculateClaimFunder(params);
-    return await this.instance.claim(params.from.address, params.claimAmount);
+    return await this.instance.connect(params.from).claim(params.claimAmount);
   }
 
   /**
