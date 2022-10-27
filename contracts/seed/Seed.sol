@@ -491,13 +491,14 @@ contract Seed {
             );
             // subtract tip from Seed tokens
             uint256 retrievableSeedAmount = seedToken.balanceOf(address(this)) -
-                tip.tipAmount;
+                (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
             uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
-                totalSeedDistributed;
+                (totalSeedDistributed - seedClaimed) -
+                (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
