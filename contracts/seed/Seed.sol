@@ -106,6 +106,14 @@ contract Seed {
         uint256 totalClaimed;
     }
 
+    modifier claimable() {
+        require(
+            endTime < block.timestamp || maximumReached || closed,
+            "Seed: the distribution has not yet finished"
+        );
+        _;
+    }
+
     modifier onlyAdmin() {
         require(msg.sender == admin, "Seed: caller should be admin");
         _;
@@ -368,12 +376,8 @@ contract Seed {
      * @dev                     Claim vested seed tokens.
      * @param _claimAmount      The amount of seed token a users wants to claim.
      */
-    function claim(uint256 _claimAmount) external {
+    function claim(uint256 _claimAmount) external claimable {
         require(minimumReached, "Seed: minimum funding amount not met");
-        require(
-            endTime < block.timestamp || maximumReached,
-            "Seed: the distribution has not yet finished"
-        );
 
         uint256 amountClaimable;
 
@@ -394,12 +398,7 @@ contract Seed {
         emit TokensClaimed(msg.sender, _claimAmount);
     }
 
-    function claimTip() external returns (uint256) {
-        require(
-            endTime < block.timestamp || maximumReached,
-            "Seed: the distribution has not yet finished"
-        );
-
+    function claimTip() external claimable returns (uint256) {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaimBeneficiary();
@@ -466,6 +465,11 @@ contract Seed {
     function close() external onlyAdmin {
         // close seed token distribution
         require(!closed, "Seed: should not be closed");
+
+        if (block.timestamp < vestingStartTime) {
+            vestingStartTime = block.timestamp;
+        }
+
         closed = true;
         paused = false;
     }
