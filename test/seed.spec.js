@@ -1186,6 +1186,53 @@ describe("> Contract: Seed", () => {
         );
       });
     });
+    describe("# when buying exeeds hardCap", () => {
+      /**@type {Seed}*/
+      let Seed_fundedLowHardCap;
+      /**@type {FunderPortfolio}*/
+      let funder;
+      before(async () => {
+        ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
+
+        await Seed_fundedLowHardCap.setAllowlist({
+          allowlist: [buyer2.address],
+          classes: [1],
+        });
+        await increaseTime(ONE_DAY);
+        await Seed_fundedLowHardCap.buy();
+      });
+      it("should adjust the buyAmount", async () => {
+        funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+        const fundingCollected =
+          await Seed_fundedLowHardCap.getFundingCollected();
+
+        // Check that funder has no funding tokens contributed
+        expect(funder.fundingAmount).to.equal(0);
+
+        const contributableFundingAmount = BigNumber.from(
+          Seed_fundedLowHardCap.hardCap
+        ).sub(BigNumber.from(fundingCollected));
+
+        // Check that buyable amount is 2 in funding tokens before hardCap is reached
+        expect(contributableFundingAmount).to.equal(
+          Seed_fundedLowHardCap.getFundingAmount("2")
+        );
+
+        // Set funding amount to 4 funding tokens, exeeding the hardCap
+        const params = {
+          from: buyer2,
+          fundingAmount: Seed_fundedLowHardCap.getFundingAmount("4"),
+        };
+
+        await expect(Seed_fundedLowHardCap.buy(params)).to.not.be.reverted;
+
+        // Get FunderPortfolio again
+        funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+
+        // expect the fundingAmount to be adjusted to amount still able to contribute
+        expect(funder.fundingAmount).to.equal(contributableFundingAmount);
+      });
+    });
     describe("# when the user tries to buy 0 tokens", () => {
       before(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));

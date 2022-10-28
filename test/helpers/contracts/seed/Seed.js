@@ -11,6 +11,7 @@ const { BigNumber } = require("ethers");
 /**
  * @typedef {import("../../../../lib/types/types").ContributorClassParams} ContributorClassParams
  * @typedef {import("../../../../lib/types/types").SignerWithAddress} SignerWithAddress
+ * @typedef {import("../../../../lib/types/types").FunderPortfolio} FunderPortfolio
  * @typedef {import("../../../../lib/types/types").Contract} Contract
  * @typedef {import("../../../../lib/types/types").Address} Address
  */
@@ -43,6 +44,11 @@ class Seed {
     this.instance = instance;
   }
 
+  /**
+   *
+   * @param {Address} address
+   * @returns {Promise<FunderPortfolio>}
+   */
   async getFunder(address) {
     return await this.instance.funders(address);
   }

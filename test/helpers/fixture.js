@@ -5,7 +5,8 @@ const {
   SeedFactoryBuilder,
 } = require("./contracts/seed/builders/SeedFactoryBuilder.js");
 const { fundSignersAndSeed } = require("./accounts/signers");
-const { TEN_DAYS } = require("./constants/time");
+const { TEN_DAYS, TWENTY_DAYS } = require("./constants/time");
+
 
 async function launchFixture() {
   const Seed_initialized = await SeedBuilder.createInit();
@@ -33,6 +34,19 @@ async function launchFixture() {
   );
   await fundSignersAndSeed({
     Seed: Seed_fundedLowHardCap,
+  });
+  const classesParams = {
+    class1: {
+      className: "contributors",
+      classCap: Seed_fundedLowHardCap.getFundingAmount("9").toString(),
+      individualCap: Seed_fundedLowHardCap.getFundingAmount("5").toString(),
+      vestingCliff: TEN_DAYS.toNumber(),
+      vestingDuration: TWENTY_DAYS.toNumber(),
+      allowlist: [[]],
+    },
+  };
+  await Seed_fundedLowHardCap.addClassesAndAllowlists({
+    classesParameters: classesParams,
   });
 
   const Seed_highNumClasses = await SeedBuilder.createInit();

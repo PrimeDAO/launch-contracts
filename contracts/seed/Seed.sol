@@ -325,12 +325,12 @@ contract Seed {
             isFunded = true;
         }
 
+        if ((fundingCollected + _fundingAmount) > hardCap) {
+            _fundingAmount = hardCap - fundingCollected;
+        }
+
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
         // total fundingAmount should not be greater than the hardCap
-        require(
-            fundingCollected + _fundingAmount <= hardCap,
-            "Seed: amount exceeds contract sale hardCap"
-        );
 
         fundingCollected += _fundingAmount;
         classes[funder.class].classFundingCollected += _fundingAmount;
