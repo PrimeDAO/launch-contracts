@@ -366,10 +366,9 @@ contract Seed {
 
     /**
      * @dev                     Claim vested seed tokens.
-     * @param _funder           Address of funder to calculate seconds and amount claimable
      * @param _claimAmount      The amount of seed token a users wants to claim.
      */
-    function claim(address _funder, uint256 _claimAmount) external {
+    function claim(uint256 _claimAmount) external {
         require(minimumReached, "Seed: minimum funding amount not met");
         require(
             endTime < block.timestamp || maximumReached,
@@ -378,20 +377,21 @@ contract Seed {
 
         uint256 amountClaimable;
 
-        amountClaimable = calculateClaimFunder(_funder);
+        amountClaimable = calculateClaimFunder(msg.sender);
         require(amountClaimable > 0, "Seed: amount claimable is 0");
+
         require(
             amountClaimable >= _claimAmount,
             "Seed: request is greater than claimable amount"
         );
 
-        funders[_funder].totalClaimed += _claimAmount;
+        funders[msg.sender].totalClaimed += _claimAmount;
 
         seedClaimed += _claimAmount;
 
-        seedToken.safeTransfer(_funder, _claimAmount);
+        seedToken.safeTransfer(msg.sender, _claimAmount);
 
-        emit TokensClaimed(_funder, _claimAmount);
+        emit TokensClaimed(msg.sender, _claimAmount);
     }
 
     function claimTip() external returns (uint256) {
@@ -484,20 +484,22 @@ contract Seed {
             closed || maximumReached || block.timestamp >= endTime,
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
+        uint256 seedTokenBalans = seedToken.balanceOf(address(this));
         if (!minimumReached) {
             require(
-                seedToken.balanceOf(address(this)) > 0,
+                seedTokenBalans > 0,
                 "Seed: Failed to transfer Seed Token" // ToDo: better error message
             );
             // subtract tip from Seed tokens
-            uint256 retrievableSeedAmount = seedToken.balanceOf(address(this)) -
-                tip.tipAmount;
+            uint256 retrievableSeedAmount = seedTokenBalans -
+                (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
-            uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
-                totalSeedDistributed;
+            uint256 amountToTransfer = seedTokenBalans -
+                (totalSeedDistributed - seedClaimed) -
+                (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
         }
     }
