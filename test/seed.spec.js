@@ -2464,6 +2464,89 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: withdraw()", () => {
+    /**@type {Seed} */
+    let Seed_fundedLowHardCap;
+    beforeEach(async () => {
+      ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
+      await Seed_fundedLowHardCap.setAllowlist({
+        allowlist: [buyer2.address],
+        classes: [1],
+      });
+      await increaseTimeTo(Seed_fundedLowHardCap.startTime);
+    });
+    describe("# when not called by admin", () => {
+      it("should revert", async () => {
+        await expect(
+          Seed_fundedLowHardCap.withdraw({ from: buyer1 })
+        ).to.be.revertedWith("Seed: caller should be admin");
+      });
+    });
+    describe("# when softCap has not been reached", () => {
+      it("should revert", async () => {
+        await expect(Seed_fundedLowHardCap.withdraw()).to.be.revertedWith(
+          "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
+        );
+      });
+    });
+    describe("# when softCap has been reached and Seed is still live", () => {
+      it("should withdraw the right amount", async () => {
+        // Check Admin funding token balance to be 0
+        expect(
+          await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
+            admin.address
+          )
+        ).to.equal(0);
+
+        // Buy to reach softCap
+        await Seed_fundedLowHardCap.buy();
+
+        // Get funding collected amount
+        const fundingCollected =
+          await Seed_fundedLowHardCap.getFundingCollected();
+
+        await expect(Seed_fundedLowHardCap.withdraw()).to.not.be.reverted;
+
+        // expect Admin funding token balance to be == funding collected i.e. it has withdrawn all the tokens
+        expect(
+          await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
+            admin.address
+          )
+        ).to.equal(fundingCollected);
+      });
+    });
+    describe("# when hardCap reached", () => {
+      it("should withdraw the right amount", async () => {
+        // Check Admin funding token balance to be 0
+        expect(
+          await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
+            admin.address
+          )
+        ).to.equal(0);
+
+        // Buy to reach hardcap
+        await Seed_fundedLowHardCap.buy();
+        await Seed_fundedLowHardCap.buy({
+          from: buyer2,
+          fundingAmount: Seed_fundedLowHardCap.getFundingAmount("2"),
+        });
+
+        // Get funding collected amount
+        const fundingCollected =
+          await Seed_fundedLowHardCap.getFundingCollected();
+
+        await expect(Seed_fundedLowHardCap.withdraw()).to.not.be.reverted;
+
+        // expect Admin funding token balance to be == funding collected i.e. it has withdrawn all the tokens
+        expect(
+          await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
+            admin.address
+          )
+        ).to.equal(fundingCollected);
+      });
+    });
+  });
+
   describe("$ Function: retrieveFundingTokens()", () => {});
   describe("$ Function: pause()", () => {
     // Will be found in other tests
@@ -2471,7 +2554,6 @@ describe("> Contract: Seed", () => {
   describe("$ Function: unpause()", () => {});
   describe("$ Function: close()", () => {});
   describe("$ Function: unwhitelist()", () => {});
-  describe("$ Function: withdraw()", () => {});
   describe("$ Function: updateMetadata()", () => {});
   describe("$ Function: seedAmountForFunder()", () => {});
 });
