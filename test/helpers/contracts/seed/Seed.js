@@ -63,6 +63,10 @@ class Seed {
     return await this.instance.isFunded();
   }
 
+  async getClosedStatus() {
+    return await this.instance.closed();
+  }
+
   async getVestingStartTime() {
     return await this.instance.vestingStartTime();
   }
@@ -77,6 +81,10 @@ class Seed {
 
   async getTotalFunderCount() {
     return await this.instance.totalFunderCount();
+  }
+
+  async getTotalSeedDistributed() {
+    return await this.instance.totalSeedDistributed();
   }
 
   async getSeedClaimed() {
@@ -151,6 +159,38 @@ class Seed {
     return BigNumber.from(this.calculateTotalBuyableSeed())
       .mul(BigNumber.from(this.tipPercentage))
       .div(PRECISION);
+  }
+
+  /**
+   *
+   * @dev See calculation in Seed.sol -> function retireveSeedTokens() for reference
+   * @param {{softCap:boolean}} params
+   * @returns {Promise<BigNumber>}
+   */
+  async calculateRetrieveSeedAmount(params) {
+    const tip = await this.getTip();
+    if (!params.softCap) {
+      return BigNumber.from(
+        await this.seedTokenInstance.balanceOf(this.instance.address)
+      ).sub(
+        BigNumber.from(tip.tipAmount).sub(BigNumber.from(tip.totalClaimed))
+      );
+    } else {
+      const totalSeedDistributed = BigNumber.from(
+        this.calculateTotalBuyableSeed()
+      ).sub(BigNumber.from(await this.getSeedRemainder()));
+      const totalDistributedMinClaimed = totalSeedDistributed.sub(
+        BigNumber.from(await this.getSeedClaimed())
+      );
+      const tipAmountMinClaimed = BigNumber.from(tip.tipAmount).sub(
+        BigNumber.from(tip.totalClaimed)
+      );
+      return BigNumber.from(
+        await this.seedTokenInstance.balanceOf(this.instance.address)
+      )
+        .sub(totalDistributedMinClaimed)
+        .sub(tipAmountMinClaimed);
+    }
   }
 
   /**
@@ -342,6 +382,18 @@ class Seed {
 
   async getAllClasses() {
     return await this.instance.callStatic.getAllClasses();
+  }
+
+  /**
+   *
+   * @param {{from?: Address, refundReceiver?: Address}} params
+   */
+  async retrieveSeedTokens(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    if (!params.refundReceiver) params.refundReceiver = params.from.address; // admin
+    await this.instance
+      .connect(params.from)
+      .retrieveSeedTokens(params.refundReceiver);
   }
 }
 

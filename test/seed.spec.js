@@ -38,6 +38,9 @@ const {
  * @typedef {import("../lib/types/types").ClassesParameters} ClassesParameters
  */
 
+/**
+ * @param {Seed} Seed
+ */
 async function convertSeedToComplete(Seed) {
   await increaseTime(ONE_DAY);
   await Seed.buy();
@@ -2001,7 +2004,7 @@ describe("> Contract: Seed", () => {
         },
       };
     });
-    describe(" when only default class", () => {
+    describe("# when only default class", () => {
       it("should return class", async () => {
         defaultClass = await Seed_funded.getClass(classTypes.CLASS_DEFAULT);
         const {
@@ -2025,7 +2028,7 @@ describe("> Contract: Seed", () => {
         );
       });
     });
-    describe(" when multiple classes", () => {
+    describe("# when multiple classes", () => {
       it("should return classes", async () => {
         await expect(
           Seed_funded.addClassesAndAllowlists({
@@ -2084,7 +2087,336 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: retrieveSeedTokens()", () => {});
+  describe("$ Function: retrieveSeedTokens()", () => {
+    /** @type {Seed}*/
+    let Seed_fundedLowHardCap;
+    /** @type {Seed}*/
+    let Seed_shortTipVesting;
+    beforeEach(async () => {
+      ({ Seed_fundedLowHardCap, Seed_shortTipVesting } = await loadFixture(
+        launchFixture
+      ));
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(
+          Seed_fundedLowHardCap.retrieveSeedTokens({ from: buyer1 })
+        ).to.be.revertedWith("Seed: caller should be admin");
+      });
+    });
+    describe("# when softCap reached but endTime not reached", () => {
+      it("should revert", async () => {
+        await increaseTime(ONE_DAY);
+        await Seed_fundedLowHardCap.buy();
+        expect(await Seed_fundedLowHardCap.getMinimumReached()).to.be.true;
+        await expect(
+          Seed_fundedLowHardCap.retrieveSeedTokens()
+        ).to.be.revertedWith(
+          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
+        );
+      });
+    });
+    describe("# when the Seed is closed", () => {
+      it("should retrieve Seed tokens", async () => {
+        expect(await Seed_fundedLowHardCap.getClosedStatus()).to.be.false;
+        await expect(
+          Seed_fundedLowHardCap.retrieveSeedTokens()
+        ).to.be.revertedWith(
+          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
+        );
+
+        await Seed_fundedLowHardCap.close();
+
+        await expect(Seed_fundedLowHardCap.retrieveSeedTokens()).to.not.be
+          .reverted;
+      });
+    });
+    describe("# when the endTime is reached", () => {
+      it("should retrieve Seed tokens", async () => {
+        await expect(
+          Seed_fundedLowHardCap.retrieveSeedTokens()
+        ).to.be.revertedWith(
+          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
+        );
+
+        await increaseTime(Seed_fundedLowHardCap.endTime);
+
+        await expect(Seed_fundedLowHardCap.retrieveSeedTokens()).to.not.be
+          .reverted;
+      });
+    });
+    describe("# when the hardCap is reached", () => {
+      it("should retrieve Seed tokens", async () => {
+        await expect(
+          Seed_fundedLowHardCap.retrieveSeedTokens()
+        ).to.be.revertedWith(
+          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
+        );
+
+        await increaseTime(ONE_DAY);
+        // Reach hardcap
+        await Seed_fundedLowHardCap.buy();
+        await Seed_fundedLowHardCap.buy({
+          from: buyer2,
+          fundingAmount: Seed_fundedLowHardCap.getFundingAmount("2"),
+        });
+
+        await expect(Seed_fundedLowHardCap.retrieveSeedTokens()).to.not.be
+          .reverted;
+      });
+    });
+    describe("# when retrieving Seed gets called twice", () => {
+      it("should retrieve tokens again", async () => {
+        await Seed_fundedLowHardCap.close();
+
+        await expect(Seed_fundedLowHardCap.retrieveSeedTokens()).to.not.be
+          .reverted;
+        await expect(Seed_fundedLowHardCap.retrieveSeedTokens()).to.not.be
+          .reverted;
+      });
+    });
+    describe("# given Seed has ended and softCap is not reached", () => {
+      describe("» when Seed has never been funded by the admin", () => {
+        it("should revert", async () => {
+          /** @type {Seed}*/
+          const Seed_unfunded = await SeedBuilder.createInit();
+          await increaseTime(Seed_unfunded.endTime);
+
+          await expect(Seed_unfunded.retrieveSeedTokens()).to.be.revertedWith(
+            "Seed: Failed to transfer Seed Token"
+          );
+        });
+      });
+      describe("» when part of the tip has been claimed", () => {
+        it("should return the right amount", async () => {
+          // Reach endTime
+          await increaseTime(Seed_shortTipVesting.endTime);
+
+          // Admin should have no Seed tokens before retrieving them
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(0);
+
+          // Increase time to half of tip vesting
+          await increaseTime(FIVE_DAYS);
+
+          // Claim half of tip
+          await Seed_shortTipVesting.claimTip();
+
+          const expectedSeedTokenAmount =
+            await Seed_shortTipVesting.calculateRetrieveSeedAmount({
+              softCap: false,
+            });
+
+          await expect(
+            Seed_shortTipVesting.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+      describe("» when all of the tip has been claimed ", () => {
+        it("should return the right amount", async () => {
+          // Reach end of tip vesting
+          await increaseTime(Seed_shortTipVesting.endTime);
+
+          // Increase time to end of tip vesting
+          await increaseTime(TEN_DAYS);
+
+          await Seed_shortTipVesting.claimTip();
+
+          const expectedSeedTokenAmount =
+            await Seed_shortTipVesting.calculateRetrieveSeedAmount({
+              softCap: false,
+            });
+
+          await expect(
+            Seed_shortTipVesting.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+    });
+    describe("# given Seed has ended and softCap has been reached", () => {
+      describe("» when part of the tip has been claimed", () => {
+        it("should return the right amount", async () => {
+          // Reach softCap and endTime
+          await convertSeedToComplete(Seed_shortTipVesting);
+
+          // Admin should have no Seed tokens before retrieving them
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(0);
+
+          // Increase time to half of tip vesting
+          await increaseTime(FIVE_DAYS);
+
+          // Claim half of tip
+          await Seed_shortTipVesting.claimTip();
+
+          const expectedSeedTokenAmount =
+            await Seed_shortTipVesting.calculateRetrieveSeedAmount({
+              softCap: true,
+            });
+
+          await expect(
+            Seed_shortTipVesting.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+      describe("» when all of the tip has been claimed ", () => {
+        it("should return the right amount", async () => {
+          // Reach softCap and endTime
+          await convertSeedToComplete(Seed_shortTipVesting);
+
+          // Admin should have no Seed tokens before retrieving them
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(0);
+
+          // Increase time to end of tip vesting
+          await increaseTime(TEN_DAYS);
+
+          // Claim  tip
+          await Seed_shortTipVesting.claimTip();
+
+          const expectedSeedTokenAmount =
+            await Seed_shortTipVesting.calculateRetrieveSeedAmount({
+              softCap: true,
+            });
+
+          await expect(
+            Seed_shortTipVesting.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+      describe("» when holders have already claimed their Seed tokens", () => {
+        it("should return the right amount", async () => {
+          // Reach softCap and endTime
+          await convertSeedToComplete(Seed_shortTipVesting);
+
+          // Admin should have no Seed tokens before retrieving them
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(0);
+
+          // Increase time to end of vesting period
+          await increaseTime(HUNDRED_DAYS);
+
+          // Claim tip and funders Seed tokens
+          await Seed_shortTipVesting.claimTip();
+          await Seed_shortTipVesting.claim();
+
+          const expectedSeedTokenAmount =
+            await Seed_shortTipVesting.calculateRetrieveSeedAmount({
+              softCap: true,
+            });
+
+          await expect(
+            Seed_shortTipVesting.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_shortTipVesting.seedTokenInstance.balanceOf(
+              admin.address
+            )
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+      describe("» when the admin has overfunded the Seed", () => {
+        it("should return the right amount", async () => {
+          /**@type {Seed} */
+          const Seed_overFunded = await SeedBuilder.create();
+          await Seed_overFunded.initialize();
+
+          // increase amount with which the seed is funded by the admin
+          const largerSeedAmountRequired = BigNumber.from(
+            Seed_overFunded.seedAmountRequired
+          ).mul(BigNumber.from(2));
+          // fund the Seed
+          await fundSignersAndSeed({
+            Seed: Seed_overFunded,
+            seedAmountRequired: largerSeedAmountRequired,
+          });
+
+          // Reach softCap and endTime
+          await convertSeedToComplete(Seed_overFunded);
+
+          // Admin should have no Seed tokens before retrieving them
+          expect(
+            await Seed_overFunded.seedTokenInstance.balanceOf(admin.address)
+          ).to.equal(0);
+
+          // Increase time to end of vesting period
+          await increaseTime(HUNDRED_DAYS);
+
+          // Claim tip and funders Seed tokens
+          await Seed_overFunded.claimTip();
+          await Seed_overFunded.claim();
+
+          const expectedSeedTokenAmount =
+            await Seed_overFunded.calculateRetrieveSeedAmount({
+              softCap: true,
+            });
+
+          await expect(
+            Seed_overFunded.retrieveSeedTokens({
+              refundReceiver: admin.address,
+            })
+          ).to.not.be.reverted;
+
+          // Check admin's balans of Seed tokens again
+          expect(
+            await Seed_overFunded.seedTokenInstance.balanceOf(admin.address)
+          ).to.equal(expectedSeedTokenAmount);
+        });
+      });
+    });
+  });
   describe("$ Function: retrieveFundingTokens()", () => {});
   describe("$ Function: pause()", () => {
     // Will be found in other tests
