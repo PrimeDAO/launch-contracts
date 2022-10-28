@@ -1577,14 +1577,14 @@ describe("> Contract: Seed", () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
       await increaseTime(ONE_DAY);
     });
-    describe("# when the softCap has not been reached", () => {
+    describe("# when the endTime has not been reached", () => {
       it("should revert", async () => {
         await expect(Seed_funded.claim()).to.be.revertedWith(
-          "Seed: minimum funding amount not met"
+          "Seed: the distribution has not yet finished"
         );
       });
     });
-    describe("# when the endTime or hardCap has not been reached ", () => {
+    describe("# when endTime reached but softCap has not been reached ", () => {
       /**@type {Seed} */
       let Seed_funded;
       before(async () => {
@@ -2000,7 +2000,6 @@ describe("> Contract: Seed", () => {
           tip = await Seed_withTip.getTip();
           tipAmount = tip.tipAmount;
           await increaseTimeTo(Seed_withTip.endTime);
-
           await expect(Seed_withTip.claimTip()).to.not.be.reverted;
 
           tip = await Seed_withTip.getTip();
