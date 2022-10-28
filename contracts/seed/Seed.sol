@@ -484,19 +484,20 @@ contract Seed {
             closed || maximumReached || block.timestamp >= endTime,
             "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
+        uint256 seedTokenBalans = seedToken.balanceOf(address(this));
         if (!minimumReached) {
             require(
-                seedToken.balanceOf(address(this)) > 0,
+                seedTokenBalans > 0,
                 "Seed: Failed to transfer Seed Token" // ToDo: better error message
             );
             // subtract tip from Seed tokens
-            uint256 retrievableSeedAmount = seedToken.balanceOf(address(this)) -
+            uint256 retrievableSeedAmount = seedTokenBalans -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
-            uint256 amountToTransfer = seedToken.balanceOf(address(this)) -
+            uint256 amountToTransfer = seedTokenBalans -
                 (totalSeedDistributed - seedClaimed) -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
