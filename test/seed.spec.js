@@ -11,7 +11,6 @@ const {
   fundSignersAndSeed,
 } = require("./helpers/accounts/signers.js");
 const {
-  ONE_DAY,
   FIVE_DAYS,
   TEN_DAYS,
   TWENTY_DAYS,
@@ -42,7 +41,7 @@ const {
  * @param {Seed} Seed
  */
 async function convertSeedToComplete(Seed) {
-  await increaseTime(ONE_DAY);
+  await increaseTimeTo(Seed.startTime);
   await Seed.buy();
   await increaseTimeTo(Seed.endTime + 1);
 }
@@ -492,10 +491,10 @@ describe("> Contract: Seed", () => {
         expect((await getCurrentTime()).toNumber()).to.be.below(
           Seed_funded.startTime
         );
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime + 1);
 
         // Check that Seed is live
-        expect((await getCurrentTime()).toNumber()).to.be.above(
+        expect((await getCurrentTime()).toNumber()).to.above(
           Seed_funded.startTime
         );
 
@@ -544,7 +543,7 @@ describe("> Contract: Seed", () => {
         );
       });
       it("should revert when ended", async () => {
-        await increaseTime(TWENTY_DAYS);
+        await increaseTimeTo(Seed_funded.endTime);
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
           "Seed: sale not live"
         );
@@ -1074,7 +1073,7 @@ describe("> Contract: Seed", () => {
     describe("# when the Seed is not active", () => {
       beforeEach(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime);
       });
       it("should revert if Seed is paused ", async () => {
         await expect(Seed_funded.buy()).to.not.be.reverted;
@@ -1098,7 +1097,7 @@ describe("> Contract: Seed", () => {
       let Seed_fundedPermissioned;
       beforeEach(async () => {
         ({ Seed_fundedPermissioned } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedPermissioned.startTime);
       });
       describe("» when a non allowlisted user tries to buy", () => {
         it("should revert", async () => {
@@ -1145,7 +1144,7 @@ describe("> Contract: Seed", () => {
       before(async () => {
         before(async () => {
           ({ Seed_funded } = await loadFixture(launchFixture));
-          await increaseTime(ONE_DAY);
+          await increaseTimeTo(Seed_funded.startTime);
         });
       });
       describe("» when a non allowlisted user tries to buy", () => {
@@ -1171,7 +1170,7 @@ describe("> Contract: Seed", () => {
       let Seed_fundedLowHardCap;
       before(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
         await Seed_fundedLowHardCap.buy();
       });
       it("should revert", async () => {
@@ -1198,7 +1197,7 @@ describe("> Contract: Seed", () => {
           allowlist: [buyer2.address],
           classes: [1],
         });
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
         await Seed_fundedLowHardCap.buy();
       });
       it("should adjust the buyAmount", async () => {
@@ -1236,7 +1235,7 @@ describe("> Contract: Seed", () => {
     describe("# when the user tries to buy 0 tokens", () => {
       before(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime);
       });
       it("should revert", async () => {
         const params = {
@@ -1254,7 +1253,7 @@ describe("> Contract: Seed", () => {
       let Seed_fundedLowHardCap;
       beforeEach(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
       });
       describe("» when buying tokens exeeds the classCap", () => {
         it("should revert", async () => {
@@ -1298,7 +1297,7 @@ describe("> Contract: Seed", () => {
         );
       });
       it("should fail if EndTime has been reached", async () => {
-        await increaseTime(FOURTY_DAYS);
+        await increaseTimeTo(Seed_notBuyable.endTime);
 
         await expect(Seed_notBuyable.buy()).to.be.revertedWith(
           "Seed: only allowed during distribution period"
@@ -1312,7 +1311,7 @@ describe("> Contract: Seed", () => {
       let Seed_initialized;
       before(async () => {
         ({ Seed_initialized } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_initialized.startTime);
       });
       it("should revert", async () => {
         await expect(Seed_initialized.buy()).to.be.revertedWith(
@@ -1327,7 +1326,7 @@ describe("> Contract: Seed", () => {
       let seedAmountBought;
       beforeEach(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime);
         buyParams = { fundingAmount: Seed_funded.getFundingAmount("10") };
         seedAmountBought = Seed_funded.getSeedAmountFromFundingAmount(
           buyParams.fundingAmount
@@ -1409,7 +1408,7 @@ describe("> Contract: Seed", () => {
       let Seed_fundedLowHardCap;
       before(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
       });
       it("should update the softCap", async () => {
         expect(await Seed_fundedLowHardCap.getMinimumReached()).to.be.false;
@@ -1422,7 +1421,8 @@ describe("> Contract: Seed", () => {
       let Seed_fundedLowHardCap;
       beforeEach(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
+
         await Seed_fundedLowHardCap.buy();
       });
       it("should update the hardCap", async () => {
@@ -1477,7 +1477,8 @@ describe("> Contract: Seed", () => {
     });
     describe("» when vestingStartTime has not been reached", () => {
       it("should return 0", async () => {
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime);
+
         const claimableAmount = await Seed_funded.calculateClaimBeneficiary();
 
         expect(await claimableAmount).to.equal(0);
@@ -1575,7 +1576,7 @@ describe("> Contract: Seed", () => {
     let Seed_funded;
     before(async () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
-      await increaseTime(ONE_DAY);
+      await increaseTimeTo(Seed_funded.startTime);
     });
     describe("# when the softCap has not been reached", () => {
       it("should revert", async () => {
@@ -1589,7 +1590,7 @@ describe("> Contract: Seed", () => {
       let Seed_funded;
       before(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_funded.startTime);
         await Seed_funded.buy();
       });
       it("should revert", async () => {
@@ -2153,7 +2154,7 @@ describe("> Contract: Seed", () => {
     });
     describe("# when softCap reached but endTime not reached", () => {
       it("should revert", async () => {
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
         await Seed_fundedLowHardCap.buy();
         expect(await Seed_fundedLowHardCap.getMinimumReached()).to.be.true;
         await expect(
@@ -2200,7 +2201,8 @@ describe("> Contract: Seed", () => {
           "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
         );
 
-        await increaseTime(ONE_DAY);
+        await increaseTimeTo(Seed_fundedLowHardCap.startTime);
+
         // Reach hardcap
         await Seed_fundedLowHardCap.buy();
         await Seed_fundedLowHardCap.buy({
