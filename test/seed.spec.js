@@ -2463,14 +2463,48 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: retrieveFundingTokens()", () => {});
-  describe("$ Function: pause()", () => {
-    // Will be found in other tests
+  describe("$ Function: close()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      await increaseTimeTo(Seed_funded.startTime);
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(Seed_funded.close({ from: buyer1 })).to.be.revertedWith(
+          "Seed: caller should be admin"
+        );
+      });
+    });
+    describe("# when the endTime has not been reached", () => {
+      it("should set vestingStartTime to current time", async () => {
+        // Check vestingStartTime is still set to same as endTime
+        expect(await Seed_funded.getVestingStartTime()).to.not.equal(
+          (await getCurrentTime()).toString()
+        );
+
+        await expect(Seed_funded.close()).to.not.reverted;
+
+        // Check that vestingStartTime has been set to current time
+        expect(await Seed_funded.getVestingStartTime()).to.equal(
+          (await getCurrentTime()).toString()
+        );
+      });
+    });
+    describe("# when the Seed has been completed", () => {
+      it("should not update the vestingStartTime", async () => {
+        const vestingStartTime = await Seed_funded.getVestingStartTime();
+        //End Seed and increase time further
+        await increaseTime(TEN_DAYS);
+
+        await expect(Seed_funded.close()).to.not.reverted;
+
+        // Check that vestingStartTime has been changed by closing the Seed
+        expect(await Seed_funded.getVestingStartTime()).to.equal(
+          vestingStartTime
+        );
+      });
+    });
   });
-  describe("$ Function: unpause()", () => {});
-  describe("$ Function: close()", () => {});
-  describe("$ Function: unwhitelist()", () => {});
-  describe("$ Function: withdraw()", () => {});
-  describe("$ Function: updateMetadata()", () => {});
-  describe("$ Function: seedAmountForFunder()", () => {});
 });
