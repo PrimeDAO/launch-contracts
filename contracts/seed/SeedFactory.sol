@@ -32,6 +32,14 @@ contract SeedFactory is CloneFactory, Ownable {
 
     event SeedCreated(address indexed newSeed, address indexed admin);
 
+    constructor(Seed _masterCopy) {
+        require(
+            address(_masterCopy) != address(0),
+            "SeedFactory: masterCopy cannot be zero"
+        );
+        masterCopy = _masterCopy;
+    }
+
     /**
      * @dev               Set Seed contract which works as a base for clones.
      * @param _masterCopy The address of the new Seed basis.
