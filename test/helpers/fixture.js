@@ -8,7 +8,10 @@ const { fundSignersAndSeed } = require("./accounts/signers");
 const { TEN_DAYS, TWENTY_DAYS } = require("./constants/time");
 
 async function launchFixture() {
-  const Seed_initialized = await SeedBuilder.createInit();
+  const Seed_initialized = await SeedBuilder.createInit({
+    from: undefined,
+    args: undefined,
+  });
 
   const Seed_funded = await SeedBuilder.createInit();
   await fundSignersAndSeed({
@@ -64,15 +67,12 @@ async function launchFixture() {
   await Seed_shortTipVesting.initialize(shortTipVesting);
   await fundSignersAndSeed({ Seed: Seed_shortTipVesting });
 
-  const SeedFactory_deployed = await SeedFactoryBuilder.create();
-
-  const SeedFactory_initialized = await SeedFactoryBuilder.createInit({
-    seedAddress: Seed_initialized.instance.address,
+  const SeedFactory_initialized = await SeedFactoryBuilder.create({
+    args: [Seed_initialized.instance.address],
   });
 
   return {
     Seed_initialized,
-    SeedFactory_deployed,
     Seed_funded,
     Seed_fundedPermissioned,
     Seed_fundedLowHardCap,

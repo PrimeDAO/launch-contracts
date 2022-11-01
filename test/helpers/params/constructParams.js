@@ -25,6 +25,7 @@ const {
 /**
  * @typedef {import("../../../lib/types/types").TestParams} TestParams
  * @typedef {import("../../../lib/types/types").SeedInitParams} SeedInitParams
+ * @typedef {import("../../../lib/types/types").SignerWithAddress} SignerWithAddress
  * @typedef  {import("../../../lib/types/types").AllowlistParams} AllowlistParams
  * @typedef  {import("../../../lib/types/types").ContributorClassFromContract} ContributorClassFromContract
  * @typedef  {import("../../../lib/types/types").GetClassParamsFromTypeParams} GetClassParamsFromTypeParams
@@ -383,12 +384,17 @@ function getChangeClassParams(params) {
   return [params.class, ...classParams];
 }
 
-const seedDeployParams = (params) => {
+/**
+ *
+ * @param {{from?: SignerWithAddress, args?: []}} params
+ * @returns {{from?: SignerWithAddress, args?: []}}
+ */
+function seedDeployParams(params) {
   return {
     from: params.from,
     args: params.args,
   };
-};
+}
 
 /**
  * @param  {number} type
@@ -401,7 +407,8 @@ async function getConvertedParams(type, params) {
       return await seedInitParams(params);
     case types.SEEDFACTORY_DEPLOY_SEED:
       return await seedFactoryDeploySeedParams(params);
-    case types.SEED_DEPLOY_INSTANCE || types.SEEDFACTORY_DEPLOY_INSTANCE:
+    case types.SEED_DEPLOY_INSTANCE:
+    case types.SEEDFACTORY_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
     case types.SEED_CHANGE_CLASS:
       return Promise.resolve(getChangeClassParams(params));
@@ -413,6 +420,8 @@ async function getConvertedParams(type, params) {
       return Promise.resolve(getClassAndWhitelistParams(params));
     case types.SEED_TOKEN_PARAMS:
       return Promise.resolve(tokenParams());
+    default:
+      return;
   }
 }
 

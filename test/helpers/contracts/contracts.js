@@ -9,10 +9,11 @@ const { getRootSigner } = require("../accounts/signers");
  *
  * @param {string} contract - "SeedFactory" | "Seed"
  * @param {{from: SignerWithAddress, args: any}} obj
- * @returns {Contract}
+ * @returns {Promise<Contract>}
  */
-async function deployContract(contract, { from, args = [] }) {
+async function deployContract(contract, { from, args }) {
   if (!from) from = await getRootSigner();
+  if (!args) args = [];
 
   const factory = await ethers.getContractFactory(contract, from);
 

@@ -4,25 +4,16 @@ const { ContractDeployer } = require("../../ContractDeployer");
 /** @typedef {import("../../../../../lib/types/types").Contract} Contract */
 
 /**
- * Deploys a new SeedFactory with different configuration
+ * Deploys a new SeedFactory
  * @class
  */
 class SeedFactoryBuilder {
   /**
-   * @param {*=} params
+   * @param {{args: []}} params
    * @returns {Promise<Contract | undefined>}
    */
   static async create(params) {
     return ContractDeployer.deploy(types.SEEDFACTORY_DEPLOY_INSTANCE, params);
-  }
-
-  /**
-   * @param {*=} params
-   * @returns {Promise<Contract | undefined>}
-   */
-  static async createInit(params) {
-    const seedFactoryInstance = await this.create();
-    return await seedFactoryInstance.setMasterCopy(params);
   }
 }
 
