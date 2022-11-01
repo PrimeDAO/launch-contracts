@@ -401,6 +401,15 @@ class Seed {
       .connect(params.from)
       .retrieveSeedTokens(params.refundReceiver);
   }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async withdraw(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    await this.instance.connect(params.from).withdraw();
+  }
 }
 
 module.exports = {

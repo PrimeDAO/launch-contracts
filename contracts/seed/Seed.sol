@@ -631,7 +631,7 @@ contract Seed {
             therefore contributors can no longer withdraw their funding tokens.
         */
         require(
-            maximumReached || (minimumReached && block.timestamp >= endTime),
+            minimumReached,
             "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
         );
         fundingWithdrawn = fundingCollected;

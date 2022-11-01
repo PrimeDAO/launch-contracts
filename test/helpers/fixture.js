@@ -7,7 +7,6 @@ const {
 const { fundSignersAndSeed } = require("./accounts/signers");
 const { TEN_DAYS, TWENTY_DAYS } = require("./constants/time");
 
-
 async function launchFixture() {
   const Seed_initialized = await SeedBuilder.createInit();
 
