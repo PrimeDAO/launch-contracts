@@ -1578,14 +1578,14 @@ describe("> Contract: Seed", () => {
       ({ Seed_funded } = await loadFixture(launchFixture));
       await increaseTimeTo(Seed_funded.startTime);
     });
-    describe("# when the softCap has not been reached", () => {
+    describe("# when the endTime has not been reached", () => {
       it("should revert", async () => {
         await expect(Seed_funded.claim()).to.be.revertedWith(
-          "Seed: minimum funding amount not met"
+          "Seed: the distribution has not yet finished"
         );
       });
     });
-    describe("# when the endTime or hardCap has not been reached ", () => {
+    describe("# when endTime reached but softCap has not been reached ", () => {
       /**@type {Seed} */
       let Seed_funded;
       before(async () => {
@@ -2001,7 +2001,6 @@ describe("> Contract: Seed", () => {
           tip = await Seed_withTip.getTip();
           tipAmount = tip.tipAmount;
           await increaseTimeTo(Seed_withTip.endTime);
-
           await expect(Seed_withTip.claimTip()).to.not.be.reverted;
 
           tip = await Seed_withTip.getTip();
@@ -2463,6 +2462,50 @@ describe("> Contract: Seed", () => {
             await Seed_overFunded.seedTokenInstance.balanceOf(admin.address)
           ).to.equal(expectedSeedTokenAmount);
         });
+      });
+    });
+  });
+  describe("$ Function: close()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      await increaseTimeTo(Seed_funded.startTime);
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(Seed_funded.close({ from: buyer1 })).to.be.revertedWith(
+          "Seed: caller should be admin"
+        );
+      });
+    });
+    describe("# when the endTime has not been reached", () => {
+      it("should set vestingStartTime to current time", async () => {
+        // Check vestingStartTime is still set to same as endTime
+        expect(await Seed_funded.getVestingStartTime()).to.not.equal(
+          (await getCurrentTime()).toString()
+        );
+
+        await expect(Seed_funded.close()).to.not.reverted;
+
+        // Check that vestingStartTime has been set to current time
+        expect(await Seed_funded.getVestingStartTime()).to.equal(
+          (await getCurrentTime()).toString()
+        );
+      });
+    });
+    describe("# when the Seed has been completed", () => {
+      it("should not update the vestingStartTime", async () => {
+        const vestingStartTime = await Seed_funded.getVestingStartTime();
+        //End Seed and increase time further
+        await increaseTime(TEN_DAYS);
+
+        await expect(Seed_funded.close()).to.not.reverted;
+
+        // Check that vestingStartTime has been changed by closing the Seed
+        expect(await Seed_funded.getVestingStartTime()).to.equal(
+          vestingStartTime
+        );
       });
     });
   });
