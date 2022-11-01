@@ -270,22 +270,24 @@ class Seed {
    *          classCap?: string | BigNumber,
    *          individualCap?: string | BigNumber,
    *          vestingCliff?: number
-   *          vestingDuration?: number
+   *          vestingDuration?: number,
+   *          allowlist?: Address[],
    *        }} params
    */
-  async changeClass(params = {}) {
+  async changeClassAndAllowlist(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
 
-    const changeClassParams = await getConvertedParams(
+    const changeClassAndAllowlistParams = await getConvertedParams(
       types.SEED_CHANGE_CLASS,
       params
     );
 
-    this.classes[changeClassParams.class] = changeClassParams.slice(1);
+    this.classes[changeClassAndAllowlistParams.class] =
+      changeClassAndAllowlistParams.slice(1);
 
     return await this.instance
       .connect(params.from)
-      .changeClass(...changeClassParams);
+      .changeClassAndAllowlist(...changeClassAndAllowlistParams);
   }
 
   /**

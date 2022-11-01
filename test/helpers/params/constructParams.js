@@ -377,10 +377,11 @@ async function getAllowlistArrays(params = {}) {
   return params;
 }
 
-function getChangeClassParams(params) {
+async function getChangeClassAndAllowlistParams(params) {
   if (!params.class) params.class = types.CLASS_DEFAULT;
+  if (!params.allowlist) params.allowlist = [];
   const classParams = getClassParamsFromType(params);
-  return [params.class, ...classParams];
+  return [params.class, ...classParams, params.allowlist];
 }
 
 const seedDeployParams = (params) => {
@@ -404,7 +405,7 @@ async function getConvertedParams(type, params) {
     case types.SEED_DEPLOY_INSTANCE || types.SEEDFACTORY_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
     case types.SEED_CHANGE_CLASS:
-      return Promise.resolve(getChangeClassParams(params));
+      return Promise.resolve(getChangeClassAndAllowlistParams(params));
     case types.SEED_ALLOWLIST:
       return await getAllowlistArrays(params);
     case types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM:
