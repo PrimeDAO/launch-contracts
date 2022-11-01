@@ -1,7 +1,7 @@
 const { waffle, ethers } = require("hardhat");
 const {
   BigNumber,
-  utils: { formatBytes32String, parseEther },
+  utils: { formatBytes32String, parseEther, parseBytes32String },
 } = ethers;
 const { expect } = require("chai");
 const { loadFixture } = waffle;
@@ -20,7 +20,6 @@ const {
   increaseTime,
   increaseTimeTo,
 } = require("./helpers/constants/time");
-const { getConvertedParams } = require("./helpers/params/constructParams");
 const {
   SeedBuilder,
 } = require("./helpers/contracts/seed/builders/SeedBuilder");
@@ -35,6 +34,7 @@ const {
  * @typedef {import("../lib/types/types").Tip} Tip
  * @typedef {import("../lib/types/types").AllowlistParams} AllowlistParams
  * @typedef {import("../lib/types/types").ClassesParameters} ClassesParameters
+ * @typedef {import("../lib/types/types").ContributorClassParams} ContributorClassParams
  */
 
 /**
@@ -974,27 +974,51 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: changeClass()", () => {
+  describe("$ Function: changeClassAndAllowlist()", () => {
     /**@type {Seed}*/
     let Seed_initialized;
+    /**@type {ContributorClassFromContract}*/
+    let contributorClass;
+    /** @type {ContributorClassParams} */
+    let class1;
+    /** @type {ContributorClassParams} */
+    let changeClass1Params;
+    /**@type {FunderPortfolio} */
+    let funder;
     beforeEach(async () => {
       ({ Seed_initialized } = await loadFixture(launchFixture));
+      class1 = {
+        className: "buyer1",
+        classCap: Seed_initialized.getFundingAmount("10").toString(),
+        individualCap: Seed_initialized.getFundingAmount("5").toString(),
+        vestingCliff: TEN_DAYS.toNumber(),
+        vestingDuration: TWENTY_DAYS.toNumber(),
+        allowlist: [[]],
+      };
+      changeClass1Params = {
+        className: "buyer2",
+        classCap: Seed_initialized.getFundingAmount("15").toString(),
+        individualCap: Seed_initialized.getFundingAmount("10").toString(),
+        vestingCliff: TWENTY_DAYS.toNumber(),
+        vestingDuration: FOURTY_DAYS.toNumber(),
+        allowlist: [[buyer1.address]],
+      };
     });
     describe("# when the caller is not the admin", () => {
       it("should revert", async () => {
         const params = { from: beneficiary };
-        await expect(Seed_initialized.changeClass(params)).to.be.revertedWith(
-          "Seed: caller should be admin"
-        );
+        await expect(
+          Seed_initialized.changeClassAndAllowlist(params)
+        ).to.be.revertedWith("Seed: caller should be admin");
       });
     });
     describe("# given the caller is the admin", () => {
       describe("» when called with invalid class ID", () => {
         it("should revert", async () => {
           const params = { class: classTypes.CLASS_2 };
-          await expect(Seed_initialized.changeClass(params)).to.be.revertedWith(
-            "Seed: incorrect class chosen"
-          );
+          await expect(
+            Seed_initialized.changeClassAndAllowlist(params)
+          ).to.be.revertedWith("Seed: incorrect class chosen");
         });
       });
       describe("» when called with individualCap > classCap", () => {
@@ -1002,9 +1026,9 @@ describe("> Contract: Seed", () => {
           const params = {
             individualCap: Seed_initialized.getFundingAmount("21").toString(),
           };
-          await expect(Seed_initialized.changeClass(params)).to.be.revertedWith(
-            "Seed: caps are invalid"
-          );
+          await expect(
+            Seed_initialized.changeClassAndAllowlist(params)
+          ).to.be.revertedWith("Seed: caps are invalid");
         });
       });
       describe("» when called with classCap > hardCap", () => {
@@ -1012,73 +1036,156 @@ describe("> Contract: Seed", () => {
           const params = {
             classCap: Seed_initialized.hardCap + 1,
           };
-          await expect(Seed_initialized.changeClass(params)).to.be.revertedWith(
-            "Seed: caps are invalid"
-          );
+          await expect(
+            Seed_initialized.changeClassAndAllowlist(params)
+          ).to.be.revertedWith("Seed: caps are invalid");
         });
       });
       describe("» when startTime has been reached", () => {
         it("should revert", async () => {
           await increaseTimeTo(Seed_initialized.startTime);
 
-          await expect(Seed_initialized.changeClass()).to.be.revertedWith(
-            "Seed: class can only be added until startTime"
-          );
+          await expect(
+            Seed_initialized.changeClassAndAllowlist()
+          ).to.be.revertedWith("Seed: class can only be added until startTime");
         });
       });
       describe("» when Seed is closed", () => {
         it("should revert", async () => {
           const localSeed = await SeedBuilder.createInit();
-          await localSeed.changeClass();
+          await localSeed.changeClassAndAllowlist();
           await localSeed.close();
-          await expect(localSeed.changeClass()).to.be.revertedWith(
+          await expect(localSeed.changeClassAndAllowlist()).to.be.revertedWith(
             "Seed: should not be closed"
           );
         });
       });
-      describe("» when called with valid parameters", () => {
+      describe("» when seed is permission-less", () => {
         it("should succeed in changing the class paramaters", async () => {
-          /**@type {ContributorClassFromContract}*/
-          let contributorClass;
-          const updatedClassParams = await getConvertedParams(
-            types.SEED_CHANGE_CLASS,
-            { class: classTypes.CLASS_DEFAULT }
-          );
-          const params = {
-            from: admin,
-            class: classTypes.CLASS_DEFAULT,
-          };
+          // Add class
+          await Seed_initialized.addClassesAndAllowlists({
+            classesParameters: { class1 },
+          });
+          // Get class and funder from contract
           contributorClass = await Seed_initialized.getClass(
-            classTypes.CLASS_DEFAULT
+            classTypes.CLASS_1
           );
-          expect(contributorClass.className).to.not.equal(
-            updatedClassParams[1]
-          );
-          expect(contributorClass.classCap).to.not.equal(updatedClassParams[2]);
-          expect(contributorClass.individualCap).to.not.equal(
-            updatedClassParams[3]
-          );
-          expect(contributorClass.vestingCliff).to.not.equal(
-            updatedClassParams[4]
-          );
-          expect(contributorClass.vestingDuration).to.not.equal(
-            updatedClassParams[5]
-          );
+          funder = await Seed_initialized.getFunder(buyer1.address);
 
-          await Seed_initialized.changeClass(params);
-          contributorClass = await Seed_initialized.getClass(
-            classTypes.CLASS_DEFAULT
+          // Check default values
+          expect(parseBytes32String(contributorClass.className)).to.equal(
+            class1.className
           );
-
-          expect(contributorClass.className).to.equal(updatedClassParams[1]);
-          expect(contributorClass.classCap).to.equal(updatedClassParams[2]);
-          expect(contributorClass.individualCap).to.equal(
-            updatedClassParams[3]
-          );
-          expect(contributorClass.vestingCliff).to.equal(updatedClassParams[4]);
+          expect(contributorClass.classCap).to.equal(class1.classCap);
+          expect(contributorClass.individualCap).to.equal(class1.individualCap);
+          expect(contributorClass.vestingCliff).to.equal(class1.vestingCliff);
           expect(contributorClass.vestingDuration).to.equal(
-            updatedClassParams[5]
+            class1.vestingDuration
           );
+          expect(funder.class).to.equal(classTypes.CLASS_DEFAULT);
+          expect(funder.allowlist).to.equal(false);
+
+          // Change class
+          await Seed_initialized.changeClassAndAllowlist({
+            class: classTypes.CLASS_1,
+            className: changeClass1Params.className,
+            classCap: changeClass1Params.classCap,
+            individualCap: changeClass1Params.individualCap,
+            vestingCliff: changeClass1Params.vestingCliff,
+            vestingDuration: changeClass1Params.vestingDuration,
+            allowlist: [buyer1.address],
+          });
+
+          // Get class and funder again
+          contributorClass = await Seed_initialized.getClass(
+            classTypes.CLASS_1
+          );
+          funder = await Seed_initialized.getFunder(buyer1.address);
+
+          // Check for edited values
+          expect(parseBytes32String(contributorClass.className)).to.equal(
+            changeClass1Params.className
+          );
+          expect(contributorClass.classCap).to.equal(
+            changeClass1Params.classCap
+          );
+          expect(contributorClass.individualCap).to.equal(
+            changeClass1Params.individualCap
+          );
+          expect(contributorClass.vestingCliff).to.equal(
+            changeClass1Params.vestingCliff
+          );
+          expect(contributorClass.vestingDuration).to.equal(
+            changeClass1Params.vestingDuration
+          );
+          expect(funder.class).to.equal(classTypes.CLASS_1);
+          expect(funder.allowlist).to.equal(false);
+        });
+      });
+      describe("» when seed is permissioned", () => {
+        /**@type {Seed} */
+        let Seed_fundedPermissioned;
+        before(async () => {
+          ({ Seed_fundedPermissioned } = await loadFixture(launchFixture));
+        });
+        it("should succeed in changing the class paramaters", async () => {
+          // Add new class
+          await Seed_fundedPermissioned.addClassesAndAllowlists({
+            classesParameters: { class1 },
+          });
+          // Get class and funder from contract
+          contributorClass = await Seed_fundedPermissioned.getClass(
+            classTypes.CLASS_1
+          );
+          funder = await Seed_fundedPermissioned.getFunder(buyer1.address);
+
+          // Check default values
+          expect(parseBytes32String(contributorClass.className)).to.equal(
+            class1.className
+          );
+          expect(contributorClass.classCap).to.equal(class1.classCap);
+          expect(contributorClass.individualCap).to.equal(class1.individualCap);
+          expect(contributorClass.vestingCliff).to.equal(class1.vestingCliff);
+          expect(contributorClass.vestingDuration).to.equal(
+            class1.vestingDuration
+          );
+          expect(funder.class).to.equal(classTypes.CLASS_DEFAULT);
+
+          // Change class
+          await Seed_fundedPermissioned.changeClassAndAllowlist({
+            class: classTypes.CLASS_1,
+            className: changeClass1Params.className,
+            classCap: changeClass1Params.classCap,
+            individualCap: changeClass1Params.individualCap,
+            vestingCliff: changeClass1Params.vestingCliff,
+            vestingDuration: changeClass1Params.vestingDuration,
+            allowlist: [buyer1.address],
+          });
+
+          // Get class and funder again
+          contributorClass = await Seed_fundedPermissioned.getClass(
+            classTypes.CLASS_1
+          );
+          funder = await Seed_fundedPermissioned.getFunder(buyer1.address);
+
+          // Check for edited values
+          expect(parseBytes32String(contributorClass.className)).to.equal(
+            changeClass1Params.className
+          );
+          expect(contributorClass.classCap).to.equal(
+            changeClass1Params.classCap
+          );
+          expect(contributorClass.individualCap).to.equal(
+            changeClass1Params.individualCap
+          );
+          expect(contributorClass.vestingCliff).to.equal(
+            changeClass1Params.vestingCliff
+          );
+          expect(contributorClass.vestingDuration).to.equal(
+            changeClass1Params.vestingDuration
+          );
+          expect(funder.class).to.equal(classTypes.CLASS_1);
+          expect(funder.allowlist).to.equal(true);
         });
       });
     });
@@ -1158,10 +1265,8 @@ describe("> Contract: Seed", () => {
     });
     describe("# given the Seed is permission-less", () => {
       before(async () => {
-        before(async () => {
-          ({ Seed_funded } = await loadFixture(launchFixture));
-          await increaseTimeTo(Seed_funded.startTime);
-        });
+        ({ Seed_funded } = await loadFixture(launchFixture));
+        await increaseTimeTo(Seed_funded.startTime);
       });
       describe("» when a non allowlisted user tries to buy", () => {
         it("should be able to buy", async () => {
