@@ -17,7 +17,7 @@ class ContractDeployer {
    * @returns {Promise<Contract | undefined>}
    */
   static async deploy(type, params) {
-    const { from, args } = getConvertedParams(type, params);
+    const { from, args } = await getConvertedParams(type, params);
 
     return await this._deploy(type, from, args);
   }

@@ -32,9 +32,9 @@ describe("> Contract: SeedFactory", () => {
     /**
      * @type {SeedFactory}
      */
-    let SeedFactory_deployed;
+    let SeedFactory_initialized;
     before(async () => {
-      ({ SeedFactory_deployed } = await loadFixture(launchFixture));
+      ({ SeedFactory_initialized } = await loadFixture(launchFixture));
     });
     describe("# given the SeedFactory has been deployed", () => {
       describe("» when calling function transferOwnership()", () => {
@@ -45,7 +45,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_deployed.transferOwnership(params)
+            SeedFactory_initialized.transferOwnership(params)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
         it("should revert if address is equal to zero", async () => {
@@ -54,15 +54,15 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_deployed.transferOwnership(params)
+            SeedFactory_initialized.transferOwnership(params)
           ).to.be.revertedWith("Ownable: new owner is the zero address");
         });
         it("should succeed if caller is the owner", async () => {
           const params = { newOwner: beneficiary.address };
 
-          expect(await SeedFactory_deployed.owner).to.equal(root.address);
-          await SeedFactory_deployed.transferOwnership(params);
-          expect(await SeedFactory_deployed.owner).to.equal(
+          expect(await SeedFactory_initialized.owner).to.equal(root.address);
+          await SeedFactory_initialized.transferOwnership(params);
+          expect(await SeedFactory_initialized.owner).to.equal(
             beneficiary.address
           );
         });
@@ -70,67 +70,59 @@ describe("> Contract: SeedFactory", () => {
     });
   });
   describe("$ Function: setMasterCopy()", () => {
-    /**
-     * @type {SeedFactory}
-     */
-    let SeedFactory_deployed;
-    /**
-     * @type {Seed}
-     */
+    /**@type {SeedFactory}*/
+    let SeedFactory_initialized;
+    /**@type {SeedFactory}*/
+    let Seed_funded;
+    /**@type {Seed}*/
     let Seed_initialized;
     before(async () => {
-      ({ SeedFactory_deployed, Seed_initialized } = await loadFixture(
-        launchFixture
-      ));
+      ({ Seed_initialized, Seed_funded, SeedFactory_initialized } =
+        await loadFixture(launchFixture));
     });
     describe("# given Seed master copy is not yet set", () => {
       describe("» when calling function setMasterCopy()", () => {
         it("should fail if Seed address is equal to SeedFactory address", async () => {
           const params = {
-            seedAddress: SeedFactory_deployed.instance.address,
+            seedAddress: SeedFactory_initialized.instance.address,
           };
 
           await expect(
-            SeedFactory_deployed.setMasterCopy(params)
+            SeedFactory_initialized.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
         });
         it("should fail if Seed address is equal zero", async () => {
           const params = { seedAddress: AddressZero };
 
           await expect(
-            SeedFactory_deployed.setMasterCopy(params)
+            SeedFactory_initialized.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
         });
         it("should succeed in setting master copy", async () => {
-          const params = { seedAddress: Seed_initialized.instance.address };
+          const params = { seedAddress: Seed_funded.instance.address };
 
-          expect(await SeedFactory_deployed.instance.masterCopy()).to.equal(
-            AddressZero
+          expect(await SeedFactory_initialized.instance.masterCopy()).to.equal(
+            Seed_initialized.instance.address
           );
 
-          await expect(SeedFactory_deployed.setMasterCopy(params)).to.not.be
+          await expect(SeedFactory_initialized.setMasterCopy(params)).to.not.be
             .reverted;
-          expect(await SeedFactory_deployed.instance.masterCopy()).to.equal(
-            Seed_initialized.instance.address
+          expect(await SeedFactory_initialized.instance.masterCopy()).to.equal(
+            Seed_funded.instance.address
           );
         });
       });
     });
   });
   describe("$ Function: deploySeed()", () => {
-    /**
-     * @type {SeedFactory}
-     */
-    let SeedFactory_deployed;
-    /**
-     * @type {SeedFactory}
-     */
+    /** @type {SeedFactory}*/
     let SeedFactory_initialized;
     let tokenInstances;
     let defaultSeedParameters;
     beforeEach(async () => {
-      ({ Seed_initialized, SeedFactory_initialized, SeedFactory_deployed } =
-        await loadFixture(launchFixture));
+      ({ Seed_initialized, SeedFactory_initialized } = await loadFixture(
+        launchFixture
+      ));
       tokenInstances = await getERC20TokenInstances(
         await getConvertedParams(types.SEED_TOKEN_PARAMS)
       );
@@ -140,15 +132,6 @@ describe("> Contract: SeedFactory", () => {
         params
       );
       defaultSeedParameters.shift();
-    });
-    describe("# given Seed Mastecopy is not set", () => {
-      describe("» when calling function deploySeed()", () => {
-        it("should revert", async () => {
-          await expect(SeedFactory_deployed.deploySeed()).to.be.revertedWith(
-            "SeedFactory: mastercopy has not been set"
-          );
-        });
-      });
     });
     describe("# given invalid deployment parameters", () => {
       describe("» when calling with invalid tip array length", () => {

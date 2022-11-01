@@ -13,7 +13,14 @@ class SeedBuilder {
    * @returns {Promise<Contract | undefined>}
    */
   static async create(params) {
-    return ContractDeployer.deploy(types.SEED_DEPLOY_INSTANCE, params);
+    const defaultInitParams = {
+      from: undefined,
+      args: undefined,
+    };
+    return await ContractDeployer.deploy(
+      types.SEED_DEPLOY_INSTANCE,
+      params ?? defaultInitParams
+    );
   }
 
   /**
@@ -21,7 +28,7 @@ class SeedBuilder {
    * @returns {Promise<Contract | undefined>}
    */
   static async createInit(params) {
-    const seedInstance = await this.create();
+    const seedInstance = await this.create(params);
     return await seedInstance.initialize(params);
   }
 }
