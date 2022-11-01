@@ -74,7 +74,7 @@ describe("> Contract: Seed", () => {
       it("should revert", async () => {
         const Seed_initialized = await SeedBuilder.createInit();
         await expect(Seed_initialized.initialize()).to.be.revertedWith(
-          "Seed: contract already initialized"
+          "Seed: Error 001"
         );
       });
     });
@@ -273,7 +273,7 @@ describe("> Contract: Seed", () => {
         await Seed_funded.close();
 
         await expect(Seed_funded.setAllowlist()).to.be.revertedWith(
-          "Seed: sale not live"
+          "Seed: Error 350"
         );
       });
       describe("# when Seed has ended", () => {
@@ -283,7 +283,7 @@ describe("> Contract: Seed", () => {
           await increaseTime(HUNDRED_DAYS);
 
           await expect(Seed_funded.setAllowlist()).to.be.revertedWith(
-            "Seed: sale not live"
+            "Seed: Error 350"
           );
         });
       });
@@ -303,7 +303,7 @@ describe("> Contract: Seed", () => {
           classes: [classTypes.CLASS_DEFAULT],
         };
         await expect(Seed_funded.setAllowlist(params)).to.be.revertedWith(
-          "Seed: mismatch in array length"
+          "Seed: Error 102"
         );
 
         params = {
@@ -312,14 +312,14 @@ describe("> Contract: Seed", () => {
         };
         await expect(
           Seed_funded.setAllowlist({ classes: invalidLengthClasses })
-        ).to.be.revertedWith("Seed: mismatch in array length");
+        ).to.be.revertedWith("Seed: Error 102");
       });
     });
     describe("# when invalid class ID is used", () => {
       it("should revert", async () => {
         await expect(
           Seed_funded.setAllowlist({ classes: [4] })
-        ).to.be.revertedWith("Seed: incorrect class chosen");
+        ).to.be.revertedWith("Seed: Error 302");
       });
     });
     describe("# given seed is permission-less", () => {
@@ -503,7 +503,7 @@ describe("> Contract: Seed", () => {
         expect(await Seed_funded.getClosedStatus()).to.be.true;
 
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: class can only be added until startTime"
+          "Seed: Error 344"
         );
       });
     });
@@ -520,7 +520,7 @@ describe("> Contract: Seed", () => {
         );
 
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: class can only be added until startTime"
+          "Seed: Error 344"
         );
       });
     });
@@ -538,7 +538,7 @@ describe("> Contract: Seed", () => {
         };
         await expect(
           Seed_funded.addClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: caller should be admin");
+        ).to.be.revertedWith("Seed: Error 322");
       });
     });
     describe("# when Seed is live or closed", () => {
@@ -546,13 +546,13 @@ describe("> Contract: Seed", () => {
         await Seed_funded.close();
 
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: should not be closed"
+          "Seed: Error 348"
         );
       });
       it("should revert when startTime reached", async () => {
         await increaseTimeTo(Seed_funded.startTime);
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: class can only be added until startTime"
+          "Seed: Error 344"
         );
       });
     });
@@ -569,7 +569,7 @@ describe("> Contract: Seed", () => {
 
         await expect(
           Seed_funded.addClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: caps are invalid");
+        ).to.be.revertedWith("Seed: Error 303");
       });
     });
     describe("# when classCap > hardCap", () => {
@@ -584,7 +584,7 @@ describe("> Contract: Seed", () => {
 
         await expect(
           Seed_funded.addClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: caps are invalid");
+        ).to.be.revertedWith("Seed: Error 303");
       });
     });
     describe("# when classCap is 0", () => {
@@ -599,7 +599,7 @@ describe("> Contract: Seed", () => {
 
         await expect(
           Seed_funded.addClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: caps are invalid");
+        ).to.be.revertedWith("Seed: Error 303");
       });
     });
     describe("# given mismatching array lengths ", () => {
@@ -635,7 +635,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
       describe("» when mismatch in classCaps array", () => {
@@ -649,7 +649,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
       describe("» when mismatch in individualCaps array", () => {
@@ -663,7 +663,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
       describe("» when mismatch in vestingCliffs array", () => {
@@ -675,7 +675,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
       describe("» when mismatch in vestingDurations array", () => {
@@ -687,7 +687,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
       describe("» when mismatch in first level of allowlist array", () => {
@@ -701,7 +701,7 @@ describe("> Contract: Seed", () => {
             Seed_funded.instance
               .connect(admin)
               .addClassesAndAllowlists(...params)
-          ).to.be.revertedWith("Seed: All provided arrays should be same size");
+          ).to.be.revertedWith("Seed: Error 102");
         });
       });
     });
@@ -712,9 +712,7 @@ describe("> Contract: Seed", () => {
         };
         await expect(
           Seed_funded.addClassesAndAllowlists(params)
-        ).to.be.revertedWith(
-          "Seed: Can't add batch with more then 100 classes"
-        );
+        ).to.be.revertedWith("Seed: Error 304");
       });
     });
     describe("# when adding classes exeeds max number of classes ", () => {
@@ -735,7 +733,7 @@ describe("> Contract: Seed", () => {
 
         await expect(
           Seed_highNumClasses.addClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: can't add more then 256 classes");
+        ).to.be.revertedWith("Seed: Error 305");
       });
     });
     describe("# given the Seed is permission-less", () => {
@@ -1009,7 +1007,7 @@ describe("> Contract: Seed", () => {
         const params = { from: beneficiary };
         await expect(
           Seed_initialized.changeClassesAndAllowlists(params)
-        ).to.be.revertedWith("Seed: caller should be admin");
+        ).to.be.revertedWith("Seed: Error 322");
       });
     });
     describe("# given the caller is the admin", () => {
@@ -1020,7 +1018,7 @@ describe("> Contract: Seed", () => {
             Seed_initialized.changeClassesAndAllowlists({
               classesParameters: params,
             })
-          ).to.be.revertedWith("Seed: incorrect class chosen");
+          ).to.be.revertedWith("Seed: Error 302");
         });
       });
       describe("» when called with individualCap > classCap", () => {
@@ -1034,7 +1032,7 @@ describe("> Contract: Seed", () => {
             Seed_initialized.changeClassesAndAllowlists({
               classesParameters: params,
             })
-          ).to.be.revertedWith("Seed: caps are invalid");
+          ).to.be.revertedWith("Seed: Error 303");
         });
       });
       describe("» when called with classCap > hardCap", () => {
@@ -1048,7 +1046,7 @@ describe("> Contract: Seed", () => {
             Seed_initialized.changeClassesAndAllowlists({
               classesParameters: params,
             })
-          ).to.be.revertedWith("Seed: caps are invalid");
+          ).to.be.revertedWith("Seed: Error 303");
         });
       });
       describe("» when startTime has been reached", () => {
@@ -1057,7 +1055,7 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_initialized.changeClassesAndAllowlists()
-          ).to.be.revertedWith("Seed: class can only be added until startTime");
+          ).to.be.revertedWith("Seed: Error 344");
         });
       });
       describe("» when Seed is closed", () => {
@@ -1067,7 +1065,7 @@ describe("> Contract: Seed", () => {
           await localSeed.close();
           await expect(
             localSeed.changeClassesAndAllowlists()
-          ).to.be.revertedWith("Seed: should not be closed");
+          ).to.be.revertedWith("Seed: Error 348");
         });
       });
       describe("» when seed is permission-less", () => {
@@ -1223,16 +1221,12 @@ describe("> Contract: Seed", () => {
 
         await Seed_funded.pause();
 
-        await expect(Seed_funded.buy()).to.be.revertedWith(
-          "Seed: should not be paused"
-        );
+        await expect(Seed_funded.buy()).to.be.revertedWith("Seed: Error 349");
       });
       it("should revert if Seed is closed ", async () => {
         await expect(Seed_funded.buy()).to.not.be.reverted;
         await Seed_funded.close();
-        await expect(Seed_funded.buy()).to.be.revertedWith(
-          "Seed: should not be closed"
-        );
+        await expect(Seed_funded.buy()).to.be.revertedWith("Seed: Error 348");
       });
     });
     describe("# given the Seed is permissioned", () => {
@@ -1246,7 +1240,7 @@ describe("> Contract: Seed", () => {
         it("should revert", async () => {
           const params = { from: buyer1 };
           await expect(Seed_fundedPermissioned.buy(params)).to.be.revertedWith(
-            "Seed: sender has no rights"
+            "Seed: Error 320"
           );
         });
       });
@@ -1264,7 +1258,7 @@ describe("> Contract: Seed", () => {
           );
 
           await expect(Seed_fundedPermissioned.buy(params)).to.be.revertedWith(
-            "Seed: sender has no rights"
+            "Seed: Error 320"
           );
           expect(
             await Seed_fundedPermissioned.fundingTokenInstance.balanceOf(
@@ -1322,7 +1316,7 @@ describe("> Contract: Seed", () => {
 
         await expect(Seed_fundedLowHardCap.buy(params)).to.not.be.reverted;
         await expect(Seed_fundedLowHardCap.buy(params)).to.be.revertedWith(
-          "Seed: maximum funding reached"
+          "Seed: Error 340"
         );
       });
     });
@@ -1384,7 +1378,7 @@ describe("> Contract: Seed", () => {
         };
 
         await expect(Seed_funded.buy(params)).to.be.revertedWith(
-          "Seed: cannot buy 0 tokens"
+          "Seed: Error 101"
         );
       });
     });
@@ -1404,7 +1398,7 @@ describe("> Contract: Seed", () => {
 
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
           await expect(Seed_fundedLowHardCap.buy(params)).to.be.revertedWith(
-            "Seed: maximum class funding reached"
+            "Seed: Error 360"
           );
         });
       });
@@ -1414,7 +1408,7 @@ describe("> Contract: Seed", () => {
             fundingAmount: Seed_fundedLowHardCap.getFundingAmount("11"),
           };
           await expect(Seed_fundedLowHardCap.buy(params)).to.be.revertedWith(
-            "Seed: maximum personal funding reached"
+            "Seed: Error 361"
           );
         });
       });
@@ -1434,14 +1428,14 @@ describe("> Contract: Seed", () => {
       });
       it("should fail if the startTime has not been reached", async () => {
         await expect(Seed_notBuyable.buy()).to.be.revertedWith(
-          "Seed: only allowed during distribution period"
+          "Seed: Error 362"
         );
       });
       it("should fail if EndTime has been reached", async () => {
         await increaseTimeTo(Seed_notBuyable.endTime);
 
         await expect(Seed_notBuyable.buy()).to.be.revertedWith(
-          "Seed: only allowed during distribution period"
+          "Seed: Error 362"
         );
       });
     });
@@ -1456,7 +1450,7 @@ describe("> Contract: Seed", () => {
       });
       it("should revert", async () => {
         await expect(Seed_initialized.buy()).to.be.revertedWith(
-          "Seed: sufficient seeds not provided"
+          "Seed: Error 343"
         );
       });
     });
@@ -1721,9 +1715,7 @@ describe("> Contract: Seed", () => {
     });
     describe("# when the endTime has not been reached", () => {
       it("should revert", async () => {
-        await expect(Seed_funded.claim()).to.be.revertedWith(
-          "Seed: the distribution has not yet finished"
-        );
+        await expect(Seed_funded.claim()).to.be.revertedWith("Seed: Error 346");
       });
     });
     describe("# when endTime reached but softCap has not been reached ", () => {
@@ -1735,9 +1727,7 @@ describe("> Contract: Seed", () => {
         await Seed_funded.buy();
       });
       it("should revert", async () => {
-        await expect(Seed_funded.claim()).to.be.revertedWith(
-          "Seed: the distribution has not yet finished"
-        );
+        await expect(Seed_funded.claim()).to.be.revertedWith("Seed: Error 346");
       });
     });
     describe("# given the Seed is not live anymore (endTime or hardCap reached)", () => {
@@ -1753,7 +1743,7 @@ describe("> Contract: Seed", () => {
           await increaseTime(TWENTY_DAYS);
 
           await expect(Seed_funded.claim(params)).to.be.revertedWith(
-            "Seed: amount claimable is 0"
+            "Seed: Error 380"
           );
         });
       });
@@ -1771,14 +1761,14 @@ describe("> Contract: Seed", () => {
           };
 
           await expect(Seed_funded.claim(params)).to.be.revertedWith(
-            "Seed: request is greater than claimable amount"
+            "Seed: Error 381"
           );
         });
       });
       describe("» when the vesting cliff has not ended", () => {
         it("should revert", async () => {
           await expect(Seed_funded.claim()).to.be.revertedWith(
-            "Seed: amount claimable is 0"
+            "Seed: Error 380"
           );
         });
       });
@@ -1874,7 +1864,7 @@ describe("> Contract: Seed", () => {
       });
       it("should revert", async () => {
         await expect(Seed_noTip.claimTip()).to.be.revertedWith(
-          "Seed: amount claimable is 0"
+          "Seed: Error 380"
         );
       });
     });
@@ -1888,7 +1878,7 @@ describe("> Contract: Seed", () => {
         });
         it("should revert", async () => {
           await expect(Seed_withTip.claimTip()).to.be.revertedWith(
-            "Seed: the distribution has not yet finished"
+            "Seed: Error 346"
           );
         });
       });
@@ -1902,7 +1892,7 @@ describe("> Contract: Seed", () => {
           await increaseTime(FIVE_DAYS); // Half of cliff
 
           await expect(Seed_withTip.claimTip()).to.be.revertedWith(
-            "Seed: amount claimable is 0"
+            "Seed: Error 380"
           );
         });
       });
@@ -2289,7 +2279,7 @@ describe("> Contract: Seed", () => {
       it("should revert", async () => {
         await expect(
           Seed_fundedLowHardCap.retrieveSeedTokens({ from: buyer1 })
-        ).to.be.revertedWith("Seed: caller should be admin");
+        ).to.be.revertedWith("Seed: Error 322");
       });
     });
     describe("# when softCap reached but endTime not reached", () => {
@@ -2299,9 +2289,7 @@ describe("> Contract: Seed", () => {
         expect(await Seed_fundedLowHardCap.getMinimumReached()).to.be.true;
         await expect(
           Seed_fundedLowHardCap.retrieveSeedTokens()
-        ).to.be.revertedWith(
-          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
-        );
+        ).to.be.revertedWith("Seed: Error 382");
       });
     });
     describe("# when the Seed is closed", () => {
@@ -2309,9 +2297,7 @@ describe("> Contract: Seed", () => {
         expect(await Seed_fundedLowHardCap.getClosedStatus()).to.be.false;
         await expect(
           Seed_fundedLowHardCap.retrieveSeedTokens()
-        ).to.be.revertedWith(
-          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
-        );
+        ).to.be.revertedWith("Seed: Error 382");
 
         await Seed_fundedLowHardCap.close();
 
@@ -2323,9 +2309,7 @@ describe("> Contract: Seed", () => {
       it("should retrieve Seed tokens", async () => {
         await expect(
           Seed_fundedLowHardCap.retrieveSeedTokens()
-        ).to.be.revertedWith(
-          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
-        );
+        ).to.be.revertedWith("Seed: Error 382");
 
         await increaseTime(Seed_fundedLowHardCap.endTime);
 
@@ -2337,9 +2321,7 @@ describe("> Contract: Seed", () => {
       it("should retrieve Seed tokens", async () => {
         await expect(
           Seed_fundedLowHardCap.retrieveSeedTokens()
-        ).to.be.revertedWith(
-          "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
-        );
+        ).to.be.revertedWith("Seed: Error 382");
 
         await increaseTimeTo(Seed_fundedLowHardCap.startTime);
 
@@ -2372,7 +2354,7 @@ describe("> Contract: Seed", () => {
           await increaseTime(Seed_unfunded.endTime);
 
           await expect(Seed_unfunded.retrieveSeedTokens()).to.be.revertedWith(
-            "Seed: Failed to transfer Seed Token"
+            "Seed: Error 345"
           );
         });
       });
@@ -2616,7 +2598,7 @@ describe("> Contract: Seed", () => {
     describe("# when not called by the admin", () => {
       it("should revert", async () => {
         await expect(Seed_funded.close({ from: buyer1 })).to.be.revertedWith(
-          "Seed: caller should be admin"
+          "Seed: Error 322"
         );
       });
     });
@@ -2665,13 +2647,13 @@ describe("> Contract: Seed", () => {
       it("should revert", async () => {
         await expect(
           Seed_fundedLowHardCap.withdraw({ from: buyer1 })
-        ).to.be.revertedWith("Seed: caller should be admin");
+        ).to.be.revertedWith("Seed: Error 322");
       });
     });
     describe("# when softCap has not been reached", () => {
       it("should revert", async () => {
         await expect(Seed_fundedLowHardCap.withdraw()).to.be.revertedWith(
-          "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
+          "Seed: Error 383"
         );
       });
     });

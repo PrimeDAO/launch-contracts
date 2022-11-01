@@ -89,14 +89,14 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.setMasterCopy(params)
-          ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
         it("should fail if Seed address is equal zero", async () => {
           const params = { seedAddress: AddressZero };
 
           await expect(
             SeedFactory_initialized.setMasterCopy(params)
-          ).to.be.revertedWith("SeedFactory: new mastercopy cannot be set");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
         it("should succeed in setting master copy", async () => {
           const params = { seedAddress: Seed_funded.instance.address };
@@ -142,7 +142,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Invalid array length");
+          ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
       describe("» when calling with invalid tokenAddresses array length", () => {
@@ -160,7 +160,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Invalid array length");
+          ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
       describe("» when calling with invalid startTimeAndEndTime array length", () => {
@@ -171,7 +171,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Invalid array length");
+          ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
 
@@ -186,7 +186,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Invalid array length");
+          ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
       describe("» when calling with tokenAddresses having identical addresses", () => {
@@ -198,7 +198,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
+          ).to.be.revertedWith("SeedFactory: Error 104");
         });
       });
       describe("» when calling with admin and beneficiary having identical addresses", () => {
@@ -211,7 +211,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: addresses cannot be identical");
+          ).to.be.revertedWith("SeedFactory: Error 104");
         });
       });
       describe("» when calling with beneficiary is equal zero", () => {
@@ -220,7 +220,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Address cannot be zero");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
       describe("» when calling with admin is equal zero", () => {
@@ -229,7 +229,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Address cannot be zero");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
       describe("» when calling with SeedToken is equal zero", () => {
@@ -239,7 +239,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Address cannot be zero");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
       describe("» when calling with FundingToken is equal zero", () => {
@@ -249,7 +249,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: Address cannot be zero");
+          ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
       describe("» when calling with softcap bigger than hardcap", () => {
@@ -263,9 +263,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith(
-            "SeedFactory: hardCap cannot be less than softCap"
-          );
+          ).to.be.revertedWith("SeedFactory: Error 300");
         });
       });
       describe("» when calling with startTime > endTime", () => {
@@ -278,7 +276,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: invalid time");
+          ).to.be.revertedWith("SeedFactory: Error 106");
         });
       });
       describe("» when calling with startTime < current time", () => {
@@ -291,7 +289,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: invalid time");
+          ).to.be.revertedWith("SeedFactory: Error 106");
         });
       });
       describe("» when calling with tip > max tip", () => {
@@ -305,7 +303,7 @@ describe("> Contract: SeedFactory", () => {
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
-          ).to.be.revertedWith("SeedFactory: tip cannot be more than 45%");
+          ).to.be.revertedWith("SeedFactory: Error 301");
         });
       });
     });
