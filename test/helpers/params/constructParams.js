@@ -27,6 +27,7 @@ const {
  * @typedef {import("../../../lib/types/types").SeedInitParams} SeedInitParams
  * @typedef {import("../../../lib/types/types").SignerWithAddress} SignerWithAddress
  * @typedef  {import("../../../lib/types/types").AllowlistParams} AllowlistParams
+ * @typedef  {import("../../../lib/types/types").ChangeClassAndAllowlistParams} ChangeClassAndAllowlistParams
  * @typedef  {import("../../../lib/types/types").ContributorClassFromContract} ContributorClassFromContract
  * @typedef  {import("../../../lib/types/types").GetClassParamsFromTypeParams} GetClassParamsFromTypeParams
  * @typedef {import("hardhat-deploy/dist/types.js").Address} Address
@@ -378,11 +379,22 @@ async function getAllowlistArrays(params = {}) {
   return params;
 }
 
-async function getChangeClassAndAllowlistParams(params) {
-  if (!params.class) params.class = types.CLASS_DEFAULT;
-  if (!params.allowlist) params.allowlist = [];
-  const classParams = getClassParamsFromType(params);
-  return [params.class, ...classParams, params.allowlist];
+async function getChangeClassesAndAllowlistsParams(params) {
+  let classesIds = [];
+  /** @type  {ChangeClassAndAllowlistParams}*/
+  let singleClass;
+  if (!params.classesParameters) {
+    params.classesParameters = { class1: { class: classTypes.CLASS_DEFAULT } };
+  }
+  const numberOfClasses = Object.keys(params.classesParameters).length;
+  const parameters = await getClassAndWhitelistParams(params);
+
+  for (let i = 0; i < numberOfClasses; i++) {
+    singleClass = Object.values(params.classesParameters)[i];
+    if (!singleClass.class) singleClass.class = classTypes.CLASS_DEFAULT;
+    classesIds.push(singleClass.class);
+  }
+  return [classesIds, ...parameters];
 }
 
 /**
@@ -411,8 +423,8 @@ async function getConvertedParams(type, params) {
     case types.SEED_DEPLOY_INSTANCE:
     case types.SEEDFACTORY_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
-    case types.SEED_CHANGE_CLASS:
-      return Promise.resolve(getChangeClassAndAllowlistParams(params));
+    case types.SEED_CHANGE_CLASSES_AND_ALLOWLISTS:
+      return Promise.resolve(getChangeClassesAndAllowlistsParams(params));
     case types.SEED_ALLOWLIST:
       return await getAllowlistArrays(params);
     case types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM:

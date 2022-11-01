@@ -10,6 +10,7 @@ const { BigNumber } = require("ethers");
 
 /**
  * @typedef {import("../../../../lib/types/types").ContributorClassParams} ContributorClassParams
+ * @typedef {import("../../../../lib/types/types").ChangeClassAndAllowlistParams} ChangeClassAndAllowlistParams
  * @typedef {import("../../../../lib/types/types").SignerWithAddress} SignerWithAddress
  * @typedef {import("../../../../lib/types/types").FunderPortfolio} FunderPortfolio
  * @typedef {import("../../../../lib/types/types").Contract} Contract
@@ -265,29 +266,31 @@ class Seed {
 
   /**
    * @param {{from?: SignerWithAddress,
-   *          class?: number,
-   *          className?: string,
-   *          classCap?: string | BigNumber,
-   *          individualCap?: string | BigNumber,
-   *          vestingCliff?: number
-   *          vestingDuration?: number,
-   *          allowlist?: Address[],
+   *          classesParameters?: {class1?: ChangeClassAndAllowlistParams,
+   *          class2?: ChangeClassAndAllowlistParams, class3?: ChangeClassAndAllowlistParams}
    *        }} params
    */
-  async changeClassAndAllowlist(params = {}) {
+  async changeClassesAndAllowlists(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
-
-    const changeClassAndAllowlistParams = await getConvertedParams(
-      types.SEED_CHANGE_CLASS,
+    const changeClassesAndAllowlistsParams = await getConvertedParams(
+      types.SEED_CHANGE_CLASSES_AND_ALLOWLISTS,
       params
     );
 
-    this.classes[changeClassAndAllowlistParams.class] =
-      changeClassAndAllowlistParams.slice(1);
+    for (let i = 0; i < changeClassesAndAllowlistsParams[0].length; i++) {
+      const classParams = [
+        changeClassesAndAllowlistsParams[1][i],
+        changeClassesAndAllowlistsParams[2][i],
+        changeClassesAndAllowlistsParams[3][i],
+        changeClassesAndAllowlistsParams[4][i],
+        changeClassesAndAllowlistsParams[5][i],
+      ];
+      this.classes[changeClassesAndAllowlistsParams[0][i]] = classParams;
+    }
 
     return await this.instance
       .connect(params.from)
-      .changeClassAndAllowlist(...changeClassAndAllowlistParams);
+      .changeClassesAndAllowlists(...changeClassesAndAllowlistsParams);
   }
 
   /**
