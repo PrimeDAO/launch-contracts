@@ -133,6 +133,19 @@ contract Seed {
         _;
     }
 
+    modifier isNotClosed() {
+        require(!closed, "Seed: should not be closed");
+        _;
+    }
+
+    modifier hasNotStarted() {
+        require(
+            block.timestamp < startTime,
+            "Seed: class can only be added until startTime"
+        );
+        _;
+    }
+
     modifier classRestriction(uint256 _classCap, uint256 _individualCap) {
         require(
             _individualCap <= _classCap && _classCap <= hardCap,
@@ -284,7 +297,13 @@ contract Seed {
         uint256 _individualCap,
         uint256 _vestingCliff,
         uint256 _vestingDuration
-    ) external classRestriction(_classCap, _individualCap) onlyAdmin isLive {
+    )
+        external
+        onlyAdmin
+        hasNotStarted
+        isNotClosed
+        classRestriction(_classCap, _individualCap)
+    {
         require(_class < classes.length, "Seed: incorrect class chosen");
 
         classes[_class].className = _className;
@@ -519,7 +538,8 @@ contract Seed {
     )
         external
         onlyAdmin
-        isLive
+        hasNotStarted
+        isNotClosed
         classBatchRestrictions(
             _classNames,
             _classCaps,

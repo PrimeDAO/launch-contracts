@@ -486,8 +486,29 @@ describe("> Contract: Seed", () => {
         expect(funder.allowlist).to.be.false;
       });
     });
+    describe("# when adding buyers before Seed is live but is closed", () => {
+      it("should revert", async () => {
+        expect((await getCurrentTime()).toNumber()).to.be.below(
+          Seed_funded.startTime
+        );
+        expect(await Seed_funded.getClosedStatus()).to.be.false;
+
+        await increaseTimeTo(Seed_funded.startTime + 1);
+        await Seed_funded.close();
+
+        // Check that Seed is live
+        expect((await getCurrentTime()).toNumber()).to.above(
+          Seed_funded.startTime
+        );
+        expect(await Seed_funded.getClosedStatus()).to.be.true;
+
+        await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
+          "Seed: class can only be added until startTime"
+        );
+      });
+    });
     describe("# when adding buyers while the Seed is live", () => {
-      it("should succees", async () => {
+      it("should revert", async () => {
         expect((await getCurrentTime()).toNumber()).to.be.below(
           Seed_funded.startTime
         );
@@ -498,23 +519,9 @@ describe("> Contract: Seed", () => {
           Seed_funded.startTime
         );
 
-        await Seed_funded.addClassesAndAllowlists();
-        funder = await Seed_funded.getFunder(buyer3.address);
-
-        expect(funder.allowlist).to.be.false;
-        expect(funder.class).to.equal(0);
-
-        const params = {
-          allowlist: [buyer3.address],
-          classes: [classTypes.CLASS_2],
-        };
-
-        await expect(Seed_funded.setAllowlist(params)).to.not.be.reverted;
-
-        funder = await Seed_funded.getFunder(buyer3.address);
-
-        expect(funder.class).to.equal(classTypes.CLASS_2);
-        expect(funder.allowlist).to.be.false;
+        await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
+          "Seed: class can only be added until startTime"
+        );
       });
     });
   });
@@ -534,18 +541,18 @@ describe("> Contract: Seed", () => {
         ).to.be.revertedWith("Seed: caller should be admin");
       });
     });
-    describe("# when Seed is not live (closed or ended)", () => {
+    describe("# when Seed is live or closed", () => {
       it("should revert when closed", async () => {
         await Seed_funded.close();
 
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: sale not live"
+          "Seed: should not be closed"
         );
       });
-      it("should revert when ended", async () => {
-        await increaseTimeTo(Seed_funded.endTime);
+      it("should revert when startTime reached", async () => {
+        await increaseTimeTo(Seed_funded.startTime);
         await expect(Seed_funded.addClassesAndAllowlists()).to.be.revertedWith(
-          "Seed: sale not live"
+          "Seed: class can only be added until startTime"
         );
       });
     });
@@ -1010,13 +1017,22 @@ describe("> Contract: Seed", () => {
           );
         });
       });
+      describe("» when startTime has been reached", () => {
+        it("should revert", async () => {
+          await increaseTimeTo(Seed_initialized.startTime);
+
+          await expect(Seed_initialized.changeClass()).to.be.revertedWith(
+            "Seed: class can only be added until startTime"
+          );
+        });
+      });
       describe("» when Seed is closed", () => {
         it("should revert", async () => {
           const localSeed = await SeedBuilder.createInit();
           await localSeed.changeClass();
           await localSeed.close();
           await expect(localSeed.changeClass()).to.be.revertedWith(
-            "Seed: sale not live"
+            "Seed: should not be closed"
           );
         });
       });
