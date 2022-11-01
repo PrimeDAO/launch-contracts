@@ -282,21 +282,24 @@ contract Seed {
     }
 
     /**
-     * @dev                     Change parameters in the class.
+     * @dev                     Change parameters in the class given in the _class parameter, and
+     *                              allowlist addresses if applicable.
      * @param _class            Class for changing.
      * @param _className        The name of the class
      * @param _classCap         The total cap of the contributor class, denominated in Wei.
      * @param _individualCap    The personal cap of each contributor in this class, denominated in Wei.
      * @param _vestingCliff     The cliff duration, denominated in seconds.
      * @param _vestingDuration  The vesting duration for this contributors class.
+     * @param _allowlist         Array of addresses to be allowlisted
      */
-    function changeClass(
+    function changeClassAndAllowlist(
         uint8 _class,
         bytes32 _className,
         uint256 _classCap,
         uint256 _individualCap,
         uint256 _vestingCliff,
-        uint256 _vestingDuration
+        uint256 _vestingDuration,
+        address[] memory _allowlist
     )
         external
         onlyAdmin
@@ -311,6 +314,16 @@ contract Seed {
         classes[_class].individualCap = _individualCap;
         classes[_class].vestingCliff = _vestingCliff;
         classes[_class].vestingDuration = _vestingDuration;
+
+        uint256 allowlistLength = _allowlist.length;
+        if (allowlistLength > 0) {
+            if (permissionedSeed) {
+                _addAddressesToAllowlist(_allowlist);
+            }
+            for (uint256 i; i < allowlistLength; ++i) {
+                _addToClass(_class, _allowlist[i]);
+            }
+        }
     }
 
     /**
