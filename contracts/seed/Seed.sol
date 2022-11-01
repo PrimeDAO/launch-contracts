@@ -163,21 +163,20 @@ contract Seed {
         uint256[] memory _vestingDurations,
         address[][] memory _allowlist
     ) {
-        uint256 arrayLength = _classNames.length;
         require(
-            arrayLength == _classCaps.length &&
-                arrayLength == _individualCaps.length &&
-                arrayLength == _vestingCliffs.length &&
-                arrayLength == _vestingDurations.length &&
-                arrayLength == _allowlist.length,
+            _classNames.length == _classCaps.length &&
+                _classNames.length == _individualCaps.length &&
+                _classNames.length == _vestingCliffs.length &&
+                _classNames.length == _vestingDurations.length &&
+                _classNames.length == _allowlist.length,
             "Seed: All provided arrays should be same size"
         );
         require(
-            arrayLength <= 100,
+            _classNames.length <= 100,
             "Seed: Can't add batch with more then 100 classes"
         );
         require(
-            classes.length + arrayLength <= 256,
+            classes.length + _classNames.length <= 256,
             "Seed: can't add more then 256 classes"
         );
         _;
@@ -281,29 +280,14 @@ contract Seed {
         seedAmountRequired = tipAmount + seedRemainder;
     }
 
-    /**
-     * @dev                     Change parameters in the class.
-     * @param _class            Class for changing.
-     * @param _className        The name of the class
-     * @param _classCap         The total cap of the contributor class, denominated in Wei.
-     * @param _individualCap    The personal cap of each contributor in this class, denominated in Wei.
-     * @param _vestingCliff     The cliff duration, denominated in seconds.
-     * @param _vestingDuration  The vesting duration for this contributors class.
-     */
-    function changeClass(
+    function _changeClass(
         uint8 _class,
         bytes32 _className,
         uint256 _classCap,
         uint256 _individualCap,
         uint256 _vestingCliff,
         uint256 _vestingDuration
-    )
-        external
-        onlyAdmin
-        hasNotStarted
-        isNotClosed
-        classRestriction(_classCap, _individualCap)
-    {
+    ) internal classRestriction(_classCap, _individualCap) {
         require(_class < classes.length, "Seed: incorrect class chosen");
 
         classes[_class].className = _className;
@@ -311,6 +295,58 @@ contract Seed {
         classes[_class].individualCap = _individualCap;
         classes[_class].vestingCliff = _vestingCliff;
         classes[_class].vestingDuration = _vestingDuration;
+    }
+
+    /**
+     * @dev                     Change parameters in the class given in the _class parameter, and
+     *                              allowlist addresses if applicable.
+     * @param _classes           Class for changing.
+     * @param _classNames        The name of the class
+     * @param _classCaps         The total cap of the contributor class, denominated in Wei.
+     * @param _individualCaps    The personal cap of each contributor in this class, denominated in Wei.
+     * @param _vestingCliffs     The cliff duration, denominated in seconds.
+     * @param _vestingDurations  The vesting duration for this contributors class.
+     * @param _allowlists        Array of addresses to be allowlisted
+     */
+    function changeClassesAndAllowlists(
+        uint8[] memory _classes,
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations,
+        address[][] memory _allowlists
+    )
+        external
+        onlyAdmin
+        hasNotStarted
+        isNotClosed
+        classBatchRestrictions(
+            _classNames,
+            _classCaps,
+            _individualCaps,
+            _vestingCliffs,
+            _vestingDurations,
+            _allowlists
+        )
+    {
+        for (uint8 i; i < _classes.length; ++i) {
+            _changeClass(
+                _classes[i],
+                _classNames[i],
+                _classCaps[i],
+                _individualCaps[i],
+                _vestingCliffs[i],
+                _vestingDurations[i]
+            );
+
+            if (permissionedSeed) {
+                _addAddressesToAllowlist(_allowlists[i]);
+            }
+            for (uint256 j; j < _allowlists[i].length; ++j) {
+                _addToClass(_classes[i], _allowlists[i][j]);
+            }
+        }
     }
 
     /**
