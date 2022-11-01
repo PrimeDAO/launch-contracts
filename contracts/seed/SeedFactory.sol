@@ -11,7 +11,7 @@
 
 // SPDX-License-Identifier: GPL-3.0
 // PrimeDAO Seed Factory contract. Enable PrimeDAO governance to create new Seed contracts.
-// Copyright (C) 2021 PrimeDao
+// Copyright (C) 2022 PrimeDao
 
 // solium-disable linebreak-style
 /* solhint-disable space-after-comma */
@@ -23,12 +23,16 @@ import "./Seed.sol";
 import "../utils/CloneFactory.sol";
 
 /**
- * @title PrimeDAO Seed Factory
+ * @title PrimeDAO Seed Factory V2
  * @dev   Enable PrimeDAO governance to create new Seed contracts.
  */
 contract SeedFactory is CloneFactory, Ownable {
-    Seed public masterCopy;
+    Seed public masterCopy; // Seed implementation address, which is used in the cloning pattern
     uint256 internal constant MAX_TIP = (45 / 100) * 10**18; // Max tip expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee)
+
+    // ----------------------------------------
+    //      EVENTS
+    // ----------------------------------------
 
     event SeedCreated(address indexed newSeed, address indexed admin);
 
@@ -39,6 +43,10 @@ contract SeedFactory is CloneFactory, Ownable {
         );
         masterCopy = _masterCopy;
     }
+
+    // ----------------------------------------
+    //      ONLY OWNER FUNCTIONS
+    // ----------------------------------------
 
     /**
      * @dev               Set Seed contract which works as a base for clones.
@@ -76,8 +84,8 @@ contract SeedFactory is CloneFactory, Ownable {
       * @param _allowlistAddresses          Array of addresses to be allowlisted for the default class, at creation time
       * @param _tip                     Array of containing three parameters:
 												- Total amount of tip percentage, calculated from the total amount of Seed tokens added to the contract, expressed as a % (e.g. 10**18 = 100% fee, 10**16 = 1%)
-												- Tip vesting period duration denominated in seconds.																								
 												- Tip cliff duration denominated in seconds.	
+												- Tip vesting period duration denominated in seconds.																								
       * @param _metadata                    Seed contract metadata, that is IPFS URI
     */
     function deploySeed(

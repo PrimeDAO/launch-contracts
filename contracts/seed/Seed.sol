@@ -11,7 +11,7 @@
 
 // SPDX-License-Identifier: GPL-3.0
 // PrimeDAO Seed contract. Smart contract for seed phases of liquid launch.
-// Copyright (C) 2021 PrimeDao
+// Copyright (C) 2022 PrimeDao
 
 // solium-disable operator-whitespace
 /* solhint-disable space-after-comma */
@@ -23,27 +23,27 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- * @title PrimeDAO Seed contract
- * @dev   Smart contract for seed phases of liquid launch.
+ * @title PrimeDAO Seed contract V2
+ * @dev   Smart contract for seed phases of Prime Launch.
  */
 contract Seed {
     using SafeERC20 for IERC20;
     // Locked parameters
-    address public beneficiary;
-    address public admin;
-    uint256 public softCap;
-    uint256 public hardCap;
+    address public beneficiary; // The address that recieves fees
+    address public admin; // The address of the admin of this contract
+    uint256 public softCap; // The minimum to be reached to consider this Seed successful,
+    //                          expressed in Funding tokens
+    uint256 public hardCap; // The maximum of Funding tokens to be raised in the Seed
     uint256 public seedAmountRequired; // Amount of seed required for distribution (buyable + tip)
     uint256 public totalBuyableSeed; // Amount of buyable seed tokens
-    uint256 public startTime;
-    uint256 public endTime; // set by project admin, this is the last resort endTime to be applied when
-    //     maximumReached has not been reached by then
+    uint256 public startTime; // Start of the buyable period
+    uint256 public endTime; // End of the buyable period
     uint256 public vestingStartTime; // timestamp for when vesting starts, by default == endTime,
-    //     otherwise when maximumReached is reached
-    bool public permissionedSeed;
-    IERC20 public seedToken;
-    IERC20 public fundingToken;
-    bytes public metadata; // IPFS Hash
+    //                                  otherwise when maximumReached is reached
+    bool public permissionedSeed; // Set to true if only allowlisted adresses are allowed to participate
+    IERC20 public seedToken; // The address of the seed token being distributed
+    IERC20 public fundingToken; // The address of the funding token being exchanged for seed token
+    bytes public metadata; // IPFS Hash wich has all the Seed parameters stored
 
     uint256 internal constant PRECISION = 10**18; // used for precision e.g. 1 ETH = 10**18 wei; toWei("1") = 10**18
 
@@ -61,12 +61,16 @@ contract Seed {
     uint256 public fundingCollected; // Amount of funding tokens collected by the seed contract.
     uint256 public fundingWithdrawn; // Amount of funding token withdrawn from the seed contract.
 
-    uint256 public price;
-    Tip public tip;
+    uint256 public price; // Price of the Seed token, expressed in Funding token with precision 10**18
+    Tip public tip; // State which stores all the Tip parameters
 
     ContributorClass[] public classes; // Array of contributor classes
 
     mapping(address => FunderPortfolio) public funders; // funder address to funder portfolio
+
+    // ----------------------------------------
+    //      EVENTS
+    // ----------------------------------------
 
     event SeedsPurchased(
         address indexed recipient,
@@ -81,30 +85,38 @@ contract Seed {
     event MetadataUpdated(bytes indexed metadata);
     event TipClaimed(uint256 indexed amountClaimed);
 
+    // ----------------------------------------
+    //      STRUCTS
+    // ----------------------------------------
+
+    // Struct which stores all the information of a given funder address
     struct FunderPortfolio {
         uint8 class; // Contibutor class id
         uint256 totalClaimed; // Total amount of seed tokens claimed
         uint256 fundingAmount; // Total amount of funding tokens contributed
         bool allowlist; // If permissioned Seed, funder needs to be allowlisted
     }
-    // ToDo: add comments
+    // Struct which stores all the parameters of a contributor class
     struct ContributorClass {
-        bytes32 className;
+        bytes32 className; // Name of the class
         uint256 classCap; // Amount of tokens that can be donated for class
         uint256 individualCap; // Amount of tokens that can be donated by specific contributor
-        uint256 vestingCliff;
+        uint256 vestingCliff; // Cliff after which the vesting starts to get released
         uint256 vestingDuration; // Vesting duration for class
         uint256 classFundingCollected; // Total amount of staked tokens
     }
-
-    // ToDo: add comment
+    // Struct which stores all the parameters related to the Tip
     struct Tip {
-        uint256 tipPercentage;
-        uint256 vestingCliff;
-        uint256 vestingDuration;
-        uint256 tipAmount;
-        uint256 totalClaimed;
+        uint256 tipPercentage; // Total amount of tip percentage,
+        uint256 vestingCliff; // Tip cliff duration denominated in seconds.
+        uint256 vestingDuration; // Tip vesting period duration denominated in seconds.
+        uint256 tipAmount; // Tip amount denominated in Seed tokens
+        uint256 totalClaimed; // Total amount of Seed tokens already claimed
     }
+
+    // ----------------------------------------
+    //      MODIFIERS
+    // ----------------------------------------
 
     modifier claimable() {
         require(
@@ -180,25 +192,6 @@ contract Seed {
             "Seed: can't add more then 256 classes"
         );
         _;
-    }
-
-    function _addClass(
-        bytes32 _className,
-        uint256 _classCap,
-        uint256 _individualCap,
-        uint256 _vestingCliff,
-        uint256 _vestingDuration
-    ) internal classRestriction(_classCap, _individualCap) {
-        classes.push(
-            ContributorClass(
-                _className,
-                _classCap,
-                _individualCap,
-                _vestingCliff,
-                _vestingDuration,
-                0
-            )
-        );
     }
 
     /**
@@ -278,75 +271,6 @@ contract Seed {
 
         seedRemainder = totalBuyableSeed;
         seedAmountRequired = tipAmount + seedRemainder;
-    }
-
-    function _changeClass(
-        uint8 _class,
-        bytes32 _className,
-        uint256 _classCap,
-        uint256 _individualCap,
-        uint256 _vestingCliff,
-        uint256 _vestingDuration
-    ) internal classRestriction(_classCap, _individualCap) {
-        require(_class < classes.length, "Seed: incorrect class chosen");
-
-        classes[_class].className = _className;
-        classes[_class].classCap = _classCap;
-        classes[_class].individualCap = _individualCap;
-        classes[_class].vestingCliff = _vestingCliff;
-        classes[_class].vestingDuration = _vestingDuration;
-    }
-
-    /**
-     * @dev                     Change parameters in the class given in the _class parameter, and
-     *                              allowlist addresses if applicable.
-     * @param _classes           Class for changing.
-     * @param _classNames        The name of the class
-     * @param _classCaps         The total cap of the contributor class, denominated in Wei.
-     * @param _individualCaps    The personal cap of each contributor in this class, denominated in Wei.
-     * @param _vestingCliffs     The cliff duration, denominated in seconds.
-     * @param _vestingDurations  The vesting duration for this contributors class.
-     * @param _allowlists        Array of addresses to be allowlisted
-     */
-    function changeClassesAndAllowlists(
-        uint8[] memory _classes,
-        bytes32[] memory _classNames,
-        uint256[] memory _classCaps,
-        uint256[] memory _individualCaps,
-        uint256[] memory _vestingCliffs,
-        uint256[] memory _vestingDurations,
-        address[][] memory _allowlists
-    )
-        external
-        onlyAdmin
-        hasNotStarted
-        isNotClosed
-        classBatchRestrictions(
-            _classNames,
-            _classCaps,
-            _individualCaps,
-            _vestingCliffs,
-            _vestingDurations,
-            _allowlists
-        )
-    {
-        for (uint8 i; i < _classes.length; ++i) {
-            _changeClass(
-                _classes[i],
-                _classNames[i],
-                _classCaps[i],
-                _individualCaps[i],
-                _vestingCliffs[i],
-                _vestingDurations[i]
-            );
-
-            if (permissionedSeed) {
-                _addAddressesToAllowlist(_allowlists[i]);
-            }
-            for (uint256 j; j < _allowlists[i].length; ++j) {
-                _addToClass(_classes[i], _allowlists[i][j]);
-            }
-        }
     }
 
     /**
@@ -493,7 +417,62 @@ contract Seed {
         return fundingAmount;
     }
 
-    // ADMIN ACTIONS
+    // ----------------------------------------
+    //      ADMIN FUNCTIONS
+    // ----------------------------------------
+
+    /**
+     * @dev                     Changes all de classes given in the _classes parameter, editing
+                                    the different parameters of the class, and allowlist addresses
+                                    if applicable.
+     * @param _classes           Class for changing.
+     * @param _classNames        The name of the class
+     * @param _classCaps         The total cap of the contributor class, denominated in Wei.
+     * @param _individualCaps    The personal cap of each contributor in this class, denominated in Wei.
+     * @param _vestingCliffs     The cliff duration, denominated in seconds.
+     * @param _vestingDurations  The vesting duration for this contributors class.
+     * @param _allowlists        Array of addresses to be allowlisted
+     */
+    function changeClassesAndAllowlists(
+        uint8[] memory _classes,
+        bytes32[] memory _classNames,
+        uint256[] memory _classCaps,
+        uint256[] memory _individualCaps,
+        uint256[] memory _vestingCliffs,
+        uint256[] memory _vestingDurations,
+        address[][] memory _allowlists
+    )
+        external
+        onlyAdmin
+        hasNotStarted
+        isNotClosed
+        classBatchRestrictions(
+            _classNames,
+            _classCaps,
+            _individualCaps,
+            _vestingCliffs,
+            _vestingDurations,
+            _allowlists
+        )
+    {
+        for (uint8 i; i < _classes.length; ++i) {
+            _changeClass(
+                _classes[i],
+                _classNames[i],
+                _classCaps[i],
+                _individualCaps[i],
+                _vestingCliffs[i],
+                _vestingDurations[i]
+            );
+
+            if (permissionedSeed) {
+                _addAddressesToAllowlist(_allowlists[i]);
+            }
+            for (uint256 j; j < _allowlists[i].length; ++j) {
+                _addToClass(_classes[i], _allowlists[i][j]);
+            }
+        }
+    }
 
     /**
      * @dev                     Pause distribution.
@@ -563,7 +542,16 @@ contract Seed {
         }
     }
 
-    //ToDo: add comment
+    /**
+     * @dev                         Add classes and allowlists to the contract by batching them into one
+                                        function call. It adds allowlists to the created classes if applicable
+     * @param _classNames           The name of the class
+     * @param _classCaps            The total cap of the contributor class, denominated in Wei.
+     * @param _individualCaps       The personal cap of each contributor in this class, denominated in Wei.
+     * @param _vestingCliffs        The cliff duration, denominated in seconds.
+     * @param _vestingDurations     The vesting duration for this contributors class.
+     * @param _allowlist            Array of addresses to be allowlisted
+     */
     function addClassesAndAllowlists(
         bytes32[] memory _classNames,
         uint256[] memory _classCaps,
@@ -628,47 +616,6 @@ contract Seed {
     }
 
     /**
-     * @dev                       Set contributor class.
-     * @param _classId              Class of the contributor.
-     * @param _buyer            Address of the contributor.
-     */
-    function _addToClass(uint8 _classId, address _buyer) internal {
-        require(_classId < classes.length, "Seed: incorrect class chosen");
-        funders[_buyer].class = _classId;
-    }
-
-    /**
-     * @dev                       Set contributor class.
-     * @param _buyers          Address of the contributor.
-     * @param _classes            Class of the contributor.
-     */
-    function _addMultipleAdressesToClass(
-        address[] memory _buyers,
-        uint8[] memory _classes
-    ) internal {
-        uint256 arrayLength = _buyers.length;
-        require(
-            _classes.length == arrayLength,
-            "Seed: mismatch in array length"
-        );
-
-        for (uint256 i; i < arrayLength; ++i) {
-            _addToClass(_classes[i], _buyers[i]);
-        }
-    }
-
-    /**
-     * @dev                     Add address to allowlist.
-     * @param _buyers        Address which needs to be allowlisted
-     */
-    function _addAddressesToAllowlist(address[] memory _buyers) internal {
-        uint256 arrayLength = _buyers.length;
-        for (uint256 i; i < arrayLength; ++i) {
-            funders[_buyers[i]].allowlist = true;
-        }
-    }
-
-    /**
      * @dev                     Remove address from allowlist.
      * @param _buyer             Address which needs to be un-allowlisted
      */
@@ -711,37 +658,102 @@ contract Seed {
         emit MetadataUpdated(_metadata);
     }
 
-    // GETTER FUNCTIONS
-    /**
-     * @dev                     Calculates the maximum claim
-     * @param _funder           Address of funder to find the maximum claim
-     */
-    function calculateClaimFunder(address _funder)
-        public
-        view
-        returns (uint256)
-    {
-        FunderPortfolio memory tokenFunder = funders[_funder];
-        uint8 currentId = tokenFunder.class;
-        ContributorClass memory claimed = classes[currentId];
+    // ----------------------------------------
+    //      INTERNAL FUNCTIONS
+    // ----------------------------------------
 
-        return
-            _calculateClaim(
-                seedAmountForFunder(_funder),
-                claimed.vestingCliff,
-                claimed.vestingDuration,
-                tokenFunder.totalClaimed
-            );
+    /**
+     * @dev                         Change parameters in the class given in the _class parameter
+     * @param _class                Class for changing.
+     * @param _className            The name of the class
+     * @param _classCap             The total cap of the contributor class, denominated in Wei.
+     * @param _individualCap        The personal cap of each contributor in this class, denominated in Wei.
+     * @param _vestingCliff         The cliff duration, denominated in seconds.
+     * @param _vestingDuration      The vesting duration for this contributors class.
+     */
+    function _changeClass(
+        uint8 _class,
+        bytes32 _className,
+        uint256 _classCap,
+        uint256 _individualCap,
+        uint256 _vestingCliff,
+        uint256 _vestingDuration
+    ) internal classRestriction(_classCap, _individualCap) {
+        require(_class < classes.length, "Seed: incorrect class chosen");
+
+        classes[_class].className = _className;
+        classes[_class].classCap = _classCap;
+        classes[_class].individualCap = _individualCap;
+        classes[_class].vestingCliff = _vestingCliff;
+        classes[_class].vestingDuration = _vestingDuration;
     }
 
-    function calculateClaimBeneficiary() public view returns (uint256) {
-        return
-            _calculateClaim(
-                tip.tipAmount,
-                tip.vestingCliff,
-                tip.vestingDuration,
-                tip.totalClaimed
-            );
+    /**
+     * @dev                             Internal function that adds a class to the classes array
+     * @param _className                The name of the class
+     * @param _classCap                 The total cap of the contributor class, denominated in Wei.
+     * @param _individualCap            The personal cap of each contributor in this class, denominated in Wei.
+     * @param _vestingCliff             The cliff duration, denominated in seconds.
+     * @param _vestingDuration          The vesting duration for this contributors class.
+     */
+    function _addClass(
+        bytes32 _className,
+        uint256 _classCap,
+        uint256 _individualCap,
+        uint256 _vestingCliff,
+        uint256 _vestingDuration
+    ) internal classRestriction(_classCap, _individualCap) {
+        classes.push(
+            ContributorClass(
+                _className,
+                _classCap,
+                _individualCap,
+                _vestingCliff,
+                _vestingDuration,
+                0
+            )
+        );
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _classId              Class of the contributor.
+     * @param _buyer            Address of the contributor.
+     */
+    function _addToClass(uint8 _classId, address _buyer) internal {
+        require(_classId < classes.length, "Seed: incorrect class chosen");
+        funders[_buyer].class = _classId;
+    }
+
+    /**
+     * @dev                       Set contributor class.
+     * @param _buyers          Address of the contributor.
+     * @param _classes            Class of the contributor.
+     */
+    function _addMultipleAdressesToClass(
+        address[] memory _buyers,
+        uint8[] memory _classes
+    ) internal {
+        uint256 arrayLength = _buyers.length;
+        require(
+            _classes.length == arrayLength,
+            "Seed: mismatch in array length"
+        );
+
+        for (uint256 i; i < arrayLength; ++i) {
+            _addToClass(_classes[i], _buyers[i]);
+        }
+    }
+
+    /**
+     * @dev                     Add address to allowlist.
+     * @param _buyers        Address which needs to be allowlisted
+     */
+    function _addAddressesToAllowlist(address[] memory _buyers) internal {
+        uint256 arrayLength = _buyers.length;
+        for (uint256 i; i < arrayLength; ++i) {
+            funders[_buyers[i]].allowlist = true;
+        }
     }
 
     function _calculateClaim(
@@ -770,6 +782,48 @@ contract Seed {
         }
     }
 
+    // ----------------------------------------
+    //      GETTER FUNCTIONS
+    // ----------------------------------------
+
+    /**
+     * @dev                     Calculates the maximum claim of the funder address
+     * @param _funder           Address of funder to find the maximum claim
+     */
+    function calculateClaimFunder(address _funder)
+        public
+        view
+        returns (uint256)
+    {
+        FunderPortfolio memory tokenFunder = funders[_funder];
+        uint8 currentId = tokenFunder.class;
+        ContributorClass memory claimed = classes[currentId];
+
+        return
+            _calculateClaim(
+                seedAmountForFunder(_funder),
+                claimed.vestingCliff,
+                claimed.vestingDuration,
+                tokenFunder.totalClaimed
+            );
+    }
+
+    /**
+     * @dev                     Calculates the maximum claim for the beneficiary
+     */
+    function calculateClaimBeneficiary() public view returns (uint256) {
+        return
+            _calculateClaim(
+                tip.tipAmount,
+                tip.vestingCliff,
+                tip.vestingDuration,
+                tip.totalClaimed
+            );
+    }
+
+    /**
+     * @dev                     Returns arrays with all the parameters of all the classes
+     */
     function getAllClasses()
         external
         view
