@@ -236,27 +236,27 @@ contract Seed {
         hardCap = _softAndHardCap[1];
         startTime = _startTimeAndEndTime[0];
         endTime = _startTimeAndEndTime[1];
-        vestingStartTime = endTime + 1;
+        vestingStartTime = _startTimeAndEndTime[1] + 1;
         permissionedSeed = _permissionedSeed;
         seedToken = IERC20(_tokens[0]);
         fundingToken = IERC20(_tokens[1]);
         price = _price;
 
-        totalBuyableSeed = (hardCap * PRECISION) / _price;
+        totalBuyableSeed = (_softAndHardCap[1] * PRECISION) / _price;
         // Calculate tip
         uint256 tipAmount = (totalBuyableSeed * _tip[0]) / PRECISION;
         tip = Tip(_tip[0], _tip[1], _tip[2], tipAmount, 0);
         // Add default class
         _addClass(
             bytes32(""),
-            hardCap,
+            _softAndHardCap[1],
             _defaultClassParameters[0],
             _defaultClassParameters[1],
             _defaultClassParameters[2]
         );
 
         // Add allowlist to the default class
-        if (permissionedSeed == true && _allowlistAddresses.length > 0) {
+        if (_permissionedSeed == true && _allowlistAddresses.length > 0) {
             uint256 arrayLength = _allowlistAddresses.length;
             for (uint256 i; i < arrayLength; ++i) {
                 _addToClass(0, _allowlistAddresses[i]); // Value 0 for the default class
