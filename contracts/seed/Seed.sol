@@ -133,12 +133,12 @@ contract Seed {
         _;
     }
 
-    modifier isClosed() {
+    modifier isNotClosed() {
         require(!closed, "Seed: should not be closed");
         _;
     }
 
-    modifier isStarted() {
+    modifier hasNotStarted() {
         require(
             block.timestamp < startTime,
             "Seed: class can only be added until startTime"
@@ -300,8 +300,8 @@ contract Seed {
     )
         external
         onlyAdmin
-        isStarted
-        isClosed
+        hasNotStarted
+        isNotClosed
         classRestriction(_classCap, _individualCap)
     {
         require(_class < classes.length, "Seed: incorrect class chosen");
@@ -538,8 +538,8 @@ contract Seed {
     )
         external
         onlyAdmin
-        isStarted
-        isClosed
+        hasNotStarted
+        isNotClosed
         classBatchRestrictions(
             _classNames,
             _classCaps,
