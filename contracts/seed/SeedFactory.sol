@@ -37,10 +37,7 @@ contract SeedFactory is CloneFactory, Ownable {
     event SeedCreated(address indexed newSeed, address indexed admin);
 
     constructor(Seed _masterCopy) {
-        require(
-            address(_masterCopy) != address(0),
-            "SeedFactory: masterCopy cannot be zero"
-        );
+        require(address(_masterCopy) != address(0), "SeedFactory: Error 100");
         masterCopy = _masterCopy;
     }
 
@@ -56,8 +53,9 @@ contract SeedFactory is CloneFactory, Ownable {
         require(
             address(_masterCopy) != address(0) &&
                 address(_masterCopy) != address(this),
-            "SeedFactory: new mastercopy cannot be set"
+            "SeedFactory: Error 100"
         );
+
         masterCopy = _masterCopy;
     }
 
@@ -103,41 +101,34 @@ contract SeedFactory is CloneFactory, Ownable {
     ) external onlyOwner returns (address) {
         {
             require(
-                address(masterCopy) != address(0),
-                "SeedFactory: mastercopy has not been set"
-            );
-            require(
                 _tip.length == 3 &&
                     _tokens.length == 2 &&
                     _softAndHardCap.length == 2 &&
                     _startTimeAndEndTime.length == 2 &&
                     _defaultClassParameters.length == 3,
-                "SeedFactory: Invalid array length"
+                "SeedFactory: Error 102"
             );
             require(
                 _beneficiary != address(0) &&
                     _admin != address(0) &&
                     _tokens[0] != address(0) &&
                     _tokens[1] != address(0),
-                "SeedFactory: Address cannot be zero"
+                "SeedFactory: Error 100"
             );
             require(
                 _tokens[0] != _tokens[1] && _beneficiary != _admin,
-                "SeedFactory: addresses cannot be identical"
+                "SeedFactory: Error 104"
             );
             require(
                 _softAndHardCap[1] >= _softAndHardCap[0],
-                "SeedFactory: hardCap cannot be less than softCap"
+                "SeedFactory: Error 300"
             );
             require(
                 _startTimeAndEndTime[1] > _startTimeAndEndTime[0] &&
                     block.timestamp < _startTimeAndEndTime[0],
-                "SeedFactory: invalid time"
+                "SeedFactory: Error 106"
             );
-            require(
-                _tip[0] <= MAX_TIP,
-                "SeedFactory: tip cannot be more than 45%"
-            );
+            require(_tip[0] <= MAX_TIP, "SeedFactory: Error 301");
         }
 
         // deploy clone

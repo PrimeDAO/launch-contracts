@@ -121,49 +121,46 @@ contract Seed {
     modifier claimable() {
         require(
             endTime < block.timestamp || maximumReached || closed,
-            "Seed: the distribution has not yet finished"
+            "Seed: Error 346"
         );
         _;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Seed: caller should be admin");
+        require(msg.sender == admin, "Seed: Error 322");
         _;
     }
 
     modifier isActive() {
-        require(!closed, "Seed: should not be closed");
-        require(!paused, "Seed: should not be paused");
+        require(!closed, "Seed: Error 348");
+        require(!paused, "Seed: Error 349");
         _;
     }
 
     modifier isLive() {
         require(
             !closed && block.timestamp < vestingStartTime,
-            "Seed: sale not live"
+            "Seed: Error 350"
         );
         _;
     }
 
     modifier isNotClosed() {
-        require(!closed, "Seed: should not be closed");
+        require(!closed, "Seed: Error 348");
         _;
     }
 
     modifier hasNotStarted() {
-        require(
-            block.timestamp < startTime,
-            "Seed: class can only be added until startTime"
-        );
+        require(block.timestamp < startTime, "Seed: Error 344");
         _;
     }
 
     modifier classRestriction(uint256 _classCap, uint256 _individualCap) {
         require(
             _individualCap <= _classCap && _classCap <= hardCap,
-            "Seed: caps are invalid"
+            "Seed: Error 303"
         );
-        require(_classCap > 0, "Seed: class Cap should be bigger then 0");
+        require(_classCap > 0, "Seed: Error 101");
         _;
     }
 
@@ -181,16 +178,10 @@ contract Seed {
                 _classNames.length == _vestingCliffs.length &&
                 _classNames.length == _vestingDurations.length &&
                 _classNames.length == _allowlist.length,
-            "Seed: All provided arrays should be same size"
+            "Seed: Error 102"
         );
-        require(
-            _classNames.length <= 100,
-            "Seed: Can't add batch with more then 100 classes"
-        );
-        require(
-            classes.length + _classNames.length <= 256,
-            "Seed: can't add more then 256 classes"
-        );
+        require(_classNames.length <= 100, "Seed: Error 304");
+        require(classes.length + _classNames.length <= 256, "Seed: Error 305");
         _;
     }
 
@@ -232,7 +223,7 @@ contract Seed {
         address[] memory _allowlistAddresses,
         uint256[] memory _tip
     ) external {
-        require(!initialized, "Seed: contract already initialized");
+        require(!initialized, "Seed: Error 001");
         initialized = true;
 
         beneficiary = _beneficiary;
@@ -279,35 +270,32 @@ contract Seed {
      */
     function buy(uint256 _fundingAmount) external isActive returns (uint256) {
         FunderPortfolio storage funder = funders[msg.sender];
-        require(
-            !permissionedSeed || funder.allowlist,
-            "Seed: sender has no rights"
-        );
+        require(!permissionedSeed || funder.allowlist, "Seed: Error 320");
 
         ContributorClass memory userClass = classes[funder.class];
-        require(!maximumReached, "Seed: maximum funding reached");
-        require(_fundingAmount > 0, "Seed: cannot buy 0 tokens");
+        require(!maximumReached, "Seed: Error 340");
+        require(_fundingAmount > 0, "Seed: Error 101");
         // Checks if contributor has exceeded his personal or class cap.
         require(
             (userClass.classFundingCollected + _fundingAmount) <=
                 userClass.classCap,
-            "Seed: maximum class funding reached"
+            "Seed: Error 360"
         );
 
         require(
             (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
-            "Seed: maximum personal funding reached"
+            "Seed: Error 361"
         );
 
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
-            "Seed: only allowed during distribution period"
+            "Seed: Error 362"
         );
 
         if (!isFunded) {
             require(
                 seedToken.balanceOf(address(this)) >= seedAmountRequired,
-                "Seed: sufficient seeds not provided"
+                "Seed: Error 343"
             );
             isFunded = true;
         }
@@ -356,17 +344,14 @@ contract Seed {
      * @param _claimAmount      The amount of seed token a users wants to claim.
      */
     function claim(uint256 _claimAmount) external claimable {
-        require(minimumReached, "Seed: minimum funding amount not met");
+        require(minimumReached, "Seed: Error 341");
 
         uint256 amountClaimable;
 
         amountClaimable = calculateClaimFunder(msg.sender);
-        require(amountClaimable > 0, "Seed: amount claimable is 0");
+        require(amountClaimable > 0, "Seed: Error 380");
 
-        require(
-            amountClaimable >= _claimAmount,
-            "Seed: request is greater than claimable amount"
-        );
+        require(amountClaimable >= _claimAmount, "Seed: Error 381");
 
         funders[msg.sender].totalClaimed += _claimAmount;
 
@@ -381,7 +366,7 @@ contract Seed {
         uint256 amountClaimable;
 
         amountClaimable = calculateClaimBeneficiary();
-        require(amountClaimable > 0, "Seed: amount claimable is 0");
+        require(amountClaimable > 0, "Seed: Error 380");
 
         tip.totalClaimed += amountClaimable;
 
@@ -396,14 +381,11 @@ contract Seed {
      * @dev         Returns funding tokens to user.
      */
     function retrieveFundingTokens() external returns (uint256) {
-        require(
-            startTime <= block.timestamp,
-            "Seed: distribution haven't started"
-        );
-        require(!minimumReached, "Seed: minimum funding amount met");
+        require(startTime <= block.timestamp, "Seed: Error 344");
+        require(!minimumReached, "Seed: Error 342");
         FunderPortfolio storage tokenFunder = funders[msg.sender];
         uint256 fundingAmount = tokenFunder.fundingAmount;
-        require(fundingAmount > 0, "Seed: zero funding amount");
+        require(fundingAmount > 0, "Seed: Error 380");
         seedRemainder += seedAmountForFunder(msg.sender);
         totalFunderCount--;
         tokenFunder.fundingAmount = 0;
@@ -485,8 +467,8 @@ contract Seed {
      * @dev                     Unpause distribution.
      */
     function unpause() external onlyAdmin {
-        require(closed != true, "Seed: should not be closed");
-        require(paused == true, "Seed: should be paused");
+        require(closed != true, "Seed: Error 348");
+        require(paused == true, "Seed: Error 351");
 
         paused = false;
     }
@@ -498,7 +480,7 @@ contract Seed {
     */
     function close() external onlyAdmin {
         // close seed token distribution
-        require(!closed, "Seed: should not be closed");
+        require(!closed, "Seed: Error 348");
 
         if (block.timestamp < vestingStartTime) {
             vestingStartTime = block.timestamp;
@@ -520,14 +502,11 @@ contract Seed {
         */
         require(
             closed || maximumReached || block.timestamp >= endTime,
-            "Seed: The ability to buy seed tokens must have ended before remaining seed tokens can be withdrawn"
+            "Seed: Error 382"
         );
         uint256 seedTokenBalans = seedToken.balanceOf(address(this));
         if (!minimumReached) {
-            require(
-                seedTokenBalans > 0,
-                "Seed: Failed to transfer Seed Token" // ToDo: better error message
-            );
+            require(seedTokenBalans > 0, "Seed: Error 345");
             // subtract tip from Seed tokens
             uint256 retrievableSeedAmount = seedTokenBalans -
                 (tip.tipAmount - tip.totalClaimed);
@@ -620,7 +599,7 @@ contract Seed {
      * @param _buyer             Address which needs to be un-allowlisted
      */
     function unAllowlist(address _buyer) external onlyAdmin isLive {
-        require(permissionedSeed == true, "Seed: seed is not permissioned");
+        require(permissionedSeed == true, "Seed: Error 347");
 
         funders[_buyer].allowlist = false;
     }
@@ -633,10 +612,7 @@ contract Seed {
             Admin can't withdraw funding tokens until buying has ended and
             therefore contributors can no longer withdraw their funding tokens.
         */
-        require(
-            minimumReached,
-            "Seed: cannot withdraw while funding tokens can still be withdrawn by contributors"
-        );
+        require(minimumReached, "Seed: Error 383");
         fundingWithdrawn = fundingCollected;
         // Send the entire seed contract balance of the funding token to the sale’s admin
         fundingToken.safeTransfer(
@@ -650,10 +626,7 @@ contract Seed {
      * @param _metadata         Seed contract metadata, that is IPFS Hash
      */
     function updateMetadata(bytes memory _metadata) external {
-        require(
-            initialized != true || msg.sender == admin,
-            "Seed: contract should not be initialized or caller should be admin"
-        );
+        require(initialized != true || msg.sender == admin, "Seed: Error 321");
         metadata = _metadata;
         emit MetadataUpdated(_metadata);
     }
@@ -679,7 +652,7 @@ contract Seed {
         uint256 _vestingCliff,
         uint256 _vestingDuration
     ) internal classRestriction(_classCap, _individualCap) {
-        require(_class < classes.length, "Seed: incorrect class chosen");
+        require(_class < classes.length, "Seed: Error 302");
 
         classes[_class].className = _className;
         classes[_class].classCap = _classCap;
@@ -721,7 +694,7 @@ contract Seed {
      * @param _buyer            Address of the contributor.
      */
     function _addToClass(uint8 _classId, address _buyer) internal {
-        require(_classId < classes.length, "Seed: incorrect class chosen");
+        require(_classId < classes.length, "Seed: Error 302");
         funders[_buyer].class = _classId;
     }
 
@@ -735,10 +708,7 @@ contract Seed {
         uint8[] memory _classes
     ) internal {
         uint256 arrayLength = _buyers.length;
-        require(
-            _classes.length == arrayLength,
-            "Seed: mismatch in array length"
-        );
+        require(_classes.length == arrayLength, "Seed: Error 102");
 
         for (uint256 i; i < arrayLength; ++i) {
             _addToClass(_classes[i], _buyers[i]);
