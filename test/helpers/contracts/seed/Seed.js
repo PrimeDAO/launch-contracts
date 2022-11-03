@@ -415,6 +415,19 @@ class Seed {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     await this.instance.connect(params.from).withdraw();
   }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress, allowlistAddress?: Address}} params
+   */
+  async unAllowlist(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    if (!params.allowlistAddress)
+      params.allowlistAddress = (await getNamedTestSigners()).buyer1.address;
+    await this.instance
+      .connect(params.from)
+      .unAllowlist(params.allowlistAddress);
+  }
 }
 
 module.exports = {
