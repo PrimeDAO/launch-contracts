@@ -53,6 +53,11 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     args: [],
     log: true,
   });
+  await deploy("TestToken", {
+    from: root,
+    args: [],
+    log: true,
+  });
 
   console.log("---");
 };
