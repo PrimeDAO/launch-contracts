@@ -4,7 +4,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const safeAddress = getSafeAddress();
+  const safeAddress = getSafeAddress(root);
   const LOCAL_CHAIN_ID = 31337
   const chainId = network.config.chainId ?? LOCAL_CHAIN_ID
   if (chainId !== LOCAL_CHAIN_ID) return
