@@ -66,7 +66,7 @@ task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(
       var tx = await seedFactoryInstance.deploySeed(
         SeedArguments.BENEFICIARY,
         SeedArguments.ADMIN,
-        [SeedArguments.cUSD, SeedArguments.TUSDC],
+        [SeedArguments.ProjectToken, SeedArguments.FundingToken],
         [SeedArguments.softCap, SeedArguments.hardCap],
         SeedArguments.price,
         [SeedArguments.startTime, SeedArguments.endTime],
