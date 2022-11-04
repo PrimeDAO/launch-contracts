@@ -1,8 +1,10 @@
 const { getSafeAddress } = require("../lib/params/safeAddresses");
 
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
+  console.log('------------------------------------------------------------------------------------------')
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 00_deploy_seed_contracts.js ~ line 6 ~ root', root)
 
   const safeAddress = getSafeAddress(root);
   const LOCAL_CHAIN_ID = 31337;
@@ -17,6 +19,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     args: [],
     log: true,
   });
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 00_deploy_seed_contracts.js ~ line 58 ~ seedAddress', seedAddress)
 
   await deploy("SeedFactory", {
     from: root,
@@ -25,6 +28,8 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   });
 
   const seedFactoryInstance = await ethers.getContract("SeedFactory");
+
+  /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: 00_deploy_seed_contracts.js ~ line 30 ~ seedFactoryInstance.address', seedFactoryInstance.address)
 
   await seedFactoryInstance.transferOwnership(safeAddress);
   // await execute(
