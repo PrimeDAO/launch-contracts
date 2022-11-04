@@ -5,7 +5,9 @@ const { BigNumber } = ethers
 
 const SEED_FACTORY_ADDRESS = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"
 // const SEED_FACTORY_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+const SEED_ADDRESS = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"
 const D2D_ADDRESS = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9"
+const TestToken_ADDRESS = "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707"
 
 async function run() {
   const readonlyEndPoint = "HTTP://127.0.0.1:8545"
@@ -17,16 +19,32 @@ async function run() {
   // const block = await provider.getBlock("0x815b5bd94a41848598d7786d0da93a579d85778e9ef8f3d")
   // const block = await provider.getBlock(2)
 
-  var D2DInstance = await ethers.getContractAt("D2D", D2D_ADDRESS);
-   D2DInstance.address/*?*/
-   D2DInstance.functions/*?*/
+  // var D2DInstance = await ethers.getContractAt("D2D", D2D_ADDRESS);
+  //  D2DInstance.address/*?*/
+  //  D2DInstance.functions/*?*/
   //  D2DInstance.populateTransaction.balanceOf("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")/*?*/
   //  D2DInstance.balanceOf("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")/*?*/
+
+  // var TestTokenInstance = await ethers.getContractAt("TestToken", TestToken_ADDRESS);
+  // TestTokenInstance.address/*?*/
+  // TestTokenInstance.functions/*?*/
 
   // var seedFactoryInstance = await ethers.getContractAt("SeedFactory", SEED_FACTORY_ADDRESS);
   //  seedFactoryInstance/*?*/
   // const addr = seedFactoryInstance.signer.getAddress();
   //  addr/*?*/
+
+  /** SEED */
+
+  await ethers.provider.getCode(SEED_ADDRESS)/*?*/
+
+  var seedInstance = await ethers.getContractAt("Seed", SEED_ADDRESS);
+  const instance = await seedInstance.deployed()
+   instance/*?*/
+  // seedInstance.functions/*?*/
+  // await seedInstance.seedToken()/*?*/
+  // await seedInstance.functions['seedToken()']()/*?*/
+  // await seedInstance.functions.seedToken()/*?*/
 
   // seedFactoryInstance.address/*?*/
 
