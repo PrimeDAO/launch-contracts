@@ -5,9 +5,9 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { root } = await getNamedAccounts();
 
   const safeAddress = getSafeAddress(root);
-  const LOCAL_CHAIN_ID = 31337
-  const chainId = network.config.chainId ?? LOCAL_CHAIN_ID
-  if (chainId !== LOCAL_CHAIN_ID) return
+  const LOCAL_CHAIN_ID = 31337;
+  const chainId = network.config.chainId ?? LOCAL_CHAIN_ID;
+  if (chainId !== LOCAL_CHAIN_ID) return;
 
   // Ethereum Mainnet safe
   // https://github.com/PrimeDAO/contracts-v2/blob/main/deployments/mainnet/Safe.json
@@ -48,7 +48,6 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     args: [],
     log: true,
   });
-
 
   console.log("---");
 };

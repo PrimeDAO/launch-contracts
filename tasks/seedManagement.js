@@ -51,10 +51,14 @@ task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(
       console.log("Creating Seed...");
       var seedFactoryInstance = await hre.ethers.getContract("SeedFactory");
       // var seedFactoryInstance = await hre.ethers.getContractAt("SeedFactory", "0x5FbDB2315678afecb367f032d93F642f64180aa3");
-      seedFactoryInstance.address
+      seedFactoryInstance.address;
       /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 55 ~ seedFactoryInstance.address', seedFactoryInstance.address)
-      console.log('------------------------------------------------------------------------------------------')
-      console.log('------------------------------------------------------------------------------------------')
+      console.log(
+        "------------------------------------------------------------------------------------------"
+      );
+      console.log(
+        "------------------------------------------------------------------------------------------"
+      );
       /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 60 ~ SeedArguments.BENEFICIARY', SeedArguments.BENEFICIARY)
       var tx = await seedFactoryInstance.deploySeed(
         SeedArguments.BENEFICIARY,
@@ -79,9 +83,8 @@ task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(
 
       var filter = seedFactoryInstance.filters.SeedCreated();
       // /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 80 ~ filter', filter)
-      var result = await seedFactoryInstance.queryFilter(filter)
+      var result = await seedFactoryInstance.queryFilter(filter);
       /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 82 ~ result', result)
-
     } catch (error) {
       console.log(error);
     }

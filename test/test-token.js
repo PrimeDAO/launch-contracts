@@ -8,7 +8,7 @@ describe("Token contract", function () {
 
     const hardhatToken = await Token.deploy();
 
-    console.log(owner.address)
+    console.log(owner.address);
 
     const ownerBalance = await hardhatToken.balanceOf(owner.address);
     expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
