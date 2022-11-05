@@ -52,6 +52,7 @@ const exportAbiFunction = async ({ run, network, deployments }) => {
   // inject ABI from externally embedded artifacts into exported sharedAbis.json
   // IF they exist in external sources AND do not yet exist in sharedAbis.json
   const sharedAbisPath = path.resolve(__dirname, `../exports/sharedAbis.json`);
+  sharedAbis = JSON.parse(await fs.readFile(sharedAbisPath));
 
   const sharedAbiNames = Array.from(
     new Set(
