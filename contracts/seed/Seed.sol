@@ -504,17 +504,17 @@ contract Seed {
             closed || maximumReached || block.timestamp >= endTime,
             "Seed: Error 382"
         );
-        uint256 seedTokenBalans = seedToken.balanceOf(address(this));
+        uint256 seedTokenBalance = seedToken.balanceOf(address(this));
         if (!minimumReached) {
-            require(seedTokenBalans > 0, "Seed: Error 345");
+            require(seedTokenBalance > 0, "Seed: Error 345");
             // subtract tip from Seed tokens
-            uint256 retrievableSeedAmount = seedTokenBalans -
+            uint256 retrievableSeedAmount = seedTokenBalance -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
-            uint256 amountToTransfer = seedTokenBalans -
+            uint256 amountToTransfer = seedTokenBalance -
                 (totalSeedDistributed - seedClaimed) -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);
