@@ -275,21 +275,15 @@ contract Seed {
         ContributorClass memory userClass = classes[funder.class];
         require(!maximumReached, "Seed: Error 340");
         require(_fundingAmount > 0, "Seed: Error 101");
-        // Checks if contributor has exceeded his personal or class cap.
+
         require(
-            (userClass.classFundingCollected + _fundingAmount) <=
-                userClass.classCap,
+            (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
             "Seed: Error 360"
         );
 
         require(
-            (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
-            "Seed: Error 361"
-        );
-
-        require(
             endTime >= block.timestamp && startTime <= block.timestamp,
-            "Seed: Error 362"
+            "Seed: Error 361"
         );
 
         if (!isFunded) {
@@ -299,9 +293,17 @@ contract Seed {
             );
             isFunded = true;
         }
-
+        // Update _fundingAmount to reflect the possible buyable amnount
         if ((fundingCollected + _fundingAmount) > hardCap) {
             _fundingAmount = hardCap - fundingCollected;
+        }
+        if (
+            (userClass.classFundingCollected + _fundingAmount) >
+            userClass.classCap
+        ) {
+            _fundingAmount =
+                userClass.classCap -
+                userClass.classFundingCollected;
         }
 
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
@@ -504,17 +506,17 @@ contract Seed {
             closed || maximumReached || block.timestamp >= endTime,
             "Seed: Error 382"
         );
-        uint256 seedTokenBalans = seedToken.balanceOf(address(this));
+        uint256 seedTokenBalance = seedToken.balanceOf(address(this));
         if (!minimumReached) {
-            require(seedTokenBalans > 0, "Seed: Error 345");
+            require(seedTokenBalance > 0, "Seed: Error 345");
             // subtract tip from Seed tokens
-            uint256 retrievableSeedAmount = seedTokenBalans -
+            uint256 retrievableSeedAmount = seedTokenBalance -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
-            uint256 amountToTransfer = seedTokenBalans -
+            uint256 amountToTransfer = seedTokenBalance -
                 (totalSeedDistributed - seedClaimed) -
                 (tip.tipAmount - tip.totalClaimed);
             seedToken.safeTransfer(_refundReceiver, amountToTransfer);

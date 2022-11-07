@@ -38,9 +38,8 @@
 - `350` : `Seed is not Live`
 - `351` : `Seed is not paused`
 ### Buy (360 - 379)
-- `360` : `Maximum contributor class funding reached`
-- `361` : `Maximum personal funding reached`
-- `362` : `Buying only allowed while the Seed is Live`
+- `360` : `Maximum personal funding reached`
+- `361` : `Buying only allowed while the Seed is Live`
 ### Claim / Withdraw (380 - 399)
 - `380` : `Claimable amount is zero`
 - `381` : `Cannot claim more than claimable amount`

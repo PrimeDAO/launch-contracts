@@ -1211,6 +1211,10 @@ describe("> Contract: Seed", () => {
   describe("$ Function: buy()", () => {
     /**@type {Seed}*/
     let Seed_funded;
+    /**@type {FunderPortfolio}*/
+    let funder;
+    /**@type {ContributorClassFromContract} */
+    let contributorClass;
     describe("# when the Seed is not active", () => {
       beforeEach(async () => {
         ({ Seed_funded } = await loadFixture(launchFixture));
@@ -1323,8 +1327,6 @@ describe("> Contract: Seed", () => {
     describe("# when buying exeeds hardCap", () => {
       /**@type {Seed}*/
       let Seed_fundedLowHardCap;
-      /**@type {FunderPortfolio}*/
-      let funder;
       before(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
 
@@ -1386,20 +1388,38 @@ describe("> Contract: Seed", () => {
       // Add more tests when changing function to add classes in the Seed contract
       /**@type {Seed}*/
       let Seed_fundedLowHardCap;
+      let params;
       beforeEach(async () => {
         ({ Seed_fundedLowHardCap } = await loadFixture(launchFixture));
         await increaseTimeTo(Seed_fundedLowHardCap.startTime);
       });
-      describe("» when buying tokens exeeds the classCap", () => {
-        it("should revert", async () => {
-          const params = {
+      describe("» when amount wanting to buy exeeds the classCap", () => {
+        it("should adjust amount automatically", async () => {
+          // contribute funding amount of 7 to as setup to reach classCap
+          params = {
             fundingAmount: Seed_fundedLowHardCap.getFundingAmount("7"),
           };
-
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
-          await expect(Seed_fundedLowHardCap.buy(params)).to.be.revertedWith(
-            "Seed: Error 360"
+
+          // Retrieve buyable amount
+          contributorClass = await Seed_fundedLowHardCap.getClass(
+            classTypes.CLASS_DEFAULT
           );
+          const buyableAmount = BigNumber.from(contributorClass.classCap).sub(
+            BigNumber.from(contributorClass.classFundingCollected)
+          );
+          params = {
+            from: buyer2,
+          };
+          // Validate that buyer has not contributed
+          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+          expect(funder.fundingAmount).to.equal(0);
+
+          // Try to buy by contributing 7 funding tokens again
+          await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
+          // Check that only the amount buyable has been bought
+          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+          expect(funder.fundingAmount).to.equal(buyableAmount);
         });
       });
       describe("» when buying tokens exeeds the individualCap", () => {
@@ -1408,7 +1428,7 @@ describe("> Contract: Seed", () => {
             fundingAmount: Seed_fundedLowHardCap.getFundingAmount("11"),
           };
           await expect(Seed_fundedLowHardCap.buy(params)).to.be.revertedWith(
-            "Seed: Error 361"
+            "Seed: Error 360"
           );
         });
       });
@@ -1428,14 +1448,14 @@ describe("> Contract: Seed", () => {
       });
       it("should fail if the startTime has not been reached", async () => {
         await expect(Seed_notBuyable.buy()).to.be.revertedWith(
-          "Seed: Error 362"
+          "Seed: Error 361"
         );
       });
       it("should fail if EndTime has been reached", async () => {
         await increaseTimeTo(Seed_notBuyable.endTime);
 
         await expect(Seed_notBuyable.buy()).to.be.revertedWith(
-          "Seed: Error 362"
+          "Seed: Error 361"
         );
       });
     });
