@@ -278,12 +278,12 @@ contract Seed {
 
         require(
             (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
-            "Seed: Error 361"
+            "Seed: Error 360"
         );
 
         require(
             endTime >= block.timestamp && startTime <= block.timestamp,
-            "Seed: Error 362"
+            "Seed: Error 361"
         );
 
         if (!isFunded) {
