@@ -18,6 +18,7 @@
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ],
+      "sourceMaps": true,
       "trace": true,
       "resolveSourceMapLocations": [
         "${workspaceFolder}/",
