@@ -275,12 +275,6 @@ contract Seed {
         ContributorClass memory userClass = classes[funder.class];
         require(!maximumReached, "Seed: Error 340");
         require(_fundingAmount > 0, "Seed: Error 101");
-        // Checks if contributor has exceeded his personal or class cap.
-        require(
-            (userClass.classFundingCollected + _fundingAmount) <=
-                userClass.classCap,
-            "Seed: Error 360"
-        );
 
         require(
             (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
@@ -299,9 +293,17 @@ contract Seed {
             );
             isFunded = true;
         }
-
+        // Update _fundingAmount to reflect the possible buyable amnount
         if ((fundingCollected + _fundingAmount) > hardCap) {
             _fundingAmount = hardCap - fundingCollected;
+        }
+        if (
+            (userClass.classFundingCollected + _fundingAmount) >
+            userClass.classCap
+        ) {
+            _fundingAmount =
+                userClass.classCap -
+                userClass.classFundingCollected;
         }
 
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
