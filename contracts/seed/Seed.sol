@@ -277,11 +277,6 @@ contract Seed {
         require(_fundingAmount > 0, "Seed: Error 101");
 
         require(
-            (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
-            "Seed: Error 360"
-        );
-
-        require(
             endTime >= block.timestamp && startTime <= block.timestamp,
             "Seed: Error 361"
         );
@@ -305,6 +300,10 @@ contract Seed {
                 userClass.classCap -
                 userClass.classFundingCollected;
         }
+        require(
+            (funder.fundingAmount + _fundingAmount) <= userClass.individualCap,
+            "Seed: Error 360"
+        );
 
         uint256 seedAmount = (_fundingAmount * PRECISION) / price;
         // total fundingAmount should not be greater than the hardCap
