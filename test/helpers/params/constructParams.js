@@ -422,6 +422,7 @@ async function getConvertedParams(type, params) {
       return await seedFactoryDeploySeedParams(params);
     case types.SEED_DEPLOY_INSTANCE:
     case types.SEEDFACTORY_DEPLOY_INSTANCE:
+    case types.SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
     case types.SEED_CHANGE_CLASSES_AND_ALLOWLISTS:
       return Promise.resolve(getChangeClassesAndAllowlistsParams(params));

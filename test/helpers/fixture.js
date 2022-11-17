@@ -4,6 +4,7 @@ const { SeedBuilder } = require("./contracts/seed/builders/SeedBuilder.js");
 const {
   SeedFactoryBuilder,
 } = require("./contracts/seed/builders/SeedFactoryBuilder.js");
+const { types } = require("./constants/constants");
 const { fundSignersAndSeed } = require("./accounts/signers");
 const { TEN_DAYS, TWENTY_DAYS } = require("./constants/time");
 
@@ -67,9 +68,20 @@ async function launchFixture() {
   await Seed_shortTipVesting.initialize(shortTipVesting);
   await fundSignersAndSeed({ Seed: Seed_shortTipVesting });
 
-  const SeedFactory_initialized = await SeedFactoryBuilder.create({
-    args: [Seed_initialized.instance.address],
-  });
+  const SeedFactory_initialized = await SeedFactoryBuilder.create(
+    {
+      args: [Seed_initialized.instance.address],
+    },
+    types.SEEDFACTORY_DEPLOY_INSTANCE
+  );
+
+  const SeedFactoryNoAccessControl_initialized =
+    await SeedFactoryBuilder.create(
+      {
+        args: [Seed_initialized.instance.address],
+      },
+      types.SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE
+    );
 
   return {
     Seed_initialized,
@@ -79,6 +91,7 @@ async function launchFixture() {
     Seed_highNumClasses,
     Seed_shortTipVesting,
     SeedFactory_initialized,
+    SeedFactoryNoAccessControl_initialized,
   };
 }
 module.exports = { launchFixture };
