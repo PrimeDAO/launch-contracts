@@ -21,12 +21,12 @@ const { SEVEN_DAYS } = require("./helpers/constants/time.js");
  * @typedef {import("../lib/types/types").Seed} Seed
  */
 
-describe("> Contract: SeedFactory", () => {
-  let root;
-  let beneficiary;
+let root;
+let beneficiary;
 
+describe("> Contract: SeedFactory", () => {
   before(async () => {
-    ({ root, admin, beneficiary } = await getNamedTestSigners());
+    ({ root, beneficiary } = await getNamedTestSigners());
   });
   describe("$ Function: transferOwnership()", () => {
     /**
@@ -340,6 +340,30 @@ describe("> Contract: SeedFactory", () => {
             defaultSeedParameters[3][1]
           );
         });
+      });
+    });
+  });
+});
+describe("> Contract: SeedFactoryNoAccessControl", () => {
+  /**
+   * @type {SeedFactory}
+   */
+  let SeedFactoryNoAccessControl_initialized;
+  before(async () => {
+    ({ root, beneficiary } = await getNamedTestSigners());
+    ({ SeedFactoryNoAccessControl_initialized } = await loadFixture(
+      launchFixture
+    ));
+  });
+  describe("$ Function: deploySeed()", () => {});
+  describe("# given the Seed has been deployed", () => {
+    describe("» when the not the owner deploys a new Seed", () => {
+      it("should succeed", async () => {
+        await expect(
+          SeedFactoryNoAccessControl_initialized.deploySeed({
+            from: beneficiary,
+          })
+        ).to.not.be.reverted;
       });
     });
   });
