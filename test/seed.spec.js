@@ -2794,4 +2794,86 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: retrieveFundingTokens()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    /**@type {FunderPortfolio} */
+    let funder;
+    let fundingAmount;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      fundingAmount = Seed_funded.getFundingAmount("8");
+    });
+    describe("# when the seed has not started yet", () => {
+      it("should reveret", async () => {
+        await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+          "Seed: Error 344"
+        );
+      });
+    });
+    describe("# when the minimum has been reached", () => {
+      it("should reveret", async () => {
+        await increaseTimeTo(Seed_funded.startTime);
+        // Buy so softCap is reached
+        await Seed_funded.buy();
+
+        await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+          "Seed: Error 342"
+        );
+      });
+    });
+    describe("# given retrieving funding tokens is possible", () => {
+      describe("# when the claimable amount is zero", () => {
+        it("should reveret", async () => {
+          await increaseTimeTo(Seed_funded.startTime);
+          // Buy so softCap is reached
+          await Seed_funded.buy({ fundingAmount: fundingAmount });
+
+          await expect(
+            Seed_funded.retrieveFundingTokens({ from: buyer2 })
+          ).to.be.revertedWith("Seed: Error 380");
+        });
+      });
+      describe("# when able to retrieve", () => {
+        it("should sent the correct value to the funder", async () => {
+          await increaseTimeTo(Seed_funded.startTime);
+          // Get token balance before buying
+          const tokenBalancePreBuy =
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address);
+          // Buy 8 funding token amount worth of tokens
+          await Seed_funded.buy({
+            fundingAmount: fundingAmount,
+          });
+          // Get token balance after buying
+          const tokenBalancePostBuy =
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address);
+          // Get funder portfolio to check amount bought
+          funder = await Seed_funded.getFunder(buyer1.address);
+
+          // Expect that token balance after buy + funding amount in contract == token balance before buy
+          expect(
+            BigNumber.from(funder.fundingAmount).add(
+              BigNumber.from(tokenBalancePostBuy)
+            )
+          ).to.equal(tokenBalancePreBuy);
+
+          // Retrieve token
+          await expect(Seed_funded.retrieveFundingTokens()).to.not.be.reverted;
+          // Get funder portfolio to check amount bought
+          funder = await Seed_funded.getFunder(buyer1.address);
+
+          // Expect balance is the same as before buying
+          expect(
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address)
+          ).to.equal(tokenBalancePreBuy);
+          // Expect that the amount is set back to 0
+          expect(funder.fundingAmount).to.equal(0);
+          // Expect that there is no funding tokens to retrieve
+          await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+            "Seed: Error 380"
+          );
+        });
+      });
+    });
+  });
 });

@@ -428,6 +428,15 @@ class Seed {
       .connect(params.from)
       .unAllowlist(params.allowlistAddress);
   }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async retrieveFundingTokens(params = {}) {
+    if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
+    return await this.instance.connect(params.from).retrieveFundingTokens();
+  }
 }
 
 module.exports = {
