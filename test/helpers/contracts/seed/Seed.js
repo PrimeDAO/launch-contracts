@@ -74,6 +74,10 @@ class Seed {
     return await this.instance.closed();
   }
 
+  async getPausedStatus() {
+    return await this.instance.paused();
+  }
+
   async getVestingStartTime() {
     return await this.instance.vestingStartTime();
   }
@@ -262,6 +266,15 @@ class Seed {
   async pause(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     await this.instance.connect(params.from).pause();
+  }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async unpause(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    await this.instance.connect(params.from).unpause();
   }
 
   /**

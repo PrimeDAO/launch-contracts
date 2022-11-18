@@ -2876,4 +2876,45 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: unpause()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(Seed_funded.unpause({ from: buyer1 })).to.be.revertedWith(
+          "Seed: Error 322"
+        );
+      });
+    });
+    describe("# when the Seed is closed", () => {
+      it("should revert", async () => {
+        expect(await Seed_funded.getClosedStatus()).to.be.false;
+        await Seed_funded.close();
+        expect(await Seed_funded.getClosedStatus()).to.be.true;
+        await expect(Seed_funded.unpause()).to.be.revertedWith(
+          "Seed: Error 348"
+        );
+      });
+    });
+    describe("# when the Seed is not paused", () => {
+      it("should revert", async () => {
+        expect(await Seed_funded.getPausedStatus()).to.be.false;
+        await expect(Seed_funded.unpause()).to.be.revertedWith(
+          "Seed: Error 351"
+        );
+      });
+    });
+    describe("# when the Seed is paused", () => {
+      it("should unpause", async () => {
+        await Seed_funded.pause();
+        expect(await Seed_funded.getPausedStatus()).to.be.true;
+
+        await expect(Seed_funded.unpause()).to.not.be.reverted;
+        expect(await Seed_funded.getPausedStatus()).to.be.false;
+      });
+    });
+  });
 });
