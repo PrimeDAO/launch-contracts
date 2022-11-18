@@ -39,8 +39,18 @@ class ContractDeployer {
           builder = new Seed(instance);
         }
         break;
-      case types.SEEDFACTORY_DEPLOY_INSTANCE: {
-        instance = await deployContract(deploy.SEEDFACTORY, { from, args });
+      case types.SEEDFACTORY_DEPLOY_INSTANCE:
+      case types.SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE: {
+        // get correct contract type
+        const seedFactoryContractType =
+          type == types.SEEDFACTORY_DEPLOY_INSTANCE
+            ? deploy.SEEDFACTORY
+            : deploy.SEEDFACTORYNOACCESSCONTROL;
+
+        instance = await deployContract(seedFactoryContractType, {
+          from,
+          args,
+        });
         builder = new SeedFactory(instance);
         builder.setOwner(await builder.instance.owner());
         break;

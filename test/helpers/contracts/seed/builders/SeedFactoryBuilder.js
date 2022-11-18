@@ -1,5 +1,4 @@
 //@ts-check
-const { types } = require("../../../constants/constants");
 const { ContractDeployer } = require("../../ContractDeployer");
 /** @typedef {import("../../../../../lib/types/types").Contract} Contract */
 
@@ -10,10 +9,11 @@ const { ContractDeployer } = require("../../ContractDeployer");
 class SeedFactoryBuilder {
   /**
    * @param {{args: []}} params
+   * @param {number} seedFactoryType
    * @returns {Promise<Contract | undefined>}
    */
-  static async create(params) {
-    return ContractDeployer.deploy(types.SEEDFACTORY_DEPLOY_INSTANCE, params);
+  static async create(params, seedFactoryType) {
+    return ContractDeployer.deploy(seedFactoryType, params);
   }
 }
 
