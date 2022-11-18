@@ -1395,30 +1395,38 @@ describe("> Contract: Seed", () => {
       });
       describe("» when amount wanting to buy exeeds the classCap", () => {
         it("should adjust amount automatically", async () => {
-          // contribute funding amount of 7 to as setup to reach classCap
+          await Seed_fundedLowHardCap.setAllowlist({
+            allowlist: [buyer2.address, buyer1.address],
+            classes: [1, 1],
+          });
+          // contribute funding amount of 5 to setup next buy
           params = {
-            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("7"),
+            from: buyer2,
+            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("5"),
           };
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
 
-          // Retrieve buyable amount
+          // Retrieve class to get calculate buyable amount
           contributorClass = await Seed_fundedLowHardCap.getClass(
-            classTypes.CLASS_DEFAULT
+            classTypes.CLASS_1
           );
           const buyableAmount = BigNumber.from(contributorClass.classCap).sub(
             BigNumber.from(contributorClass.classFundingCollected)
           );
-          params = {
-            from: buyer2,
-          };
-          // Validate that buyer has not contributed
-          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+
+          // Validate that funder has not contributed yet
+          funder = await Seed_fundedLowHardCap.getFunder(buyer1.address);
           expect(funder.fundingAmount).to.equal(0);
+
+          params = {
+            from: buyer1,
+            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("5"),
+          };
 
           // Try to buy by contributing 7 funding tokens again
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
           // Check that only the amount buyable has been bought
-          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+          funder = await Seed_fundedLowHardCap.getFunder(buyer1.address);
           expect(funder.fundingAmount).to.equal(buyableAmount);
         });
       });
@@ -1610,7 +1618,6 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: calculateClaimFunder()", () => {});
   describe("$ Function: calculateClaimBeneficiary()", () => {
     /**@type {Seed}*/
     let Seed_funded;
