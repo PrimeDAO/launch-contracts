@@ -5,6 +5,7 @@ const EMPTY32BYTES = ethers.utils.formatBytes32String("");
 const PRECISION = ethers.constants.WeiPerEther;
 const deploy = {
   SEEDFACTORY: "SeedFactory",
+  SEEDFACTORYNOACCESSCONTROL: "SeedFactoryNoAccessControl",
   SEED: "Seed",
 };
 
@@ -18,6 +19,7 @@ const types = {
   SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM: 6,
   SEED_ADD_CLASS_AND_WHITELIST: 7,
   SEED_TOKEN_PARAMS: 8,
+  SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE: 9,
 };
 
 const classTypes = {

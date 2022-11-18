@@ -371,3 +371,27 @@ describe("> Contract: SeedFactory", () => {
     });
   });
 });
+describe("> Contract: SeedFactoryNoAccessControl", () => {
+  /**
+   * @type {SeedFactory}
+   */
+  let SeedFactoryNoAccessControl_initialized;
+  before(async () => {
+    ({ root, beneficiary } = await getNamedTestSigners());
+    ({ SeedFactoryNoAccessControl_initialized } = await loadFixture(
+      launchFixture
+    ));
+  });
+  describe("$ Function: deploySeed()", () => {});
+  describe("# given the Seed has been deployed", () => {
+    describe("» when the not the owner deploys a new Seed", () => {
+      it("should succeed", async () => {
+        await expect(
+          SeedFactoryNoAccessControl_initialized.deploySeed({
+            from: beneficiary,
+          })
+        ).to.not.be.reverted;
+      });
+    });
+  });
+});
