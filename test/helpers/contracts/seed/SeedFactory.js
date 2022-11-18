@@ -7,6 +7,7 @@ class SeedFactory {
   instance;
   beneficiary;
   admin;
+  treasury;
   seedTokenAddress;
   fundingTokenAddress;
   softCap;
@@ -64,7 +65,8 @@ class SeedFactory {
     deployment.shift();
 
     this.beneficiary = deployment[0];
-    this.admin = deployment[1];
+    this.admin = deployment[1][0];
+    this.treasury = deployment[1][1];
     this.seedTokenAddress = deployment[2][0];
     this.fundingTokenAddress = deployment[2][1];
     this.softCap = deployment[3][0];
