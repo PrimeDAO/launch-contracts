@@ -4,7 +4,8 @@ const LocalhostJson = require("../../exports/localhost.json");
 
 const { ethers } = hre;
 
-const seedFactoryAddress = LocalhostJson.contracts.SeedFactory.address;
+const SEED_FACTORY_NAME = "SeedFactoryNoAccessControl"
+const seedFactoryAddress = LocalhostJson.contracts[SEED_FACTORY_NAME].address;
 const readonlyEndPoint = "HTTP://127.0.0.1:8545"; // Localhost only!
 
 function getProvider() {
@@ -32,7 +33,7 @@ class Shared {
     if (this.seedFactoryContract) return this.seedFactoryContract;
 
     var seedFactoryInstance = await ethers.getContractAt(
-      "SeedFactory",
+      SEED_FACTORY_NAME,
       seedFactoryAddress
     );
 
