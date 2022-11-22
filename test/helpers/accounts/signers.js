@@ -10,12 +10,13 @@ async function getNamedTestSigners() {
     root: signers[0],
     beneficiary: signers[1],
     admin: signers[2],
-    buyer1: signers[3],
-    buyer2: signers[4],
-    buyer3: signers[5],
-    buyer4: signers[6],
-    buyer5: signers[7],
-    buyer6: signers[8],
+    treasury: signers[3],
+    buyer1: signers[4],
+    buyer2: signers[5],
+    buyer3: signers[6],
+    buyer4: signers[7],
+    buyer5: signers[8],
+    buyer6: signers[9],
   };
 }
 

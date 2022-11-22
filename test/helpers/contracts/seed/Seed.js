@@ -21,6 +21,7 @@ class Seed {
   instance;
   beneficiary;
   admin;
+  treasury;
   seedTokenAddress;
   fundingTokenAddress;
   softCap;
@@ -232,7 +233,8 @@ class Seed {
     await this.instance.connect(params.from).initialize(...deployment);
 
     this.beneficiary = deployment[0];
-    this.admin = deployment[1];
+    this.admin = deployment[1][0];
+    this.treasury = deployment[1][1];
     this.seedTokenAddress = deployment[2][0];
     this.fundingTokenAddress = deployment[2][1];
     this.softCap = deployment[3][0];
@@ -410,14 +412,11 @@ class Seed {
 
   /**
    *
-   * @param {{from?: Address, refundReceiver?: Address}} params
+   * @param {{from?: Address}} params
    */
   async retrieveSeedTokens(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
-    if (!params.refundReceiver) params.refundReceiver = params.from.address; // admin
-    await this.instance
-      .connect(params.from)
-      .retrieveSeedTokens(params.refundReceiver);
+    await this.instance.connect(params.from).retrieveSeedTokens();
   }
 
   /**

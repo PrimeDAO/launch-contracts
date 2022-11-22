@@ -36,7 +36,11 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
     //      EVENTS
     // ----------------------------------------
 
-    event SeedCreated(address indexed newSeed, address indexed admin);
+    event SeedCreated(
+        address indexed newSeed,
+        address indexed admin,
+        address indexed treasury
+    );
 
     constructor(Seed _masterCopy) {
         require(address(_masterCopy) != address(0), "SeedFactory: Error 100");
@@ -64,8 +68,11 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
     /**
       * @dev                                Deploys Seed contract.
       * @param _beneficiary                 The address that recieves fees.
-      * @param _admin                       The address of the admin of this contract. Funds contract
-                                            and has permissions to allowlist users, pause and close contract.
+      * @param _projectAddresses            Array containing two params:
+                                                - The address of the admin of this contract. Funds contract
+                                                    and has permissions to allowlist users, pause and close contract.
+                                                - The treasury address which is the receiver of the funding tokens
+                                                        raised, as well as the reciever of the retrievable seed tokens.
       * @param _tokens                      Array containing two params:
                                                 - The address of the seed token being distributed.
       *                                         - The address of the funding token being exchanged for seed token.
@@ -90,7 +97,7 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
     */
     function deploySeed(
         address _beneficiary,
-        address _admin,
+        address[] memory _projectAddresses,
         address[] memory _tokens,
         uint256[] memory _softAndHardCap,
         uint256 _price,
@@ -107,18 +114,22 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
                     _tokens.length == 2 &&
                     _softAndHardCap.length == 2 &&
                     _startTimeAndEndTime.length == 2 &&
-                    _defaultClassParameters.length == 3,
+                    _defaultClassParameters.length == 3 &&
+                    _projectAddresses.length == 2,
                 "SeedFactory: Error 102"
             );
             require(
                 _beneficiary != address(0) &&
-                    _admin != address(0) &&
+                    _projectAddresses[0] != address(0) &&
+                    _projectAddresses[1] != address(0) &&
                     _tokens[0] != address(0) &&
                     _tokens[1] != address(0),
                 "SeedFactory: Error 100"
             );
             require(
-                _tokens[0] != _tokens[1] && _beneficiary != _admin,
+                _tokens[0] != _tokens[1] &&
+                    _beneficiary != _projectAddresses[0] &&
+                    _beneficiary != _projectAddresses[1],
                 "SeedFactory: Error 104"
             );
             require(
@@ -141,7 +152,7 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
         // initialize
         Seed(_newSeed).initialize(
             _beneficiary,
-            _admin,
+            _projectAddresses,
             _tokens,
             _softAndHardCap,
             _price,
@@ -152,7 +163,11 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
             _tip
         );
 
-        emit SeedCreated(address(_newSeed), _admin);
+        emit SeedCreated(
+            address(_newSeed),
+            _projectAddresses[0],
+            _projectAddresses[1]
+        );
 
         return _newSeed;
     }

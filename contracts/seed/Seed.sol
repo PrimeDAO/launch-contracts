@@ -31,6 +31,8 @@ contract Seed {
     // Locked parameters
     address public beneficiary; // The address that recieves fees
     address public admin; // The address of the admin of this contract
+    address public treasury; // The address that receives the raised funding tokens, and
+    //                          retrievable seed tokens.
     uint256 public softCap; // The minimum to be reached to consider this Seed successful,
     //                          expressed in Funding tokens
     uint256 public hardCap; // The maximum of Funding tokens to be raised in the Seed
@@ -188,8 +190,11 @@ contract Seed {
     /**
       * @dev                            Initialize Seed.
       * @param _beneficiary             The address that recieves fees.
-      * @param _admin                   The address of the admin of this contract. Funds contract
-                                            and has permissions to allowlist users, pause and close contract.
+      * @param _projectAddresses        Array containing two params:
+                                            - The address of the admin of this contract. Funds contract
+                                                and has permissions to allowlist users, pause and close contract.
+                                            - The treasury address which is the receiver of the funding tokens
+                                                raised, as well as the reciever of the retrievable seed tokens.
       * @param _tokens                  Array containing two params:
                                             - The address of the seed token being distributed.
       *                                     - The address of the funding token being exchanged for seed token.
@@ -213,7 +218,7 @@ contract Seed {
     */
     function initialize(
         address _beneficiary,
-        address _admin,
+        address[] memory _projectAddresses,
         address[] memory _tokens,
         uint256[] memory _softAndHardCap,
         uint256 _price,
@@ -227,7 +232,8 @@ contract Seed {
         initialized = true;
 
         beneficiary = _beneficiary;
-        admin = _admin;
+        admin = _projectAddresses[0];
+        treasury = _projectAddresses[1];
         softCap = _softAndHardCap[0];
         hardCap = _softAndHardCap[1];
         startTime = _startTimeAndEndTime[0];
@@ -493,10 +499,9 @@ contract Seed {
 
     /**
      * @dev                     retrieve remaining seed tokens back to project.
-     * @param _refundReceiver   refund receiver address
      */
-    function retrieveSeedTokens(address _refundReceiver) external onlyAdmin {
-        // transfer seed tokens back to admin
+    function retrieveSeedTokens() external {
+        // transfer seed tokens back to treasury
         /*
             Can't withdraw seed tokens until buying has ended and
             therefore the number of distributable seed tokens can no longer change.
@@ -511,14 +516,14 @@ contract Seed {
             // subtract tip from Seed tokens
             uint256 retrievableSeedAmount = seedTokenBalance -
                 (tip.tipAmount - tip.totalClaimed);
-            seedToken.safeTransfer(_refundReceiver, retrievableSeedAmount);
+            seedToken.safeTransfer(treasury, retrievableSeedAmount);
         } else {
             // seed tokens to transfer = buyable seed tokens - totalSeedDistributed
             uint256 totalSeedDistributed = totalBuyableSeed - seedRemainder;
             uint256 amountToTransfer = seedTokenBalance -
                 (totalSeedDistributed - seedClaimed) -
                 (tip.tipAmount - tip.totalClaimed);
-            seedToken.safeTransfer(_refundReceiver, amountToTransfer);
+            seedToken.safeTransfer(treasury, amountToTransfer);
         }
     }
 
@@ -608,16 +613,16 @@ contract Seed {
     /**
      * @dev                     Withdraw funds from the contract
      */
-    function withdraw() external onlyAdmin {
+    function withdraw() external {
         /*
-            Admin can't withdraw funding tokens until buying has ended and
+            Can't withdraw funding tokens until buying has ended and
             therefore contributors can no longer withdraw their funding tokens.
         */
         require(minimumReached, "Seed: Error 383");
         fundingWithdrawn = fundingCollected;
         // Send the entire seed contract balance of the funding token to the sale’s admin
         fundingToken.safeTransfer(
-            msg.sender,
+            treasury,
             fundingToken.balanceOf(address(this))
         );
     }

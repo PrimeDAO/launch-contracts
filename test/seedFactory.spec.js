@@ -21,12 +21,14 @@ const { SEVEN_DAYS } = require("./helpers/constants/time.js");
  * @typedef {import("../lib/types/types").Seed} Seed
  */
 
-let root;
-let beneficiary;
-
 describe("> Contract: SeedFactory", () => {
+  let root;
+  let beneficiary;
+  let treasury;
+  let admin;
+
   before(async () => {
-    ({ root, beneficiary } = await getNamedTestSigners());
+    ({ root, admin, beneficiary, treasury } = await getNamedTestSigners());
   });
   describe("$ Function: transferOwnership()", () => {
     /**
@@ -206,7 +208,20 @@ describe("> Contract: SeedFactory", () => {
           const beneficiaryAddress = defaultSeedParameters[0];
           const params = {
             beneficiary: beneficiaryAddress,
-            admin: beneficiaryAddress,
+            projectAddresses: [beneficiaryAddress, treasury.address],
+          };
+
+          await expect(
+            SeedFactory_initialized.deploySeed(params)
+          ).to.be.revertedWith("SeedFactory: Error 104");
+        });
+      });
+      describe("» when calling with treasury and beneficiary having identical addresses", () => {
+        it("should revert", async () => {
+          const beneficiaryAddress = defaultSeedParameters[0];
+          const params = {
+            beneficiary: beneficiaryAddress,
+            projectAddresses: [admin.address, beneficiaryAddress],
           };
 
           await expect(
@@ -225,7 +240,16 @@ describe("> Contract: SeedFactory", () => {
       });
       describe("» when calling with admin is equal zero", () => {
         it("should revert", async () => {
-          const params = { admin: AddressZero };
+          const params = { projectAddresses: [admin.address, AddressZero] };
+
+          await expect(
+            SeedFactory_initialized.deploySeed(params)
+          ).to.be.revertedWith("SeedFactory: Error 100");
+        });
+      });
+      describe("» when calling with treasury is equal zero", () => {
+        it("should revert", async () => {
+          const params = { projectAddresses: [AddressZero, treasury.address] };
 
           await expect(
             SeedFactory_initialized.deploySeed(params)
@@ -325,7 +349,10 @@ describe("> Contract: SeedFactory", () => {
             defaultSeedParameters[0]
           );
           expect(await Seed_initialized.admin()).to.equal(
-            defaultSeedParameters[1]
+            defaultSeedParameters[1][0]
+          );
+          expect(await Seed_initialized.treasury()).to.equal(
+            defaultSeedParameters[1][1]
           );
           expect(await Seed_initialized.seedToken()).to.equal(
             defaultSeedParameters[2][0]

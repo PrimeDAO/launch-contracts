@@ -37,7 +37,7 @@ async function getDefaultSeedParams(params = {}) {
   if (!params.tokenInstances)
     params.tokenInstances = await getERC20TokenInstances(tokenParams());
 
-  const { root, beneficiary, admin } = await getNamedTestSigners();
+  const { root, beneficiary, admin, treasury } = await getNamedTestSigners();
   const seedTokenInstance = params.tokenInstances[0];
   const fundingTokenInstance = params.tokenInstances[1];
   // Convert Funding and Seed token amount from decimal 16 -> 18
@@ -70,7 +70,7 @@ async function getDefaultSeedParams(params = {}) {
   return {
     from: root.address,
     beneficiary: beneficiary.address,
-    admin: admin.address,
+    projectAddresses: [admin.address, treasury.address],
     tokenAddresses: [seedTokenInstance.address, fundingTokenInstance.address],
     softAndHardCaps: [softCap, hardCap],
     price: price,
@@ -94,7 +94,7 @@ async function seedInitParams(params) {
   return [
     defaultParams.tokenInstances,
     params.beneficiary,
-    params.admin,
+    params.projectAddresses,
     params.tokenAddresses,
     params.softAndHardCaps,
     params.price,
@@ -246,7 +246,7 @@ async function getClassAndWhitelistParams(params = {}) {
   const numberOfClasses = Object.keys(params.classesParameters).length;
 
   const NUM_OF_CLASS_PARAMS = 5;
-  const FIRST_BUYER_INDEX = 9; // skip root, admin, beneficiary, buyer1, buyer2, buyer3
+  const FIRST_BUYER_INDEX = 10; // skip root, admin, treasury, beneficiary, buyer1, buyer2, buyer3
 
   const signers = await ethers.getSigners();
   offset = 0; // Offset used to get the signer addresses
@@ -356,7 +356,7 @@ function getClassParamsFromNumber(params) {
  * @returns {Promise<Address[]>}
  */
 async function getAllowlistFromNumber(params) {
-  const SIGNERS_START_INDEX = 3; // Skipping root, admin and beneficiary
+  const SIGNERS_START_INDEX = 4; // Skipping root, admin and beneficiary and treasury
   const signers = (await ethers.getSigners()).slice(
     SIGNERS_START_INDEX,
     params.numberOfAllowlist + SIGNERS_START_INDEX

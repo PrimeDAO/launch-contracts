@@ -55,12 +55,14 @@ describe("> Contract: Seed", () => {
   let buyer5;
   let buyer6;
   let admin;
+  let treasury;
 
   before(async () => {
     ({
       root,
       admin,
       beneficiary,
+      treasury,
       buyer1,
       buyer2,
       buyer3,
@@ -94,6 +96,11 @@ describe("> Contract: Seed", () => {
         it("should set admin", async () => {
           expect(await Seed_permissonless.instance.admin()).to.equal(
             Seed_permissonless.admin
+          );
+        });
+        it("should set treasury", async () => {
+          expect(await Seed_permissonless.instance.treasury()).to.equal(
+            Seed_permissonless.treasury
           );
         });
         it("should set tokens", async () => {
@@ -2302,13 +2309,6 @@ describe("> Contract: Seed", () => {
         launchFixture
       ));
     });
-    describe("# when not called by the admin", () => {
-      it("should revert", async () => {
-        await expect(
-          Seed_fundedLowHardCap.retrieveSeedTokens({ from: buyer1 })
-        ).to.be.revertedWith("Seed: Error 322");
-      });
-    });
     describe("# when softCap reached but endTime not reached", () => {
       it("should revert", async () => {
         await increaseTimeTo(Seed_fundedLowHardCap.startTime);
@@ -2390,10 +2390,10 @@ describe("> Contract: Seed", () => {
           // Reach endTime
           await increaseTime(Seed_shortTipVesting.endTime);
 
-          // Admin should have no Seed tokens before retrieving them
+          // Treasury should have no Seed tokens before retrieving them
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(0);
 
@@ -2410,14 +2410,14 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_shortTipVesting.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
           // Check admin's balans of Seed tokens again
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(expectedSeedTokenAmount);
         });
@@ -2439,14 +2439,14 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_shortTipVesting.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
-          // Check admin's balans of Seed tokens again
+          // Check treasury's balans of Seed tokens again
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(expectedSeedTokenAmount);
         });
@@ -2461,7 +2461,7 @@ describe("> Contract: Seed", () => {
           // Admin should have no Seed tokens before retrieving them
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(0);
 
@@ -2478,14 +2478,14 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_shortTipVesting.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
-          // Check admin's balans of Seed tokens again
+          // Check treasury's balans of Seed tokens again
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(expectedSeedTokenAmount);
         });
@@ -2495,10 +2495,10 @@ describe("> Contract: Seed", () => {
           // Reach softCap and endTime
           await convertSeedToComplete(Seed_shortTipVesting);
 
-          // Admin should have no Seed tokens before retrieving them
+          // treasury should have no Seed tokens before retrieving them
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(0);
 
@@ -2515,14 +2515,14 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_shortTipVesting.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
-          // Check admin's balans of Seed tokens again
+          // Check treasury's balans of Seed tokens again
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(expectedSeedTokenAmount);
         });
@@ -2532,10 +2532,10 @@ describe("> Contract: Seed", () => {
           // Reach softCap and endTime
           await convertSeedToComplete(Seed_shortTipVesting);
 
-          // Admin should have no Seed tokens before retrieving them
+          // treasury should have no Seed tokens before retrieving them
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(0);
 
@@ -2553,14 +2553,14 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_shortTipVesting.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
-          // Check admin's balans of Seed tokens again
+          // Check treasury's balans of Seed tokens again
           expect(
             await Seed_shortTipVesting.seedTokenInstance.balanceOf(
-              admin.address
+              treasury.address
             )
           ).to.equal(expectedSeedTokenAmount);
         });
@@ -2584,9 +2584,9 @@ describe("> Contract: Seed", () => {
           // Reach softCap and endTime
           await convertSeedToComplete(Seed_overFunded);
 
-          // Admin should have no Seed tokens before retrieving them
+          // treasury should have no Seed tokens before retrieving them
           expect(
-            await Seed_overFunded.seedTokenInstance.balanceOf(admin.address)
+            await Seed_overFunded.seedTokenInstance.balanceOf(treasury.address)
           ).to.equal(0);
 
           // Increase time to end of vesting period
@@ -2603,13 +2603,13 @@ describe("> Contract: Seed", () => {
 
           await expect(
             Seed_overFunded.retrieveSeedTokens({
-              refundReceiver: admin.address,
+              refundReceiver: treasury.address,
             })
           ).to.not.be.reverted;
 
-          // Check admin's balans of Seed tokens again
+          // Check treasury's balans of Seed tokens again
           expect(
-            await Seed_overFunded.seedTokenInstance.balanceOf(admin.address)
+            await Seed_overFunded.seedTokenInstance.balanceOf(treasury.address)
           ).to.equal(expectedSeedTokenAmount);
         });
       });
@@ -2670,13 +2670,6 @@ describe("> Contract: Seed", () => {
       });
       await increaseTimeTo(Seed_fundedLowHardCap.startTime);
     });
-    describe("# when not called by admin", () => {
-      it("should revert", async () => {
-        await expect(
-          Seed_fundedLowHardCap.withdraw({ from: buyer1 })
-        ).to.be.revertedWith("Seed: Error 322");
-      });
-    });
     describe("# when softCap has not been reached", () => {
       it("should revert", async () => {
         await expect(Seed_fundedLowHardCap.withdraw()).to.be.revertedWith(
@@ -2686,10 +2679,10 @@ describe("> Contract: Seed", () => {
     });
     describe("# when softCap has been reached and Seed is still live", () => {
       it("should withdraw the right amount", async () => {
-        // Check Admin funding token balance to be 0
+        // Check treasury funding token balance to be 0
         expect(
           await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
-            admin.address
+            treasury.address
           )
         ).to.equal(0);
 
@@ -2702,20 +2695,20 @@ describe("> Contract: Seed", () => {
 
         await expect(Seed_fundedLowHardCap.withdraw()).to.not.be.reverted;
 
-        // expect Admin funding token balance to be == funding collected i.e. it has withdrawn all the tokens
+        // expect treasury funding token balance to be == funding collected i.e. it has withdrawn all the tokens
         expect(
           await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
-            admin.address
+            treasury.address
           )
         ).to.equal(fundingCollected);
       });
     });
     describe("# when hardCap reached", () => {
       it("should withdraw the right amount", async () => {
-        // Check Admin funding token balance to be 0
+        // Check treasury funding token balance to be 0
         expect(
           await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
-            admin.address
+            treasury.address
           )
         ).to.equal(0);
 
@@ -2732,10 +2725,10 @@ describe("> Contract: Seed", () => {
 
         await expect(Seed_fundedLowHardCap.withdraw()).to.not.be.reverted;
 
-        // expect Admin funding token balance to be == funding collected i.e. it has withdrawn all the tokens
+        // expect treasury funding token balance to be == funding collected i.e. it has withdrawn all the tokens
         expect(
           await Seed_fundedLowHardCap.fundingTokenInstance.balanceOf(
-            admin.address
+            treasury.address
           )
         ).to.equal(fundingCollected);
       });
