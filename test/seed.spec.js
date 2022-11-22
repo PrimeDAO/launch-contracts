@@ -1395,30 +1395,38 @@ describe("> Contract: Seed", () => {
       });
       describe("» when amount wanting to buy exeeds the classCap", () => {
         it("should adjust amount automatically", async () => {
-          // contribute funding amount of 7 to as setup to reach classCap
+          await Seed_fundedLowHardCap.setAllowlist({
+            allowlist: [buyer2.address, buyer1.address],
+            classes: [1, 1],
+          });
+          // contribute funding amount of 5 to setup next buy
           params = {
-            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("7"),
+            from: buyer2,
+            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("5"),
           };
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
 
-          // Retrieve buyable amount
+          // Retrieve class to get calculate buyable amount
           contributorClass = await Seed_fundedLowHardCap.getClass(
-            classTypes.CLASS_DEFAULT
+            classTypes.CLASS_1
           );
           const buyableAmount = BigNumber.from(contributorClass.classCap).sub(
             BigNumber.from(contributorClass.classFundingCollected)
           );
-          params = {
-            from: buyer2,
-          };
-          // Validate that buyer has not contributed
-          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+
+          // Validate that funder has not contributed yet
+          funder = await Seed_fundedLowHardCap.getFunder(buyer1.address);
           expect(funder.fundingAmount).to.equal(0);
+
+          params = {
+            from: buyer1,
+            fundingAmount: Seed_fundedLowHardCap.getFundingAmount("5"),
+          };
 
           // Try to buy by contributing 7 funding tokens again
           await expect(Seed_fundedLowHardCap.buy(params)).to.not.reverted;
           // Check that only the amount buyable has been bought
-          funder = await Seed_fundedLowHardCap.getFunder(buyer2.address);
+          funder = await Seed_fundedLowHardCap.getFunder(buyer1.address);
           expect(funder.fundingAmount).to.equal(buyableAmount);
         });
       });
@@ -1610,7 +1618,6 @@ describe("> Contract: Seed", () => {
       });
     });
   });
-  describe("$ Function: calculateClaimFunder()", () => {});
   describe("$ Function: calculateClaimBeneficiary()", () => {
     /**@type {Seed}*/
     let Seed_funded;
@@ -2734,14 +2741,187 @@ describe("> Contract: Seed", () => {
       });
     });
   });
+  describe("$ Function: unAllowlist()", () => {
+    /** @type {Seed} */
+    let Seed_fundedPermissioned;
+    /** @type {Seed} */
+    let Seed_funded; // This Seed is permission-less
+    /** @type {FunderPortfolio} */
+    let funder;
+    beforeEach(async () => {
+      ({ Seed_fundedPermissioned } = await loadFixture(launchFixture));
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(
+          Seed_fundedPermissioned.unAllowlist({ from: buyer1 })
+        ).to.be.revertedWith("Seed: Error 322");
+      });
+    });
+    describe("# when the Seed is not Live", () => {
+      it("should revert when closed", async () => {
+        // Set Seed to closes
+        await Seed_fundedPermissioned.close();
 
-  describe("$ Function: retrieveFundingTokens()", () => {});
-  describe("$ Function: pause()", () => {
-    // Will be found in other tests
+        await expect(Seed_fundedPermissioned.unAllowlist()).to.be.revertedWith(
+          "Seed: Error 350"
+        );
+      });
+      it("should revert when Seed has ended", async () => {
+        // Increase time so that the Seed has ended
+        await increaseTimeTo(Seed_fundedPermissioned.endTime + 1);
+        await expect(Seed_fundedPermissioned.unAllowlist()).to.be.revertedWith(
+          "Seed: Error 350"
+        );
+      });
+    });
+    before(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+    });
+    describe("# when the Seed is permission-less", () => {
+      it("should revert", async () => {
+        await expect(Seed_funded.unAllowlist()).to.be.revertedWith(
+          "Seed: Error 347"
+        );
+      });
+    });
+    describe("# when address has been allowlisted", () => {
+      it("should un-allowlist the address", async () => {
+        // Allowlist buyer
+        await Seed_fundedPermissioned.setAllowlist();
+        // confirm that buyer has been allowlisted
+        funder = await Seed_fundedPermissioned.getFunder(buyer1.address);
+        expect(funder.allowlist).to.be.true;
+
+        // unAllowlist buyer
+        await expect(Seed_fundedPermissioned.unAllowlist()).to.not.be.reverted;
+        // confirm that buyer is unAllowlisted
+        funder = await Seed_fundedPermissioned.getFunder(buyer1.address);
+        expect(funder.allowlist).to.be.false;
+      });
+    });
   });
-  describe("$ Function: unpause()", () => {});
-  describe("$ Function: close()", () => {});
-  describe("$ Function: unwhitelist()", () => {});
-  describe("$ Function: updateMetadata()", () => {});
-  describe("$ Function: seedAmountForFunder()", () => {});
+  describe("$ Function: retrieveFundingTokens()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    /**@type {FunderPortfolio} */
+    let funder;
+    let fundingAmount;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+      fundingAmount = Seed_funded.getFundingAmount("8");
+    });
+    describe("# when the seed has not started yet", () => {
+      it("should reveret", async () => {
+        await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+          "Seed: Error 344"
+        );
+      });
+    });
+    describe("# when the minimum has been reached", () => {
+      it("should reveret", async () => {
+        await increaseTimeTo(Seed_funded.startTime);
+        // Buy so softCap is reached
+        await Seed_funded.buy();
+
+        await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+          "Seed: Error 342"
+        );
+      });
+    });
+    describe("# given retrieving funding tokens is possible", () => {
+      describe("# when the claimable amount is zero", () => {
+        it("should reveret", async () => {
+          await increaseTimeTo(Seed_funded.startTime);
+          // Buy so softCap is reached
+          await Seed_funded.buy({ fundingAmount: fundingAmount });
+
+          await expect(
+            Seed_funded.retrieveFundingTokens({ from: buyer2 })
+          ).to.be.revertedWith("Seed: Error 380");
+        });
+      });
+      describe("# when able to retrieve", () => {
+        it("should sent the correct value to the funder", async () => {
+          await increaseTimeTo(Seed_funded.startTime);
+          // Get token balance before buying
+          const tokenBalancePreBuy =
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address);
+          // Buy 8 funding token amount worth of tokens
+          await Seed_funded.buy({
+            fundingAmount: fundingAmount,
+          });
+          // Get token balance after buying
+          const tokenBalancePostBuy =
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address);
+          // Get funder portfolio to check amount bought
+          funder = await Seed_funded.getFunder(buyer1.address);
+
+          // Expect that token balance after buy + funding amount in contract == token balance before buy
+          expect(
+            BigNumber.from(funder.fundingAmount).add(
+              BigNumber.from(tokenBalancePostBuy)
+            )
+          ).to.equal(tokenBalancePreBuy);
+
+          // Retrieve token
+          await expect(Seed_funded.retrieveFundingTokens()).to.not.be.reverted;
+          // Get funder portfolio to check amount bought
+          funder = await Seed_funded.getFunder(buyer1.address);
+
+          // Expect balance is the same as before buying
+          expect(
+            await Seed_funded.fundingTokenInstance.balanceOf(buyer1.address)
+          ).to.equal(tokenBalancePreBuy);
+          // Expect that the amount is set back to 0
+          expect(funder.fundingAmount).to.equal(0);
+          // Expect that there is no funding tokens to retrieve
+          await expect(Seed_funded.retrieveFundingTokens()).to.be.revertedWith(
+            "Seed: Error 380"
+          );
+        });
+      });
+    });
+  });
+  describe("$ Function: unpause()", () => {
+    /**@type {Seed} */
+    let Seed_funded;
+    beforeEach(async () => {
+      ({ Seed_funded } = await loadFixture(launchFixture));
+    });
+    describe("# when not called by the admin", () => {
+      it("should revert", async () => {
+        await expect(Seed_funded.unpause({ from: buyer1 })).to.be.revertedWith(
+          "Seed: Error 322"
+        );
+      });
+    });
+    describe("# when the Seed is closed", () => {
+      it("should revert", async () => {
+        expect(await Seed_funded.getClosedStatus()).to.be.false;
+        await Seed_funded.close();
+        expect(await Seed_funded.getClosedStatus()).to.be.true;
+        await expect(Seed_funded.unpause()).to.be.revertedWith(
+          "Seed: Error 348"
+        );
+      });
+    });
+    describe("# when the Seed is not paused", () => {
+      it("should revert", async () => {
+        expect(await Seed_funded.getPausedStatus()).to.be.false;
+        await expect(Seed_funded.unpause()).to.be.revertedWith(
+          "Seed: Error 351"
+        );
+      });
+    });
+    describe("# when the Seed is paused", () => {
+      it("should unpause", async () => {
+        await Seed_funded.pause();
+        expect(await Seed_funded.getPausedStatus()).to.be.true;
+
+        await expect(Seed_funded.unpause()).to.not.be.reverted;
+        expect(await Seed_funded.getPausedStatus()).to.be.false;
+      });
+    });
+  });
 });

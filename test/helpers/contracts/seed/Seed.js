@@ -74,6 +74,10 @@ class Seed {
     return await this.instance.closed();
   }
 
+  async getPausedStatus() {
+    return await this.instance.paused();
+  }
+
   async getVestingStartTime() {
     return await this.instance.vestingStartTime();
   }
@@ -265,6 +269,15 @@ class Seed {
   }
 
   /**
+   *
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async unpause(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    await this.instance.connect(params.from).unpause();
+  }
+
+  /**
    * @param {{from?: SignerWithAddress,
    *          classesParameters?: {class1?: ChangeClassAndAllowlistParams,
    *          class2?: ChangeClassAndAllowlistParams, class3?: ChangeClassAndAllowlistParams}
@@ -414,6 +427,28 @@ class Seed {
   async withdraw(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     await this.instance.connect(params.from).withdraw();
+  }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress, allowlistAddress?: Address}} params
+   */
+  async unAllowlist(params = {}) {
+    if (!params.from) params.from = await ethers.getSigner(this.admin);
+    if (!params.allowlistAddress)
+      params.allowlistAddress = (await getNamedTestSigners()).buyer1.address;
+    await this.instance
+      .connect(params.from)
+      .unAllowlist(params.allowlistAddress);
+  }
+
+  /**
+   *
+   * @param {{from?: SignerWithAddress}} params
+   */
+  async retrieveFundingTokens(params = {}) {
+    if (!params.from) params.from = (await getNamedTestSigners()).buyer1;
+    return await this.instance.connect(params.from).retrieveFundingTokens();
   }
 }
 
