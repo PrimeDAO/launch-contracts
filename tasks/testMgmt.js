@@ -18,9 +18,7 @@ async function token(name, tokenAddress) {
 
 // token();
 
-async function main() {
-  console.log("hi");
-
+async function createSeed() {
   const seedFactoryAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
   var seedFactoryInstance = await ethers.getContractAt(
     "SeedFactory",
@@ -29,12 +27,17 @@ async function main() {
 
   const readonlyEndPoint = "HTTP://127.0.0.1:8545";
   const provider = ethers.getDefaultProvider(readonlyEndPoint);
-  const signer = (await hre.ethers.getSigners())[0];
+
+  const jsonSigner = provider.getSigner();
+
+  // signerOrProvider = jsonSigner.getSigner();
+
+  // const signer = (await hre.ethers.getSigners())[0];
 
   const SeedFactoryContract = new ethers.Contract(
     seedFactoryAddress,
     seedFactoryInstance.interface,
-    signer
+    jsonSigner
   );
 
   // var tx = await seedFactoryInstance.populateTransaction.deploySeed(
@@ -60,7 +63,7 @@ async function main() {
   /* prettier-ignore */ console.log('>>>> _ >>>> ~ file: seedManagement.js ~ line 36 ~ tx', tx)
 }
 
-main();
+createSeed();
 
 // const signer = (await hre.ethers.getSigners())[0]
 // const SeedFactoryContract = new ethers.Contract(
