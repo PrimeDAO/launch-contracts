@@ -71,12 +71,12 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const Class2_User2_Address = "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
   const Class3_User1_Address = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
 
-  const testTokenInstance = await ethers.getContract("TestToken");
-  testTokenInstance.transfer(Class1_User1_Address, "1000000000000000000000000")
-  testTokenInstance.transfer(Class1_User2_Address, "1000000000000000000000000")
-  testTokenInstance.transfer(Class2_User1_Address, "1000000000000000000000000")
-  testTokenInstance.transfer(Class2_User2_Address, "1000000000000000000000000")
-  testTokenInstance.transfer(Class3_User1_Address, "1000000000000000000000000")
+  // const testTokenInstance = await ethers.getContract("TestToken");
+  // testTokenInstance.transfer(Class1_User1_Address, "1000000000000000000000000")
+  // testTokenInstance.transfer(Class1_User2_Address, "1000000000000000000000000")
+  // testTokenInstance.transfer(Class2_User1_Address, "1000000000000000000000000")
+  // testTokenInstance.transfer(Class2_User2_Address, "1000000000000000000000000")
+  // testTokenInstance.transfer(Class3_User1_Address, "1000000000000000000000000")
 
   const D2DInstance = await ethers.getContract("D2D");
   D2DInstance.transfer(Class1_User1_Address, "1000000000000000000000000")
