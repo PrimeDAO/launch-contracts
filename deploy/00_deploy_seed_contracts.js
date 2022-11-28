@@ -53,9 +53,10 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   console.log("--- deploy tokens");
   await deploy("D2D", {
     from: root,
-    args: [],
+    args: ["Prime", "D2D"],
     log: true,
   });
+
   await deploy("TestToken", {
     from: root,
     args: [],

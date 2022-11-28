@@ -2,11 +2,11 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  await deploy("D2D", {
-    from: root,
-    args: [],
-    log: true,
-  });
+  // await deploy("D2D", {
+  //   from: root,
+  //   args: [],
+  //   log: true,
+  // });
 };
 
 module.exports = deployFunction;
