@@ -21,7 +21,7 @@ const { SEVEN_DAYS } = require("./helpers/constants/time.js");
  * @typedef {import("../lib/types/types").Seed} Seed
  */
 
-describe("> Contract: SeedFactory", () => {
+describe("> Contract: SeedFactoryV2", () => {
   let root;
   let beneficiary;
   let treasury;
@@ -34,9 +34,9 @@ describe("> Contract: SeedFactory", () => {
     /**
      * @type {SeedFactory}
      */
-    let SeedFactory_initialized;
+    let SeedFactoryV2_initialized;
     before(async () => {
-      ({ SeedFactory_initialized } = await loadFixture(launchFixture));
+      ({ SeedFactoryV2_initialized } = await loadFixture(launchFixture));
     });
     describe("# given the SeedFactory has been deployed", () => {
       describe("» when calling function transferOwnership()", () => {
@@ -47,7 +47,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.transferOwnership(params)
+            SeedFactoryV2_initialized.transferOwnership(params)
           ).to.be.revertedWith("Ownable: caller is not the owner");
         });
         it("should revert if address is equal to zero", async () => {
@@ -56,15 +56,15 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.transferOwnership(params)
+            SeedFactoryV2_initialized.transferOwnership(params)
           ).to.be.revertedWith("Ownable: new owner is the zero address");
         });
         it("should succeed if caller is the owner", async () => {
           const params = { newOwner: beneficiary.address };
 
-          expect(await SeedFactory_initialized.owner).to.equal(root.address);
-          await SeedFactory_initialized.transferOwnership(params);
-          expect(await SeedFactory_initialized.owner).to.equal(
+          expect(await SeedFactoryV2_initialized.owner).to.equal(root.address);
+          await SeedFactoryV2_initialized.transferOwnership(params);
+          expect(await SeedFactoryV2_initialized.owner).to.equal(
             beneficiary.address
           );
         });
@@ -73,64 +73,64 @@ describe("> Contract: SeedFactory", () => {
   });
   describe("$ Function: setMasterCopy()", () => {
     /**@type {SeedFactory}*/
-    let SeedFactory_initialized;
+    let SeedFactoryV2_initialized;
     /**@type {SeedFactory}*/
-    let Seed_funded;
+    let SeedV2_funded;
     /**@type {Seed}*/
-    let Seed_initialized;
+    let SeedV2_initialized;
     before(async () => {
-      ({ Seed_initialized, Seed_funded, SeedFactory_initialized } =
+      ({ SeedV2_initialized, SeedV2_funded, SeedFactoryV2_initialized } =
         await loadFixture(launchFixture));
     });
     describe("# given Seed master copy is not yet set", () => {
       describe("» when calling function setMasterCopy()", () => {
         it("should fail if Seed address is equal to SeedFactory address", async () => {
           const params = {
-            seedAddress: SeedFactory_initialized.instance.address,
+            seedAddress: SeedFactoryV2_initialized.instance.address,
           };
 
           await expect(
-            SeedFactory_initialized.setMasterCopy(params)
+            SeedFactoryV2_initialized.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
         it("should fail if Seed address is equal zero", async () => {
           const params = { seedAddress: AddressZero };
 
           await expect(
-            SeedFactory_initialized.setMasterCopy(params)
+            SeedFactoryV2_initialized.setMasterCopy(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
         it("should succeed in setting master copy", async () => {
-          const params = { seedAddress: Seed_funded.instance.address };
+          const params = { seedAddress: SeedV2_funded.instance.address };
 
-          expect(await SeedFactory_initialized.instance.masterCopy()).to.equal(
-            Seed_initialized.instance.address
-          );
+          expect(
+            await SeedFactoryV2_initialized.instance.masterCopy()
+          ).to.equal(SeedV2_initialized.instance.address);
 
-          await expect(SeedFactory_initialized.setMasterCopy(params)).to.not.be
-            .reverted;
-          expect(await SeedFactory_initialized.instance.masterCopy()).to.equal(
-            Seed_funded.instance.address
-          );
+          await expect(SeedFactoryV2_initialized.setMasterCopy(params)).to.not
+            .be.reverted;
+          expect(
+            await SeedFactoryV2_initialized.instance.masterCopy()
+          ).to.equal(SeedV2_funded.instance.address);
         });
       });
     });
   });
   describe("$ Function: deploySeed()", () => {
     /** @type {SeedFactory}*/
-    let SeedFactory_initialized;
+    let SeedFactoryV2_initialized;
     let tokenInstances;
     let defaultSeedParameters;
     beforeEach(async () => {
-      ({ Seed_initialized, SeedFactory_initialized } = await loadFixture(
+      ({ SeedV2_initialized, SeedFactoryV2_initialized } = await loadFixture(
         launchFixture
       ));
       tokenInstances = await getERC20TokenInstances(
-        await getConvertedParams(types.SEED_TOKEN_PARAMS)
+        await getConvertedParams(types.SEEDV2_TOKEN_PARAMS)
       );
       const params = { tokenInstances: tokenInstances };
       defaultSeedParameters = await getConvertedParams(
-        types.SEEDFACTORY_DEPLOY_SEED,
+        types.SEEDFACTORYV2_DEPLOY_SEED,
         params
       );
       defaultSeedParameters.shift();
@@ -143,7 +143,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { tip: [tipPercentage, tipVestingCliff] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
@@ -151,7 +151,7 @@ describe("> Contract: SeedFactory", () => {
         it("should revert", async () => {
           const seedTokenAddress = defaultSeedParameters[2][0];
           const fundingTokenAddress = defaultSeedParameters[2][1];
-          const thirdAddress = SeedFactory_initialized.instance.address;
+          const thirdAddress = SeedFactoryV2_initialized.instance.address;
           const params = {
             tokenAddresses: [
               seedTokenAddress,
@@ -161,7 +161,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
@@ -172,7 +172,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { startAndEndTime: [startTime, endTime, startTime] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
@@ -187,7 +187,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 102");
         });
       });
@@ -199,7 +199,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 104");
         });
       });
@@ -212,7 +212,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 104");
         });
       });
@@ -225,7 +225,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 104");
         });
       });
@@ -234,7 +234,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { beneficiary: AddressZero };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
@@ -243,7 +243,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { projectAddresses: [admin.address, AddressZero] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
@@ -252,7 +252,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { projectAddresses: [AddressZero, treasury.address] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
@@ -262,7 +262,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { tokenAddresses: [AddressZero, fundingTokenAddress] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
@@ -272,7 +272,7 @@ describe("> Contract: SeedFactory", () => {
           const params = { tokenAddresses: [seedTokenAddress, AddressZero] };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 100");
         });
       });
@@ -286,7 +286,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 300");
         });
       });
@@ -299,7 +299,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 106");
         });
       });
@@ -312,7 +312,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 106");
         });
       });
@@ -326,7 +326,7 @@ describe("> Contract: SeedFactory", () => {
           };
 
           await expect(
-            SeedFactory_initialized.deploySeed(params)
+            SeedFactoryV2_initialized.deploySeed(params)
           ).to.be.revertedWith("SeedFactory: Error 301");
         });
       });
@@ -335,35 +335,35 @@ describe("> Contract: SeedFactory", () => {
       describe("» when calling function deploySeed()", () => {
         it("should deploy a new Seed succesfully", async () => {
           const params = { tokenInstances: tokenInstances };
-          const tx = await SeedFactory_initialized.deploySeed(params);
+          const tx = await SeedFactoryV2_initialized.deploySeed(params);
           const receipt = await tx.wait();
           const event = receipt.events.filter((x) => {
             return x.event == "SeedCreated";
           });
           const newSeedAddress = event[0].args[0];
 
-          const SeedFactory = await ethers.getContractFactory("Seed", root);
-          const Seed_initialized = SeedFactory.attach(newSeedAddress);
+          const SeedFactory = await ethers.getContractFactory("SeedV2", root);
+          const SeedV2_initialized = SeedFactory.attach(newSeedAddress);
 
-          expect(await Seed_initialized.beneficiary()).to.equal(
+          expect(await SeedV2_initialized.beneficiary()).to.equal(
             defaultSeedParameters[0]
           );
-          expect(await Seed_initialized.admin()).to.equal(
+          expect(await SeedV2_initialized.admin()).to.equal(
             defaultSeedParameters[1][0]
           );
-          expect(await Seed_initialized.treasury()).to.equal(
+          expect(await SeedV2_initialized.treasury()).to.equal(
             defaultSeedParameters[1][1]
           );
-          expect(await Seed_initialized.seedToken()).to.equal(
+          expect(await SeedV2_initialized.seedToken()).to.equal(
             defaultSeedParameters[2][0]
           );
-          expect(await Seed_initialized.fundingToken()).to.equal(
+          expect(await SeedV2_initialized.fundingToken()).to.equal(
             defaultSeedParameters[2][1]
           );
-          expect(await Seed_initialized.softCap()).to.equal(
+          expect(await SeedV2_initialized.softCap()).to.equal(
             defaultSeedParameters[3][0]
           );
-          expect(await Seed_initialized.hardCap()).to.equal(
+          expect(await SeedV2_initialized.hardCap()).to.equal(
             defaultSeedParameters[3][1]
           );
         });
@@ -371,14 +371,14 @@ describe("> Contract: SeedFactory", () => {
     });
   });
 });
-describe("> Contract: SeedFactoryNoAccessControl", () => {
+describe("> Contract: SeedFactoryV2NoAccessControl", () => {
   /**
    * @type {SeedFactory}
    */
-  let SeedFactoryNoAccessControl_initialized;
+  let SeedFactoryV2NoAccessControl_initialized;
   before(async () => {
     ({ root, beneficiary } = await getNamedTestSigners());
-    ({ SeedFactoryNoAccessControl_initialized } = await loadFixture(
+    ({ SeedFactoryV2NoAccessControl_initialized } = await loadFixture(
       launchFixture
     ));
   });
@@ -387,7 +387,7 @@ describe("> Contract: SeedFactoryNoAccessControl", () => {
     describe("» when the not the owner deploys a new Seed", () => {
       it("should succeed", async () => {
         await expect(
-          SeedFactoryNoAccessControl_initialized.deploySeed({
+          SeedFactoryV2NoAccessControl_initialized.deploySeed({
             from: beneficiary,
           })
         ).to.not.be.reverted;
