@@ -8,7 +8,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const lbpManagerFactoryInstance = await ethers.getContract(
     "LBPManagerFactory"
   );
-  const seedFactoryInstance = await ethers.getContract("SeedFactory");
+  const seedFactoryInstance = await ethers.getContract("SeedFactoryV2");
 
   const deployLBPManagerFunctionSignature =
     await lbpManagerFactoryInstance.interface.getSighash("deployLBPManager");

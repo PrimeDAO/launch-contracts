@@ -19,17 +19,16 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Seed.sol";
+import "./SeedV2.sol";
 import "../utils/CloneFactory.sol";
 
 /**
- * @title PrimeDAO Seed Factory V2
- * @dev   SeedFactory deployed without the onlyOwner modifer for the function deploySeed(). By 
-          removing the access control, everyone can deploy a seed from this contract. This is
- *        a temporarly solution in response to the flaky Celo Safe.
+ * @title PrimeDAO Seed Factory version 2.1.0
+ * @dev   Enable PrimeDAO governance to create new Seed contracts.
  */
-contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
-    Seed public masterCopy; // Seed implementation address, which is used in the cloning pattern
+contract SeedFactoryV2 is CloneFactory, Ownable {
+    bytes6 public version = "2.1.0";
+    SeedV2 public masterCopy; // Seed implementation address, which is used in the cloning pattern
     uint256 internal constant MAX_TIP = (45 / 100) * 10**18; // Max tip expressed as a % (e.g. 45 / 100 * 10**18 = 45% fee)
 
     // ----------------------------------------
@@ -42,7 +41,7 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
         address indexed treasury
     );
 
-    constructor(Seed _masterCopy) {
+    constructor(SeedV2 _masterCopy) {
         require(address(_masterCopy) != address(0), "SeedFactory: Error 100");
         masterCopy = _masterCopy;
     }
@@ -55,7 +54,7 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
      * @dev               Set Seed contract which works as a base for clones.
      * @param _masterCopy The address of the new Seed basis.
      */
-    function setMasterCopy(Seed _masterCopy) external onlyOwner {
+    function setMasterCopy(SeedV2 _masterCopy) external onlyOwner {
         require(
             address(_masterCopy) != address(0) &&
                 address(_masterCopy) != address(this),
@@ -107,7 +106,7 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
         address[] memory _allowlistAddresses,
         uint256[] memory _tip,
         bytes memory _metadata
-    ) external returns (address) {
+    ) external onlyOwner returns (address) {
         {
             require(
                 _tip.length == 3 &&
@@ -147,10 +146,10 @@ contract SeedFactoryNoAccessControl is CloneFactory, Ownable {
         // deploy clone
         address _newSeed = createClone(address(masterCopy));
 
-        Seed(_newSeed).updateMetadata(_metadata);
+        SeedV2(_newSeed).updateMetadata(_metadata);
 
         // initialize
-        Seed(_newSeed).initialize(
+        SeedV2(_newSeed).initialize(
             _beneficiary,
             _projectAddresses,
             _tokens,
