@@ -416,23 +416,23 @@ function seedDeployParams(params) {
  */
 async function getConvertedParams(type, params) {
   switch (type) {
-    case types.SEED_INITIALIZE:
+    case types.SEEDV2_INITIALIZE:
       return await seedInitParams(params);
-    case types.SEEDFACTORY_DEPLOY_SEED:
+    case types.SEEDFACTORYV2_DEPLOY_SEED:
       return await seedFactoryDeploySeedParams(params);
-    case types.SEED_DEPLOY_INSTANCE:
-    case types.SEEDFACTORY_DEPLOY_INSTANCE:
-    case types.SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE:
+    case types.SEEDV2_DEPLOY_INSTANCE:
+    case types.SEEDFACTORYV2_DEPLOY_INSTANCE:
+    case types.SEEDFACTORYV2NOACCESSCONTROL_DEPLOY_INSTANCE:
       return Promise.resolve(seedDeployParams(params));
-    case types.SEED_CHANGE_CLASSES_AND_ALLOWLISTS:
+    case types.SEEDV2_CHANGE_CLASSES_AND_ALLOWLISTS:
       return Promise.resolve(getChangeClassesAndAllowlistsParams(params));
-    case types.SEED_ALLOWLIST:
+    case types.SEEDV2_ALLOWLIST:
       return await getAllowlistArrays(params);
-    case types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM:
+    case types.SEEDV2_ADD_CLASS_AND_WHITELIST_FROM_NUM:
       return Promise.resolve(getClassAndWhitelistParamsFromNumber(params));
-    case types.SEED_ADD_CLASS_AND_WHITELIST:
+    case types.SEEDV2_ADD_CLASS_AND_WHITELIST:
       return Promise.resolve(getClassAndWhitelistParams(params));
-    case types.SEED_TOKEN_PARAMS:
+    case types.SEEDV2_TOKEN_PARAMS:
       return Promise.resolve(tokenParams());
     default:
       return;

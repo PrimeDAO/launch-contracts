@@ -33,19 +33,19 @@ class ContractDeployer {
     let instance;
     let builder;
     switch (type) {
-      case types.SEED_DEPLOY_INSTANCE:
+      case types.SEEDV2_DEPLOY_INSTANCE:
         {
-          instance = await deployContract(deploy.SEED, { from, args });
+          instance = await deployContract(deploy.SEEDV2, { from, args });
           builder = new Seed(instance);
         }
         break;
-      case types.SEEDFACTORY_DEPLOY_INSTANCE:
-      case types.SEEDFACTORYNOACCESSCONTROL_DEPLOY_INSTANCE: {
+      case types.SEEDFACTORYV2_DEPLOY_INSTANCE:
+      case types.SEEDFACTORYV2NOACCESSCONTROL_DEPLOY_INSTANCE: {
         // get correct contract type
         const seedFactoryContractType =
-          type == types.SEEDFACTORY_DEPLOY_INSTANCE
-            ? deploy.SEEDFACTORY
-            : deploy.SEEDFACTORYNOACCESSCONTROL;
+          type == types.SEEDFACTORYV2_DEPLOY_INSTANCE
+            ? deploy.SEEDFACTORYV2
+            : deploy.SEEDFACTORYV2NOACCESSCONTROL;
 
         instance = await deployContract(seedFactoryContractType, {
           from,
