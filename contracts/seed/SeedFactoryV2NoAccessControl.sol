@@ -10,7 +10,7 @@
 */
 
 // SPDX-License-Identifier: GPL-3.0
-// PrimeDAO Seed Factory contract. Enable PrimeDAO governance to create new Seed contracts.
+// PrimeDAO Seed Factory version 2 contract. Enable PrimeDAO governance to create new Seed contracts.
 // Copyright (C) 2022 PrimeDao
 
 // solium-disable linebreak-style
@@ -24,7 +24,7 @@ import "../utils/CloneFactory.sol";
 
 /**
  * @title PrimeDAO Seed Factory V2
- * @dev   SeedFactory deployed without the onlyOwner modifer for the function deploySeed(). By 
+ * @dev   SeedFactory version 2 deployed without the onlyOwner modifer for the function deploySeed(). By 
           removing the access control, everyone can deploy a seed from this contract. This is
  *        a temporarly solution in response to the flaky Celo Safe.
  */
