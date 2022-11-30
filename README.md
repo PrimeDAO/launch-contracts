@@ -1,5 +1,6 @@
 # Launch Contracts
-[![Coverage](https://codecov.io/gh/PrimeDAO/launch-contracts/branch/main/graph/badge.svg?token=5GJA99CHLC)](https://codecov.io/gh/PrimeDAO/launch-contracts) ![build&tests](https://github.com/PrimeDAO/launch-contracts/actions/workflows/ci-config.yml/badge.svg) 
+
+[![Coverage](https://codecov.io/gh/PrimeDAO/launch-contracts/branch/main/graph/badge.svg?token=5GJA99CHLC)](https://codecov.io/gh/PrimeDAO/launch-contracts) ![build&tests](https://github.com/PrimeDAO/launch-contracts/actions/workflows/ci-config.yml/badge.svg)
 
 This repo contains the smart contracts making up PrimeDAO.
 
@@ -64,7 +65,7 @@ Note:`.env` should be created in root directory.
 
 This project uses the hardhat-deploy plugin to deploy contracts. When a contract has been deployed, it is saved as JSON to the `deployments` directory, including its _address_ as well as its _abi_.
 
-Since this is a project that is continuously being extended, it is generally not desirable to always deploy all contracts. Therefore, this project makes use of [deployment tags](https://hardhat.org/plugins/hardhat-deploy.html#deploy-scripts-tags-and-dependencies). These are specified at the end of each deploy script.
+Since this is a project that is continuously being extended, it is generally not desirable to always deploy all contracts. Therefore, this project makes use of [deployment tags](https://hardhat.org/plugins/hardhat-deploy.html#deploy-scripts-tags-and-dependencies). These are specified at the end of each deploy script. This makes it possible to deploy specific versions for a given contract as they are being developed.
 
 There are two **npm scripts** that facilitate the deployment to _mainnet_ and _rinkeby_. Both require the specification of **tags**. When using these scripts, at the end of the deployment, it automatically exports the addresses & artifacts in one file per network. These files can be found in the `exports` directory and, for example, can be used for dApp development.
 
@@ -89,8 +90,8 @@ General (one tag):
 General (multiple tags):
 `npm run deploy:contracts:mainnet --tags=<YOUR_TAG_NAME1>,<YOUR_TAG_NAME2>`
 
-Example (deploys Seed and Migration contracts):
-`npm run deploy:contracts:mainnet --tags=Seed,Migration`
+Example (deploys SeedV2 and Migration contracts):
+`npm run deploy:contracts:mainnet --tags=SeedV2,Migration`
 
 ## Interacting with contracts
 
