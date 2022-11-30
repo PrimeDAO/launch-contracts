@@ -21,7 +21,7 @@ const { SEVEN_DAYS } = require("./helpers/constants/time.js");
  * @typedef {import("../lib/types/types").Seed} Seed
  */
 
-describe("> Contract: SeedFactoryV2", () => {
+describe("> Contract: SeedFactory", () => {
   let root;
   let beneficiary;
   let treasury;
@@ -371,7 +371,7 @@ describe("> Contract: SeedFactoryV2", () => {
     });
   });
 });
-describe("> Contract: SeedFactoryV2NoAccessControl", () => {
+describe("> Contract: SeedFactoryNoAccessControl", () => {
   /**
    * @type {SeedFactory}
    */

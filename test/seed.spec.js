@@ -46,7 +46,7 @@ async function convertSeedToComplete(Seed) {
   await increaseTimeTo(Seed.endTime + 1);
 }
 
-describe("> Contract: SeedV2", () => {
+describe("> Contract: Seed", () => {
   let beneficiary;
   let buyer1;
   let buyer2;
