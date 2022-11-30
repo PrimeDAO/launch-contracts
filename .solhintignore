@@ -8,5 +8,6 @@ contracts/utils/Signer.sol
 contracts/utils/CloneFactory.sol
 contracts/migration/MerkleDrop.sol
 contracts/Reputation.sol
-contracts/seed/Seed.sol
-contracts/seed/SeedFactory.sol
+contracts/seed/SeedV2.sol
+contracts/seed/SeedFactoryV2.sol
+contracts/seed/SeedFactoryV2NoAccessControl.sol
