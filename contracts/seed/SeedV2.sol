@@ -23,10 +23,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- * @title PrimeDAO Seed contract V2
+ * @title PrimeDAO Seed contract version 2.1.0
  * @dev   Smart contract for seed phases of Prime Launch.
  */
-contract Seed {
+contract SeedV2 {
+    bytes6 public version = "2.1.0";
     using SafeERC20 for IERC20;
     // Locked parameters
     address public beneficiary; // The address that recieves fees

@@ -57,7 +57,7 @@ class SeedFactory {
     if (!params.from) params.from = await getRootSigner();
 
     const deployment = await getConvertedParams(
-      types.SEEDFACTORY_DEPLOY_SEED,
+      types.SEEDFACTORYV2_DEPLOY_SEED,
       params
     );
     this.seedTokenInstance = deployment[0][0];

@@ -7,7 +7,7 @@ const { getRootSigner } = require("../accounts/signers");
 
 /**
  *
- * @param {string} contract - "SeedFactory" | "Seed"
+ * @param {string} contract - "SeedFactoryV2" | "SeedV2"
  * @param {{from: SignerWithAddress, args: any}} obj
  * @returns {Promise<Contract>}
  */

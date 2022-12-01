@@ -6,7 +6,7 @@ task("createSeed", "Creates a Seed directly, bypassing Gnosis safe").setAction(
   async (_, hre) => {
     try {
       console.log("Creating Seed...");
-      const seedFactoryInstance = await hre.ethers.getContract("SeedFactory");
+      const seedFactoryInstance = await hre.ethers.getContract("SeedFactoryV2");
       const tx = await seedFactoryInstance.deploySeed(
         SeedArguments.BENEFICIARY,
         SeedArguments.ADMIN,
@@ -34,7 +34,7 @@ task("changeOwner", "changes owner of SeedFactory")
   .setAction(async ({ address }, { ethers }) => {
     try {
       console.log(`changing owner of SeedFactory to ${address}`);
-      const seedFactoryInstance = await ethers.getContract("SeedFactory");
+      const seedFactoryInstance = await ethers.getContract("SeedFactoryV2");
       const tx = await seedFactoryInstance.transferOwnership(address);
       console.log("Transaction:", tx.hash);
     } catch (error) {

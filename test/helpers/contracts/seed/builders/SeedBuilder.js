@@ -18,7 +18,7 @@ class SeedBuilder {
       args: undefined,
     };
     return await ContractDeployer.deploy(
-      types.SEED_DEPLOY_INSTANCE,
+      types.SEEDV2_DEPLOY_INSTANCE,
       params ?? defaultInitParams
     );
   }

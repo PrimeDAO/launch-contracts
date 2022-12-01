@@ -116,7 +116,7 @@ class Seed {
   }
 
   static async create(params = {}) {
-    return contractDeployer.ContractDeployer.deploy("SeedFactory", params);
+    return contractDeployer.ContractDeployer.deploy("SeedFactoryV2", params);
   }
 
   /**
@@ -223,7 +223,10 @@ class Seed {
   async initialize(params = {}) {
     if (!params.from) params.from = await getRootSigner();
 
-    const deployment = await getConvertedParams(types.SEED_INITIALIZE, params);
+    const deployment = await getConvertedParams(
+      types.SEEDV2_INITIALIZE,
+      params
+    );
     this.seedTokenInstance = deployment[0][0];
     this.fundingTokenInstance = deployment[0][1];
     this.fundingTokenDecimal = await this.fundingTokenInstance.decimals();
@@ -288,7 +291,7 @@ class Seed {
   async changeClassesAndAllowlists(params = {}) {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     const changeClassesAndAllowlistsParams = await getConvertedParams(
-      types.SEED_CHANGE_CLASSES_AND_ALLOWLISTS,
+      types.SEEDV2_CHANGE_CLASSES_AND_ALLOWLISTS,
       params
     );
 
@@ -335,12 +338,12 @@ class Seed {
     if (!params.from) params.from = await ethers.getSigner(this.admin);
     if (params.numberOfRandomClasses) {
       functionParams = await getConvertedParams(
-        types.SEED_ADD_CLASS_AND_WHITELIST_FROM_NUM,
+        types.SEEDV2_ADD_CLASS_AND_WHITELIST_FROM_NUM,
         params
       );
     } else {
       functionParams = await getConvertedParams(
-        types.SEED_ADD_CLASS_AND_WHITELIST,
+        types.SEEDV2_ADD_CLASS_AND_WHITELIST,
         params
       );
     }

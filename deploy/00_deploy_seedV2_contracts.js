@@ -6,22 +6,22 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
 
   const safeAddress = getSafeAddress();
 
-  const { address: seedAddress } = await deploy("Seed", {
+  const { address: seedAddress } = await deploy("SeedV2", {
     from: root,
     args: [],
     log: true,
   });
 
-  await deploy("SeedFactory", {
+  await deploy("SeedFactoryV2", {
     from: root,
     args: [seedAddress],
     log: true,
   });
 
-  const seedFactoryInstance = await ethers.getContract("SeedFactory");
+  const seedFactoryInstance = await ethers.getContract("SeedFactoryV2");
 
   await seedFactoryInstance.transferOwnership(safeAddress);
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["Seed"];
+module.exports.tags = ["SeedV2"];
