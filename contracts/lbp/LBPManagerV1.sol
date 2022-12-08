@@ -20,11 +20,12 @@ import "../utils/interface/IVault.sol";
 import "../utils/interface/ILBP.sol";
 
 /**
- * @title LBPManager contract.
+ * @title LBPManager contract version 1
  * @dev   Smart contract for managing interactions with a Balancer LBP.
  */
 // solhint-disable-next-line max-states-count
-contract LBPManager {
+contract LBPManagerV1 {
+    bytes6 public version = "1.0.0";
     // Constants
     uint256 private constant HUNDRED_PERCENT = 1e18; // Used in calculating the fee.
 

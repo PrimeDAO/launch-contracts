@@ -16,16 +16,17 @@ pragma solidity 0.8.17;
 
 import "../utils/CloneFactory.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./LBPManager.sol";
+import "./LBPManagerV1.sol";
 
 /**
- * @title LBPManager Factory
+ * @title LBPManager Factory no access control version 1
  * @dev   Governance to create new LBPManager contract without the onlyOwner modifer for the
  *        function deployLBPManager(). By removing the access control, everyone can deploy a
  *        LBPManager from this contract. This is a temporarly solution in response to the
  *        flaky Celo Safe.
  */
-contract LBPManagerFactoryNoAccessControl is CloneFactory, Ownable {
+contract LBPManagerFactoryV1NoAccessControl is CloneFactory, Ownable {
+    bytes6 public version = "1.0.0";
     address public masterCopy;
     address public lbpFactory;
 
@@ -137,7 +138,7 @@ contract LBPManagerFactoryNoAccessControl is CloneFactory, Ownable {
 
         address lbpManager = createClone(masterCopy);
 
-        LBPManager(lbpManager).initializeLBPManager(
+        LBPManagerV1(lbpManager).initializeLBPManager(
             lbpFactory,
             _beneficiary,
             _name,
@@ -151,7 +152,7 @@ contract LBPManagerFactoryNoAccessControl is CloneFactory, Ownable {
             _metadata
         );
 
-        LBPManager(lbpManager).transferAdminRights(_admin);
+        LBPManagerV1(lbpManager).transferAdminRights(_admin);
 
         emit LBPManagerDeployed(lbpManager, _admin, _metadata);
     }

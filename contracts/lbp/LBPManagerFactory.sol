@@ -16,13 +16,14 @@ pragma solidity 0.8.17;
 
 import "../utils/CloneFactory.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./LBPManager.sol";
+import "./LBPManagerV1.sol";
 
 /**
  * @title LBPManager Factory
  * @dev   Governance to create new LBPManager contracts.
  */
 contract LBPManagerFactory is CloneFactory, Ownable {
+    bytes6 public version = "2.1.0";
     address public masterCopy;
     address public lbpFactory;
 
@@ -134,7 +135,7 @@ contract LBPManagerFactory is CloneFactory, Ownable {
 
         address lbpManager = createClone(masterCopy);
 
-        LBPManager(lbpManager).initializeLBPManager(
+        LBPManagerV1(lbpManager).initializeLBPManager(
             lbpFactory,
             _beneficiary,
             _name,
@@ -148,7 +149,7 @@ contract LBPManagerFactory is CloneFactory, Ownable {
             _metadata
         );
 
-        LBPManager(lbpManager).transferAdminRights(_admin);
+        LBPManagerV1(lbpManager).transferAdminRights(_admin);
 
         emit LBPManagerDeployed(lbpManager, _admin, _metadata);
     }
