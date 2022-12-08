@@ -19,11 +19,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./LBPManagerV1.sol";
 
 /**
- * @title LBPManager Factory
- * @dev   Governance to create new LBPManager contracts.
+ * @title LBPManager Factory no access control version 1
+ * @dev   Governance to create new LBPManager contract without the onlyOwner modifer for the
+ *        function deployLBPManager(). By removing the access control, everyone can deploy a
+ *        LBPManager from this contract. This is a temporarly solution in response to the
+ *        flaky Celo Safe.
  */
-contract LBPManagerFactory is CloneFactory, Ownable {
-    bytes6 public version = "2.1.0";
+contract LBPManagerFactoryV1NoAccessControl is CloneFactory, Ownable {
+    bytes6 public version = "1.0.0";
     address public masterCopy;
     address public lbpFactory;
 
@@ -126,7 +129,7 @@ contract LBPManagerFactory is CloneFactory, Ownable {
         uint256[] memory _endWeights,
         uint256[] memory _fees,
         bytes memory _metadata
-    ) external onlyOwner {
+    ) external {
         // solhint-disable-next-line reason-string
         require(
             masterCopy != address(0),
